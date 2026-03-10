@@ -32,10 +32,14 @@ public class BeginPanel : BasePanel
     {
         Debug.Log("点击了 开始游戏");
 
+        Camera.main.GetComponent<CameraEvent>().TurnAround(() =>
+        {
+            print("进入创建角色界面");
+        });
         // 如果后面想避免主菜单残留，可以先隐藏自己
         UIManager.Instance.HidePanel<BeginPanel>(false);
 
-        SceneManager.LoadScene(gameSceneName);
+        //SceneManager.LoadScene(gameSceneName);
     }
 
     private void OnClickContinueGame()

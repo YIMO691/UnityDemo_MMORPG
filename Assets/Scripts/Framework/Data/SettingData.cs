@@ -13,4 +13,6 @@ public class SettingData
     // 用于关闭后再次开启时恢复
     public float lastMusicVolume = 1f;
     public float lastSoundVolume = 1f;
+
+
 }
