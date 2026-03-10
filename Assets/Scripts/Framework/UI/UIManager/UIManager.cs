@@ -25,7 +25,7 @@ public class UIManager
             return;
 
         // 从 ResourceManager 中加载 PanelCanvas 预制体
-        GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>("UI/Windows/PanelCanvas");
+        GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>("UI/Root/PanelCanvas");
         if (canvasPrefab == null)
         {
             Debug.LogError("[UIManager] PanelCanvas prefab not found: UI/Windows/PanelCanvas");
