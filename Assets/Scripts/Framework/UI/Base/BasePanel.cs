@@ -17,6 +17,9 @@ public abstract class BasePanel : MonoBehaviour
     //当隐藏完毕后 想要做的事情 
     private UnityAction hideCallBack = null;
 
+    //每个面板都要有一个属性 来告诉UIManager自己属于哪个层
+    public virtual UILayer Layer => UILayer.Normal;
+
     protected virtual void Awake()
     {
         //一开始获取面板上挂载的 组件

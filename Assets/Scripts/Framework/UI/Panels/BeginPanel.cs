@@ -4,6 +4,9 @@ using UnityEngine.SceneManagement;
 
 public class BeginPanel : BasePanel
 {
+    // 重写 Layer 属性，指定该面板属于 Normal 层
+    public override UILayer Layer => UILayer.Normal;
+
     // 使用 Header 属性在 Inspector 中分组显示按钮，方便编辑和维护
     [Header("Buttons")]
     public Button btnStart;
@@ -51,8 +54,10 @@ public class BeginPanel : BasePanel
     private void OnClickSetting()
     {
         Debug.Log("点击了 设置");
-        UIManager.Instance.ShowPanel<SettingPanel>();
+
+        EventBus.Publish(new OpenPanelEvent("SettingPanel"));
     }
+
 
     private void OnClickAbout()
     {

@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class SettingPanel : BasePanel
 {
+    // 重写 Layer 属性，指定该面板属于 Popup 层
+    public override UILayer Layer => UILayer.Popup;
+
     [Header("音乐和音效设置")]
     public Toggle togMusic;
     public Toggle togSound;
@@ -142,6 +145,6 @@ public class SettingPanel : BasePanel
     private void OnClickClose()
     {
         DataManager.Instance.SaveSettingData();
-        UIManager.Instance.HidePanel<SettingPanel>();
+        EventBus.Publish(new ClosePanelEvent("SettingPanel"));
     }
 }
