@@ -12,4 +12,8 @@ public class SettingData
     public float musicVolume = 1.0f;
     // 音效音量 (0-1)
     public float soundVolume = 1.0f;
+    // 静音前的音乐音量（用于恢复音量）
+    public float lastMusicVolume = 1.0f;
+    // 静音前的音效音量（用于恢复音量）
+    public float lastSoundVolume = 1.0f;
 }
