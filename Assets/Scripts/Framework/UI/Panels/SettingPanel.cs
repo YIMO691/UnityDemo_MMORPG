@@ -3,7 +3,6 @@ using UnityEngine.UI;
 
 public class SettingPanel : BasePanel
 {
-    // 重写 Layer 属性，指定该面板属于 Popup 层
     public override UILayer Layer => UILayer.Popup;
 
     [Header("音乐和音效设置")]
@@ -17,7 +16,28 @@ public class SettingPanel : BasePanel
 
     private bool isInitializing = false;
 
-    public override void Init()
+    // 重写属性，设置使用遮罩，点击遮罩关闭面板
+    public override bool UseMask => true;
+    public override bool CloseByMask => true;
+
+    /// <summary>
+    /// 只执行一次：注册事件
+    /// </summary>
+    protected override void OnCreate()
+    {
+        togMusic.onValueChanged.AddListener(OnMusicToggleChanged);
+        togSound.onValueChanged.AddListener(OnSoundToggleChanged);
+
+        sliderMusic.onValueChanged.AddListener(OnMusicSliderChanged);
+        sliderSound.onValueChanged.AddListener(OnSoundSliderChanged);
+
+        btnClose.onClick.AddListener(OnClickClose);
+    }
+
+    /// <summary>
+    /// 每次打开面板时执行
+    /// </summary>
+    protected override void OnShow()
     {
         isInitializing = true;
 
@@ -28,25 +48,33 @@ public class SettingPanel : BasePanel
         sliderMusic.value = DataManager.Instance.GetMusicVolume();
         sliderSound.value = DataManager.Instance.GetSoundVolume();
 
-        // 根据 Toggle 状态更新 Slider 是否可用
         RefreshMusicState();
         RefreshSoundState();
-
-        // 注册事件
-        togMusic.onValueChanged.AddListener(OnMusicToggleChanged);
-        togSound.onValueChanged.AddListener(OnSoundToggleChanged);
-        sliderMusic.onValueChanged.AddListener(OnMusicSliderChanged);
-        sliderSound.onValueChanged.AddListener(OnSoundSliderChanged);
-        btnClose.onClick.AddListener(OnClickClose);
 
         isInitializing = false;
     }
 
-    // 控制音乐开关的事件处理
+    /// <summary>
+    /// 销毁面板时取消监听
+    /// </summary>
+    protected override void OnDestroyPanel()
+    {
+        togMusic.onValueChanged.RemoveListener(OnMusicToggleChanged);
+        togSound.onValueChanged.RemoveListener(OnSoundToggleChanged);
+
+        sliderMusic.onValueChanged.RemoveListener(OnMusicSliderChanged);
+        sliderSound.onValueChanged.RemoveListener(OnSoundSliderChanged);
+
+        btnClose.onClick.RemoveListener(OnClickClose);
+    }
+
+    // =============================
+    // 事件逻辑
+    // =============================
+
     private void OnMusicToggleChanged(bool isOn)
     {
-        if (isInitializing)
-            return;
+        if (isInitializing) return;
 
         DataManager.Instance.SetMusicOn(isOn, false);
 
@@ -57,6 +85,7 @@ public class SettingPanel : BasePanel
                 value = 1f;
 
             sliderMusic.value = value;
+
             DataManager.Instance.SetMusicVolume(value, false);
             AudioManager.Instance.SetMusicVolume(value);
         }
@@ -70,11 +99,9 @@ public class SettingPanel : BasePanel
         DataManager.Instance.SaveSettingData();
     }
 
-    // 控制音效开关的事件处理
     private void OnSoundToggleChanged(bool isOn)
     {
-        if (isInitializing)
-            return;
+        if (isInitializing) return;
 
         DataManager.Instance.SetSoundOn(isOn, false);
 
@@ -85,6 +112,7 @@ public class SettingPanel : BasePanel
                 value = 1f;
 
             sliderSound.value = value;
+
             DataManager.Instance.SetSoundVolume(value, false);
             AudioManager.Instance.SetSoundVolume(value);
         }
@@ -98,50 +126,38 @@ public class SettingPanel : BasePanel
         DataManager.Instance.SaveSettingData();
     }
 
-    // 控制音乐音量的事件处理
     private void OnMusicSliderChanged(float value)
     {
-        if (isInitializing)
-            return;
-
-        // 当滑条值非常小（接近0）时，认为是关闭状态
-        bool isOn = value > 0.0001f;
+        if (isInitializing) return;
 
         DataManager.Instance.SetMusicVolume(value, false);
-
         AudioManager.Instance.SetMusicVolume(value);
+
         RefreshMusicState();
         DataManager.Instance.SaveSettingData();
     }
 
-    // 控制音效音量的事件处理
     private void OnSoundSliderChanged(float value)
     {
-        if (isInitializing)
-            return;
-
-        bool isOn = value > 0.0001f;
+        if (isInitializing) return;
 
         DataManager.Instance.SetSoundVolume(value, false);
-
         AudioManager.Instance.SetSoundVolume(value);
+
         RefreshSoundState();
         DataManager.Instance.SaveSettingData();
     }
 
-    // 刷新音乐开关状态，控制音乐音量滑条是否可用
     private void RefreshMusicState()
     {
         sliderMusic.interactable = togMusic.isOn;
     }
 
-    // 刷新音效开关状态，控制音效音量滑条是否可用
     private void RefreshSoundState()
     {
         sliderSound.interactable = togSound.isOn;
     }
 
-    // 关闭设置界面，保存设置数据
     private void OnClickClose()
     {
         DataManager.Instance.SaveSettingData();

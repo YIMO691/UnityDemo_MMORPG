@@ -1,48 +1,30 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager
 {
-    private Dictionary<UILayer, Transform> layerDic = new Dictionary<UILayer, Transform>();
-
-    private static UIManager instance = new UIManager();
+    private static readonly UIManager instance = new UIManager();
     public static UIManager Instance => instance;
 
     private readonly Dictionary<string, BasePanel> panelDic = new Dictionary<string, BasePanel>();
+    private readonly Dictionary<UILayer, Transform> layerDic = new Dictionary<UILayer, Transform>();
+
+    // Popup层的面板需要入栈，出栈时才显示下面的面板
+    private readonly Stack<BasePanel> popupStack = new Stack<BasePanel>();
+    private UIMask uiMask;
+
+
     private Transform canvasTrans;
+    private GameObject canvasObj;
+    private bool isInited = false;
 
     private UIManager() { }
 
-    void InitLayer()
-    {
-        if (canvasTrans == null)
-        {
-            Debug.LogError("[UIManager] canvasTrans is null when InitLayer()");
-            return;
-        }
-
-        layerDic.Clear();
-
-        foreach (UILayer layer in System.Enum.GetValues(typeof(UILayer)))
-        {
-            Transform layerTrans = canvasTrans.Find(layer.ToString());
-
-            if (layerTrans == null)
-            {
-                Debug.LogError($"[UIManager] Layer not found: {layer}");
-                continue;
-            }
-
-            layerDic.Add(layer, layerTrans);
-        }
-    }
-
-
     public void Init()
     {
-        // 如果已经初始化过了，就直接返回，避免重复初始化
-        if (canvasTrans != null)
-            return;
+        if (isInited) return;
 
         EventBus.Subscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Subscribe<ClosePanelEvent>(OnClosePanelEvent);
@@ -54,14 +36,145 @@ public class UIManager
             return;
         }
 
-        GameObject canvasObj = GameObject.Instantiate(canvasPrefab);
+        canvasObj = GameObject.Instantiate(canvasPrefab);
         canvasTrans = canvasObj.transform;
         GameObject.DontDestroyOnLoad(canvasObj);
 
-        // 对于层级的初始化，必须在创建 Canvas 之后进行，否则会找不到层级对象
         InitLayer();
+
+        InitMask();
+
+        isInited = true;
         Debug.Log("[UIManager] Init Success.");
     }
+
+    private void InitLayer()
+    {
+        if (canvasTrans == null)
+        {
+            Debug.LogError("[UIManager] canvasTrans is null when InitLayer()");
+            return;
+        }
+
+        layerDic.Clear();
+
+        foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
+        {
+            Transform layerTrans = canvasTrans.Find(layer.ToString());
+            if (layerTrans == null)
+            {
+                Debug.LogError($"[UIManager] Layer not found: {layer}");
+                continue;
+            }
+
+            layerDic[layer] = layerTrans;
+        }
+    }
+
+    #region popup相关功能
+    private void InitMask()
+    {
+        GameObject maskPrefab = ResourceManager.Instance.Load<GameObject>("UI/Root/UIMask");
+        if (maskPrefab == null)
+        {
+            Debug.LogError("[UIManager] UIMask prefab not found: UI/Root/UIMask");
+            return;
+        }
+
+        GameObject maskObj = GameObject.Instantiate(maskPrefab);
+
+        Transform popupLayer = layerDic[UILayer.Popup];
+        maskObj.transform.SetParent(popupLayer, false);
+
+        uiMask = maskObj.GetComponent<UIMask>();
+        if (uiMask == null)
+        {
+            Debug.LogError("[UIManager] UIMask component not found on prefab.");
+            GameObject.Destroy(maskObj);
+            return;
+        }
+
+        uiMask.Hide();
+    }
+
+
+    private void TryPushPopup(BasePanel panel)
+    {
+        if (panel.Layer != UILayer.Popup)
+            return;
+
+        if (popupStack.Contains(panel))
+            return;
+
+        panel.transform.SetAsLastSibling();
+        popupStack.Push(panel);
+
+        RefreshPopupMask();
+    }
+
+    private void RemovePopupFromStack(BasePanel target)
+    {
+        if (popupStack.Count == 0)
+            return;
+
+        Stack<BasePanel> tempStack = new Stack<BasePanel>();
+
+        while (popupStack.Count > 0)
+        {
+            BasePanel panel = popupStack.Pop();
+            if (panel != target)
+                tempStack.Push(panel);
+        }
+
+        while (tempStack.Count > 0)
+        {
+            popupStack.Push(tempStack.Pop());
+        }
+
+        RefreshPopupMask();
+    }
+
+    private void RefreshPopupMask()
+    {
+        if (uiMask == null)
+            return;
+
+        if (popupStack.Count == 0)
+        {
+            uiMask.Hide();
+            return;
+        }
+
+        BasePanel topPanel = popupStack.Peek();
+        if (topPanel == null || !topPanel.UseMask)
+        {
+            uiMask.Hide();
+            return;
+        }
+
+        uiMask.Show();
+
+        topPanel.transform.SetAsLastSibling();
+
+        int topIndex = topPanel.transform.GetSiblingIndex();
+        uiMask.transform.SetSiblingIndex(Mathf.Max(0, topIndex - 1));
+    }
+
+    public void OnMaskClicked()
+    {
+        if (popupStack.Count == 0)
+            return;
+
+        BasePanel topPanel = popupStack.Peek();
+        if (topPanel == null)
+            return;
+
+        if (!topPanel.CloseByMask)
+            return;
+
+        DestroyPanel(topPanel.GetType().Name, true);
+    }
+    #endregion
 
     private void OnOpenPanelEvent(OpenPanelEvent e)
     {
@@ -80,14 +193,14 @@ public class UIManager
 
     public BasePanel ShowPanel(string panelName)
     {
-        if (canvasTrans == null)
-        {
-            Debug.LogError("[UIManager] Not initialized. Please call UIManager.Instance.Init() first.");
-            return null;
-        }
+        if (!CheckInit()) return null;
 
-        if (panelDic.ContainsKey(panelName))
-            return panelDic[panelName];
+        if (panelDic.TryGetValue(panelName, out BasePanel existPanel))
+        {
+            existPanel.ShowMe();
+            Debug.Log($"[UIManager] ReShow Panel: {panelName}");
+            return existPanel;
+        }
 
         GameObject panelPrefab = ResourceManager.Instance.Load<GameObject>("UI/Windows/" + panelName);
         if (panelPrefab == null)
@@ -107,67 +220,175 @@ public class UIManager
         }
 
         UILayer layer = panel.Layer;
-
-        if (!layerDic.ContainsKey(layer))
+        if (!layerDic.TryGetValue(layer, out Transform parent))
         {
-            Debug.LogError($"Layer not exist: {layer}");
+            Debug.LogError($"[UIManager] Layer not exist: {layer}");
+            GameObject.Destroy(panelObj);
             return null;
         }
 
-        panelObj.transform.SetParent(layerDic[layer], false);
+        panelObj.transform.SetParent(parent, false);
+
+        panel.Create();
         panelDic.Add(panelName, panel);
+
         panel.ShowMe();
+
+        TryPushPopup(panel);
 
         Debug.Log($"[UIManager] ShowPanel Success: {panelName}");
         return panel;
     }
 
-    public void HidePanel<T>(bool isFade = true) where T : BasePanel
+    public void HidePanel<T>(bool useFade = true) where T : BasePanel
     {
-        HidePanel(typeof(T).Name, isFade);
+        HidePanel(typeof(T).Name, useFade);
     }
 
-    public void HidePanel(string panelName, bool isFade = true)
+    public void HidePanel(string panelName, bool useFade = true)
     {
-        if (!panelDic.ContainsKey(panelName))
+        if (!panelDic.TryGetValue(panelName, out BasePanel panel))
         {
             Debug.LogWarning($"[UIManager] HidePanel failed, panel not found: {panelName}");
             return;
         }
 
-        BasePanel panel = panelDic[panelName];
-
-        void DestroyPanel()
+        if (useFade)
         {
-            if (panel != null)
-                GameObject.Destroy(panel.gameObject);
-
-            panelDic.Remove(panelName);
-            Debug.Log($"[UIManager] HidePanel Success: {panelName}");
+            panel.HideMe();
+        }
+        else
+        {
+            panel.gameObject.SetActive(false);
         }
 
-        if (isFade)
-            panel.HideMe(DestroyPanel);
+        if (panel.Layer == UILayer.Popup)
+            RemovePopupFromStack(panel);
+
+        Debug.Log($"[UIManager] HidePanel Success: {panelName}");
+    }
+
+    public void DestroyPanel<T>(bool useFade = false) where T : BasePanel
+    {
+        DestroyPanel(typeof(T).Name, useFade);
+    }
+
+    public void DestroyPanel(string panelName, bool useFade = false)
+    {
+        if (!panelDic.TryGetValue(panelName, out BasePanel panel))
+        {
+            Debug.LogWarning($"[UIManager] DestroyPanel failed, panel not found: {panelName}");
+            return;
+        }
+
+        void DoDestroy()
+        {
+            if (panel != null)
+            {
+                panel.DestroyPanel();
+            }
+
+            panelDic.Remove(panelName);
+            Debug.Log($"[UIManager] DestroyPanel Success: {panelName}");
+        }
+
+        if (useFade)
+            panel.HideMe(DoDestroy);
         else
-            DestroyPanel();
+            DoDestroy();
+
+        if (panel.Layer == UILayer.Popup)
+            RemovePopupFromStack(panel);
+
     }
 
     public T GetPanel<T>() where T : BasePanel
     {
         string panelName = typeof(T).Name;
 
-        if (panelDic.ContainsKey(panelName))
-            return panelDic[panelName] as T;
+        if (panelDic.TryGetValue(panelName, out BasePanel panel))
+            return panel as T;
 
         return null;
+    }
+
+    public BasePanel GetPanel(string panelName)
+    {
+        if (panelDic.TryGetValue(panelName, out BasePanel panel))
+            return panel;
+
+        return null;
+    }
+
+    public void RefreshPanel<T>() where T : BasePanel
+    {
+        RefreshPanel(typeof(T).Name);
+    }
+
+    public void RefreshPanel(string panelName)
+    {
+        if (panelDic.TryGetValue(panelName, out BasePanel panel))
+        {
+            panel.Refresh();
+        }
+        else
+        {
+            Debug.LogWarning($"[UIManager] RefreshPanel failed, panel not found: {panelName}");
+        }
+    }
+
+    public bool IsPanelVisible<T>() where T : BasePanel
+    {
+        return IsPanelVisible(typeof(T).Name);
+    }
+
+    public bool IsPanelVisible(string panelName)
+    {
+        if (panelDic.TryGetValue(panelName, out BasePanel panel))
+            return panel.IsVisible && panel.gameObject.activeSelf;
+
+        return false;
     }
 
     public void Clear()
     {
         EventBus.Unsubscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Unsubscribe<ClosePanelEvent>(OnClosePanelEvent);
+
+        foreach (var kv in panelDic)
+        {
+            if (kv.Value != null)
+            {
+                kv.Value.DestroyPanel();
+            }
+        }
+
         panelDic.Clear();
+        layerDic.Clear();
+
+        if (canvasObj != null)
+        {
+            GameObject.Destroy(canvasObj);
+            canvasObj = null;
+        }
+
         canvasTrans = null;
+        isInited = false;
+
+        popupStack.Clear();
+        uiMask = null;
+
+        Debug.Log("[UIManager] Clear Success.");
     }
 
+    private bool CheckInit()
+    {
+        if (!isInited || canvasTrans == null)
+        {
+            Debug.LogError("[UIManager] Not initialized. Please call UIManager.Instance.Init() first.");
+            return false;
+        }
+
+        return true;
+    }
 }

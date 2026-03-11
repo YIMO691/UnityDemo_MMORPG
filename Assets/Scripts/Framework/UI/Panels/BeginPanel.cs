@@ -4,10 +4,8 @@ using UnityEngine.SceneManagement;
 
 public class BeginPanel : BasePanel
 {
-    // 重写 Layer 属性，指定该面板属于 Normal 层
     public override UILayer Layer => UILayer.Normal;
 
-    // 使用 Header 属性在 Inspector 中分组显示按钮，方便编辑和维护
     [Header("Buttons")]
     public Button btnStart;
     public Button btnContinue;
@@ -15,14 +13,13 @@ public class BeginPanel : BasePanel
     public Button btnAbout;
     public Button btnExit;
 
-
-    // 场景名称，可以在 Inspector 中设置，方便后续修改
     [Header("Scene Name")]
-
-    // 使用 SerializeField 让私有字段在 Inspector 中可见，同时保持封装性，方便后续修改场景名称
     [SerializeField] private string gameSceneName = "SampleScene";
 
-    public override void Init()
+    /// <summary>
+    /// 只执行一次：注册按钮事件
+    /// </summary>
+    protected override void OnCreate()
     {
         btnStart.onClick.AddListener(OnClickStartGame);
         btnContinue.onClick.AddListener(OnClickContinueGame);
@@ -31,38 +28,58 @@ public class BeginPanel : BasePanel
         btnExit.onClick.AddListener(OnClickExitGame);
     }
 
+    /// <summary>
+    /// 每次显示时调用
+    /// 目前主菜单没有复杂刷新需求，可以先空着
+    /// </summary>
+    protected override void OnShow()
+    {
+        // 例如后续可以在这里刷新 Continue 按钮状态
+        // btnContinue.interactable = SaveSystem.HasSaveData();
+    }
+
+    /// <summary>
+    /// 销毁前移除事件
+    /// </summary>
+    protected override void OnDestroyPanel()
+    {
+        btnStart.onClick.RemoveListener(OnClickStartGame);
+        btnContinue.onClick.RemoveListener(OnClickContinueGame);
+        btnSetting.onClick.RemoveListener(OnClickSetting);
+        btnAbout.onClick.RemoveListener(OnClickAbout);
+        btnExit.onClick.RemoveListener(OnClickExitGame);
+    }
+
     private void OnClickStartGame()
     {
         Debug.Log("点击了 开始游戏");
 
         Camera.main.GetComponent<CameraEvent>().TurnAround(() =>
         {
-            print("进入创建角色界面");
+            Debug.Log("进入创建角色界面");
         });
-        // 如果后面想避免主菜单残留，可以先隐藏自己
+
         UIManager.Instance.HidePanel<BeginPanel>(false);
 
-        //SceneManager.LoadScene(gameSceneName);
+        // SceneManager.LoadScene(gameSceneName);
     }
 
     private void OnClickContinueGame()
     {
         Debug.Log("点击了 继续游戏");
-        // 后续这里接存档系统
+        // 后续接存档系统
     }
 
     private void OnClickSetting()
     {
         Debug.Log("点击了 设置");
-
         EventBus.Publish(new OpenPanelEvent("SettingPanel"));
     }
-
 
     private void OnClickAbout()
     {
         Debug.Log("点击了 关于");
-        // 后续这里可以打开 AboutPanel
+        // 后续这里打开 AboutPanel
     }
 
     private void OnClickExitGame()
@@ -74,15 +91,5 @@ public class BeginPanel : BasePanel
 #else
         Application.Quit();
 #endif
-    }
-
-    protected virtual void OnDestroy()
-    {
-        btnStart.onClick.RemoveListener(OnClickStartGame);
-        btnContinue.onClick.RemoveListener(OnClickContinueGame);
-        btnSetting.onClick.RemoveListener(OnClickSetting);
-        btnAbout.onClick.RemoveListener(OnClickAbout);
-        btnExit.onClick.RemoveListener(OnClickExitGame);
-
     }
 }

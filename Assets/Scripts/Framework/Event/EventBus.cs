@@ -20,6 +20,7 @@ public static class EventBus
         }
     }
 
+    // 取消订阅时需要注意，如果事件类型不存在或者没有对应的监听器，直接返回即可
     public static void Unsubscribe<T>(Action<T> listener)
     {
         Type eventType = typeof(T);
