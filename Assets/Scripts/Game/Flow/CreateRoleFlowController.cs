@@ -38,7 +38,7 @@ public class CreateRoleFlowController
 
         DataManager.Instance.SetCurrentPlayerData(playerData);
 
-        Debug.Log($"[CreateRoleFlowController] 创角成功：{playerData.roleName}");
+        Debug.Log($"[CreateRoleFlowController] 创角成功：{playerData.baseData.roleName}");
 
         // 这里后续再接主界面或加载场景
         // UIManager.Instance.ShowMainPage<MainPanel>(hideOld: true, useFade: false);
