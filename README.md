@@ -1,133 +1,195 @@
-# UnityDemo_MMORPG — 客户端 Demo（UI/资源/音频/数据驱动）
+# UnityDemo_MMORPG
 
-**项目定位**：面向单人 RPG 的 Unity 客户端演示工程，已实现启动与主菜单 UI、资源加载抽象、设置数据持久化、基础音频系统与场景资源组织，采用 JSON 配置驱动的可扩展架构。
+一个基于 Unity 的 MMORPG 客户端原型项目，包含按层级管理的 UI 框架、事件总线解耦、创建角色流程、设置与音频联动、资源与数据驱动等基础能力。
 
-- 关键词：UI 框架 / 资源系统 / 数据持久化 / 音频管理 / 场景与动画
-- 运行平台：Unity（Windows 编辑器优先）
+## 功能特性
 
----
-
-## 快速上手
-- 打开场景：Assets/Scenes/BeginScene.unity
-- 挂载入口脚本：[StartGame.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Boot/StartGame.cs)（场景中已包含）
-- 运行后：
-  - 自动初始化 UIManager，实例化 PanelCanvas
-  - 显示主菜单 [BeginPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/BeginPanel.cs)
-  - 点击“设置”打开 [SettingPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/SettingPanel.cs)，进行音乐/音效开关与音量调节
-- 音频：
-  - 在场景中放置一个包含 [AudioManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Data/AudioManager.cs) 的对象（DontDestroyOnLoad）
-  - 通过 Inspector 指定默认 BGM（如 Resources/Music/BKMusic.mp3），或运行时调用 PlayBGM/PlaySound
-
----
-
-## 已实现功能
-- 启动与主菜单
-  - [StartGame.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Boot/StartGame.cs)：初始化 UIManager 并显示 BeginPanel
-  - [BeginPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/BeginPanel.cs)：开始、继续、设置、关于、退出
 - UI 框架
-  - [UIManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/UIManager.cs)：单例管理、Panel 缓存、显示/隐藏、淡入淡出
-  - [BasePanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/BasePanel.cs)：CanvasGroup 控制，统一淡入/淡出动画
-  - [UILayers.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Layers/UILayers.cs)：UI 层级管理
-  - [OpenSettingPanelEvent.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Events/OpenSettingPanelEvent.cs)：UI 事件定义
-  - 运行时 UI 资源规范：
-    - Canvas：[PanelCanvas.prefab](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/UI/Root/PanelCanvas.prefab)
-    - 面板：[BeginPanel.prefab](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/UI/Windows/BeginPanel.prefab)、[SettingPanel.prefab](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/UI/Windows/SettingPanel.prefab)
-- 设置与持久化
-  - [SettingPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/SettingPanel.cs)：音乐/音效开关与音量滑条（数据与 UI 双向联动）
-  - [DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs)：统一读写设置数据
-  - [SettingData.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/SettingData.cs)：配置模型（musicOn/soundOn/musicVolume/soundVolume/lastMusicVolume/lastSoundVolume）
-  - [JsonMgr.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Json/JsonMgr.cs)：LitJSON / JsonUtility 序列化与本地文件持久化
-- 资源系统
-  - [ResourceManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/ResourceManager.cs)：统一加载接口与模式切换（编辑器默认 Resources）
-  - [ResourcesLoader.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Resource/Loader/ResourcesLoader.cs)：Resources 加载实现
-  - [AssetBundleLoader.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Resource/Loader/AssetBundleLoader.cs)：AB 预留（待实现）
+  - 分层管理（Bottom/Normal/Popup/Top），根画布通过 Resources 自动实例化
+  - 面板生命周期统一：OnCreate / OnShow / OnHide / OnDestroyPanel，内置淡入淡出动画与交互控制
+  - 主页面与弹窗管理：主页面单例显示，弹窗支持栈式管理与遮罩
+  - 遮罩 UIMask：支持点击遮罩关闭顶层弹窗（按需开启）
 - 事件系统
-  - [EventBus.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventBus.cs)：全局事件总线，支持订阅/发布模式
-- 音频系统
-  - [AudioManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/AudioManager.cs)：BGM/SFX 双 AudioSource，音量/开关应用、PlayBGM/PlaySound
-  - 运行时资源：Resources/Music 目录包含示例音频（BKMusic.mp3、Wound.wav 等）
-- 场景与动画
-  - BeginScene：启动展示与动效资源
-  - AnimatorController：BeginSceneFlammerIdle、BeginSceneGunnerIdle、BeginSceneZombieRun 等
-
----
+  - 轻量事件总线 EventBus，支持 Publish/Subscribe/Unsubscribe/Clear
+  - 事件定义规范化（如 OpenPanelEvent、OpenMainPageEvent、OpenRoleInfoPanelEvent、CreateRoleRequestEvent 等）
+- 创建角色流程
+  - BeginPanel → 相机转场 → CreateRolePanel → RoleInfoPanel（详情弹窗）→ CreateRoleRequest
+  - RoleDataManager 从 JSON 配置加载职业数据，Portrait 头像按职业展示
+  - CreateRoleFlowController 响应创角事件，PlayerFactory 生成 PlayerData 并写入 DataManager
+- 资源与数据
+  - ResourceManager 统一资源加载（编辑器使用 Resources，运行时预留 AssetBundle 入口）
+  - JsonMgr 支持 LitJson/JsonUtility 双方案；SettingData 持久化至 persistentDataPath
+- 设置与音频
+  - SettingPanel 管理音乐/音效开关与音量，实时生效并持久化
+  - AudioManager 初始化与默认 BGM 播放，开机自动套用设置
 
 ## 目录结构（核心）
+
 ```
 Assets
 ├─ Resources
 │  ├─ UI
-│  │  ├─ Root/PanelCanvas.prefab
-│  │  └─ Windows/BeginPanel.prefab, SettingPanel.prefab
-│  ├─ Music/  # BKMusic.mp3, Wound.wav 等
-│  ├─ AnimatorController/
-│  └─ Animation/
-├─ Scenes/BeginScene.unity
-├─ Scripts
-│  ├─ Boot/StartGame.cs
-│  ├─ Framework
-│  │  ├─ UI
-│  │  │  ├─ Base/BasePanel.cs, UIMask.cs
-│  │  │  ├─ Panels/BeginPanel.cs, SettingPanel.cs
-│  │  │  ├─ Events/OpenSettingPanelEvent.cs
-│  │  │  └─ Layers/UILayers.cs
-│  │  ├─ Managers/AudioManager.cs, DataManager.cs, ResourceManager.cs, UIManager.cs, SettingData.cs
-│  │  ├─ Resource/LoadMode.cs, Loader/ResourcesLoader.cs, AssetBundleLoader.cs, IResLoader.cs
-│  │  ├─ Event/EventBus.cs, EventDefine/GameEvents/, EventDefine/UIEvents/
-│  │  └─ Json/JsonMgr.cs (+ LitJSON)
-│  └─ Game/  # 业务模块占位（AI/Combat/Entity/Inventory/Skill 等）
-└─ ArtRes/   # 第三方美术与效果资源
+│  │  ├─ Root
+│  │  │  ├─ PanelCanvas.prefab
+│  │  │  └─ UIMask.prefab
+│  │  └─ Windows
+│  │     ├─ BeginPanel.prefab
+│  │     ├─ SettingPanel.prefab
+│  │     ├─ CreateRolePanel.prefab
+│  │     └─ RoleInfoPanel.prefab
+│  ├─ Config
+│  │  └─ RoleClassConfig.json
+│  └─ Portrait
+│     ├─ infantry_portrait.png
+│     ├─ sniper_portrait.png
+│     ├─ medic_portrait.png
+│     └─ engineer_portrait.png
+└─ Scripts
+   ├─ Boot
+   │  └─ StartGame.cs
+   ├─ Framework
+   │  ├─ Data
+   │  │  └─ SettingData.cs
+   │  ├─ Event
+   │  │  ├─ EventBus.cs
+   │  │  └─ EventDefine
+   │  │     ├─ GameEvents
+   │  │     │  └─ BeginPanelCameraEvent.cs
+   │  │     └─ UIEvents
+   │  │        ├─ OpenPanelEvent.cs
+   │  │        ├─ ClosePanelEvent.cs
+   │  │        ├─ OpenMainPageEvent.cs
+   │  │        ├─ OpenRoleInfoPanelEvent.cs
+   │  │        └─ CreateRoleRequestEvent.cs
+   │  ├─ Managers
+   │  │  ├─ UIManager.cs
+   │  │  ├─ ResourceManager.cs
+   │  │  ├─ AudioManager.cs
+   │  │  └─ DataManager.cs
+   │  ├─ Json
+   │  │  └─ JsonMgr.cs
+   │  └─ UI
+   │     ├─ Base
+   │     │  ├─ BasePanel.cs
+   │     │  └─ UIMask.cs
+   │     └─ Panels
+   │        ├─ BeginPanel.cs
+   │        ├─ SettingPanel.cs
+   │        ├─ CreatRolePanel.cs
+   │        └─ RoleInfoPanel.cs
+   └─ Game
+      ├─ Flow
+      │  └─ CreateRoleFlowController.cs
+      └─ Entity
+         ├─ RoleClass
+         │  ├─ Data
+         │  │  ├─ RoleClassConfig.cs
+         │  │  └─ RoleClassConfigList.cs
+         │  └─ Manager
+         │     └─ RoleDataManager.cs
+         ├─ Data
+         │  ├─ PlayerData.cs
+         │  ├─ PlayerBaseData.cs
+         │  ├─ PlayerProgressData.cs
+         │  ├─ PlayerAttributeData.cs
+         │  ├─ PlayerRuntimeData.cs
+         │  └─ CreateRoleRequest.cs
+         └─ Factory
+            └─ PlayerFactory.cs
 ```
 
----
+## 快速开始
 
-## 开发规范与约定
-- UI 面板路径：Resources/UI/Windows/{PanelName}，脚本类名与预制体名一致
-- Canvas 根节点：Resources/UI/Root/PanelCanvas
-- 资源访问：使用 ResourceManager.Instance.Load<T>(path)
-- 设置持久化：JsonMgr 保存至 persistentDataPath；默认数据可放置于 StreamingAssets
-- 提交规范：建议使用 Conventional Commits（feat/fix/refactor/chore/docs）
-- 大体积资源：建议启用 Git LFS（fbx/psd/wav/mp4/tga 等）
+1) 打开工程并加载场景  
+- 推荐从 BeginScene 开始（含主菜单与相机过渡）  
+- 场景需包含：  
+  - 主摄像机并挂载 [CameraEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/GameEvents/BeginPanelCameraEvent.cs)，Animator 内含 “Turn” 触发器，并在动画尾部触发 PlayerOver 事件  
+  - [AudioManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/AudioManager.cs) 挂载到一个常驻物体
 
----
+2) 运行游戏  
+- 启动入口 [StartGame.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Boot/StartGame.cs) 会初始化 UIManager 与 CreateRoleFlowController，并显示 BeginPanel  
+- 点击“开始游戏”进入创建角色流程  
+- “设置”可调节音乐/音效开关与音量，立即生效并持久化  
+- 在创建角色页面可左右切换职业、查看详情、输入昵称并创建
 
-## 更新日志
+## UI 框架说明
 
-### 2026-03-11
-- **动画更新**: 更新 TrunAround.anim 动画文件
-- **UI重构**: 重构UI系统结构
-  - 新增 UI 事件系统 (Events/OpenSettingPanelEvent)
-  - 新增 UI 层级管理 (Layers/UILayers)
-  - 更新 BeginPanel、SettingPanel 面板逻辑
-  - 更新 PanelCanvas 预制体
-- **场景更新**: 更新 BeginScene.unity 场景
-- **框架重构**: 重构核心框架结构
-  - 删除旧目录: Data/、ResourceSystem/、UI/UIManager/
-  - 新增 Managers/ 目录统一管理器 (AudioManager, DataManager, ResourceManager, UIManager)
-  - 新增 Resource/ 目录管理资源加载 (LoadMode, Loader/)
-  - 新增 Event/ 事件系统 (EventBus, EventDefine/)
-  - 更新命名空间和引用关系
-- **数据修复**: 添加 SettingData 设置数据类
-  - 支持音乐/音效开关和音量控制
-  - 支持静音前音量记录 (lastMusicVolume/lastSoundVolume)
+- 面板基类：[BasePanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/BasePanel.cs)  
+  - 重写 OnCreate 注册事件与缓存组件  
+  - 重写 OnShow/OnHide 实现显示/隐藏逻辑  
+  - 提供 ShowMe/HideMe/HideImmediately 控制可见性与过渡  
+- UI 管理器：[UIManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/UIManager.cs)  
+  - ShowPanel(name) / ShowMainPage(name)：加载 Resources/UI/Windows 下的同名预制并显示  
+  - HidePanel(name)、DestroyPanel(name)：隐藏或销毁面板（支持淡出回调）  
+  - Popup 栈与遮罩：弹窗面板（Layer=Popup）进入栈，UIMask 跟随栈顶显示，支持遮罩点击关闭  
+- 遮罩组件：[UIMask.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/UIMask.cs)
 
----
+示例：显示一个新面板
 
-## 路线图（Roadmap）
-- 近期
-  - 完成 AssetBundleLoader 基础能力（构建/版本/缓存）
-  - 规范 UI 命名与异常处理（空引用保护/路径校验）
-- 明日计划（数据建模）
-  - 以"创建角色"为入口，结构化人物/怪物/NPC 等数据
-    - 抽象 Entity 基础数据（ID、名称、阵营、等级、属性、移动/战斗参数）
-    - 定义 Player/Monster/NPC 数据结构与差异字段（职业/外观/掉落/对话等）
-    - 设计配置数据格式与加载流程（Resources/Config → 反序列化 → 运行时缓存）
-    - 预留存档结构（角色创建结果持久化，后续接入继续游戏）
+```csharp
+// 通过事件打开
+EventBus.Publish(new OpenPanelEvent("SettingPanel"));
+// 或直接调用
+UIManager.Instance.ShowPanel("SettingPanel");
+```
 
----
+## 事件与数据
 
-## 参考与入口
-- UIManager 初始化与调用：参见 [UIManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UIManager/UIManager.cs)
-- 主菜单与设置面板：参见 [BeginPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/BeginPanel.cs)、[SettingPanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Panels/SettingPanel.cs)
-- 资源加载：参见 [ResourceManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/ResourceSystem/ResourceManager.cs)
-- 音频播放：参见 [AudioManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Data/AudioManager.cs)
+- 事件总线：[EventBus.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventBus.cs)  
+  - Subscribe<T>(Action<T>) / Unsubscribe<T>(Action<T>) / Publish<T>(T data)  
+- 常用 UI 事件定义  
+  - [OpenPanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenPanelEvent.cs)  
+  - [ClosePanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/ClosePanelEvent.cs)  
+  - [OpenMainPageEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenMainPageEvent.cs)  
+  - [OpenRoleInfoPanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenRoleInfoPanelEvent.cs)  
+  - [CreateRoleRequestEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/CreateRoleRequestEvent.cs)
+- 数据持久化  
+  - [JsonMgr.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Json/JsonMgr.cs) 负责对象的序列化与反序列化  
+  - [SettingData.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Data/SettingData.cs) 保存音量与开关；[DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs) 提供读写接口
+
+## 创建角色流程
+
+1) BeginPanel（主菜单）  
+   - 点击“开始游戏”后，调用 [CameraEvent.TurnAround](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/GameEvents/BeginPanelCameraEvent.cs) 播放转场动画，动画回调打开 CreateRolePanel  
+2) CreateRolePanel（创建角色）  
+   - 左右切换职业、刷新名称与头像（来自 Resources/Portrait）  
+   - “职业详情”发布 OpenRoleInfoPanelEvent 打开弹窗  
+   - “创建”发布 CreateRoleRequestEvent  
+3) RoleInfoPanel（职业详情）  
+   - 弹窗层，可点击遮罩关闭  
+4) CreateRoleFlowController（流程控制）  
+   - 订阅 CreateRoleRequestEvent，调用 [PlayerFactory](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Factory/PlayerFactory.cs) 生成 [PlayerData](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Data/PlayerData.cs) 并写入 DataManager  
+5) RoleDataManager（配置加载）  
+   - 从 [Resources/Config/RoleClassConfig.json](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/Config/RoleClassConfig.json) 加载职业配置
+
+## 资源组织与加载
+
+- 资源路径约定  
+  - UI 预制：Resources/UI/Windows/<PanelName>.prefab  
+  - 根画布与遮罩：Resources/UI/Root/PanelCanvas.prefab、UIMask.prefab  
+  - 配置：Resources/Config  
+  - 头像：Resources/Portrait  
+- 统一加载入口：[ResourceManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/ResourceManager.cs)
+
+## 常见问题（FAQ）
+
+- 运行后没有任何 UI  
+  - 确认 Resources/UI/Root/PanelCanvas.prefab 存在且命名正确；UIManager 会自动实例化  
+- 点击“开始游戏”没有转场  
+  - 确认主摄像机已挂载 CameraEvent，Animator 有 “Turn” 触发器，且动画尾部触发 PlayerOver  
+- 设置面板无效  
+  - 确认场景有 AudioManager，SettingPanel 的控件引用已在预制上绑定
+
+## 开发约定
+
+- UI 面板脚本命名与预制名一致（如 SettingPanel.cs ↔ SettingPanel.prefab）  
+- 新增弹窗需继承 BasePanel，将 Layer 设为 UILayer.Popup，并按需开启 UseMask/CloseByMask  
+- 新功能优先通过事件驱动，避免强耦合引用
+
+## 路线图
+
+- 接入 Continue 存档系统与 About 页面  
+- 为 CreateRolePanel/RoleInfoPanel 增加 UI 过渡动画与输入合法性提示  
+- 引入 Play Mode 测试覆盖主流程  
+- 评估 Addressables/AssetBundle 接入方案并扩展 ResourceManager 加载策略
+
