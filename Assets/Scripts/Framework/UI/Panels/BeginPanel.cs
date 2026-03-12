@@ -16,9 +16,26 @@ public class BeginPanel : BasePanel
     [Header("Scene Name")]
     [SerializeField] private string gameSceneName = "SampleScene";
 
-    /// <summary>
-    /// 只执行一次：注册按钮事件
-    /// </summary>
+    public void ResetPanelState()
+    {
+        if (btnStart != null)
+            btnStart.interactable = true;
+
+        if (btnContinue != null)
+            btnContinue.interactable = true;
+
+        if (btnSetting != null)
+            btnSetting.interactable = true;
+
+        if (btnAbout != null)
+            btnAbout.interactable = true;
+
+        if (btnExit != null)
+            btnExit.interactable = true;
+
+        Debug.Log("[BeginPanel] Reset");
+    }
+
     protected override void OnCreate()
     {
         btnStart.onClick.AddListener(OnClickStartGame);
@@ -28,19 +45,15 @@ public class BeginPanel : BasePanel
         btnExit.onClick.AddListener(OnClickExitGame);
     }
 
-    /// <summary>
-    /// 每次显示时调用
-    /// 目前主菜单没有复杂刷新需求，可以先空着
-    /// </summary>
     protected override void OnShow()
     {
+       ResetPanelState();
         // 例如后续可以在这里刷新 Continue 按钮状态
         // btnContinue.interactable = SaveSystem.HasSaveData();
     }
 
-    /// <summary>
-    /// 销毁前移除事件
-    /// </summary>
+
+
     protected override void OnDestroyPanel()
     {
         btnStart.onClick.RemoveListener(OnClickStartGame);
@@ -54,14 +67,26 @@ public class BeginPanel : BasePanel
     {
         Debug.Log("点击了 开始游戏");
 
-        Camera.main.GetComponent<CameraEvent>().TurnAround(() =>
+        btnStart.interactable = false;
+
+        // 先隐藏开始面板，只保留摄像头画面
+        UIManager.Instance.HidePanel<BeginPanel>(useFade: false);
+
+        CameraEvent cameraEvent = Camera.main != null ? Camera.main.GetComponent<CameraEvent>() : null;
+
+        if (cameraEvent != null)
         {
-            Debug.Log("进入创建角色界面");
-        });
-
-        UIManager.Instance.HidePanel<BeginPanel>(false);
-
-        // SceneManager.LoadScene(gameSceneName);
+            cameraEvent.TurnAround(() =>
+            {
+                Debug.Log("摄像头动画播放完毕，进入创建角色界面");
+                EventBus.Publish(new OpenMainPageEvent("CreateRolePanel", hideOld: false, useFade: false));
+            });
+        }
+        else
+        {
+            Debug.LogWarning("[BeginPanel] 未找到 CameraEvent，直接打开 CreateRolePanel");
+            EventBus.Publish(new OpenMainPageEvent("CreateRolePanel", hideOld: false, useFade: false));
+        }
     }
 
     private void OnClickContinueGame()

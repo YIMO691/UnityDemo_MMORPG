@@ -20,6 +20,9 @@ public class UIManager
     private GameObject canvasObj;
     private bool isInited = false;
 
+    private BasePanel currentMainPage;
+
+
     private UIManager() { }
 
     public void Init()
@@ -28,6 +31,10 @@ public class UIManager
 
         EventBus.Subscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Subscribe<ClosePanelEvent>(OnClosePanelEvent);
+
+        EventBus.Subscribe<OpenRoleInfoPanelEvent>(OnOpenRoleInfoPanelEvent);
+        EventBus.Subscribe<OpenMainPageEvent>(OnOpenMainPageEvent);
+
 
         GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>("UI/Root/PanelCanvas");
         if (canvasPrefab == null)
@@ -186,6 +193,21 @@ public class UIManager
         HidePanel(e.PanelName);
     }
 
+    private void OnOpenRoleInfoPanelEvent(OpenRoleInfoPanelEvent e)
+    {
+        RoleInfoPanel panel = ShowPanel<RoleInfoPanel>();
+        if (panel != null)
+        {
+            panel.SetRoleInfo(e.Config);
+        }
+    }
+
+    private void OnOpenMainPageEvent(OpenMainPageEvent e)
+    {
+        ShowMainPage(e.PanelName, e.HideOld, e.UseFade);
+    }
+
+
     public T ShowPanel<T>() where T : BasePanel
     {
         return ShowPanel(typeof(T).Name) as T;
@@ -238,6 +260,32 @@ public class UIManager
 
         Debug.Log($"[UIManager] ShowPanel Success: {panelName}");
         return panel;
+    }
+
+    public T ShowMainPage<T>(bool hideOld = true, bool useFade = false) where T : BasePanel
+    {
+        return ShowMainPage(typeof(T).Name, hideOld, useFade) as T;
+    }
+
+    public BasePanel ShowMainPage(string panelName, bool hideOld = true, bool useFade = false)
+    {
+        BasePanel newPage = ShowPanel(panelName);
+        if (newPage == null)
+            return null;
+
+        if (newPage.Layer != UILayer.Normal)
+        {
+            Debug.LogWarning($"[UIManager] ShowMainPage called with non-Normal panel: {panelName}");
+            return newPage;
+        }
+
+        if (hideOld && currentMainPage != null && currentMainPage != newPage)
+        {
+            HidePanel(currentMainPage.GetType().Name, useFade);
+        }
+
+        currentMainPage = newPage;
+        return newPage;
     }
 
     public void HidePanel<T>(bool useFade = true) where T : BasePanel
@@ -354,6 +402,8 @@ public class UIManager
     {
         EventBus.Unsubscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Unsubscribe<ClosePanelEvent>(OnClosePanelEvent);
+        EventBus.Unsubscribe<OpenRoleInfoPanelEvent>(OnOpenRoleInfoPanelEvent);
+        EventBus.Unsubscribe<OpenMainPageEvent>(OnOpenMainPageEvent);
 
         foreach (var kv in panelDic)
         {
@@ -377,6 +427,9 @@ public class UIManager
 
         popupStack.Clear();
         uiMask = null;
+
+        currentMainPage = null;
+
 
         Debug.Log("[UIManager] Clear Success.");
     }

@@ -102,6 +102,25 @@ public abstract class BasePanel : MonoBehaviour
         OnHide();
     }
 
+    // 方便后期页面之间的跳转，直接隐藏不播放动画
+    public virtual void HideImmediately()
+    {
+        hideCallBack = null;
+
+        IsVisible = false;
+        State = PanelState.Hidden;
+
+        canvasGroup.alpha = 0f;
+        canvasGroup.interactable = false;
+        canvasGroup.blocksRaycasts = false;
+
+        OnHide();
+        OnHideComplete();
+
+        gameObject.SetActive(false);
+    }
+
+
     /// <summary>
     /// 外部主动请求刷新
     /// </summary>

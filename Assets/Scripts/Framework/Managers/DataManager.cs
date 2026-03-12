@@ -5,6 +5,8 @@ public class DataManager
     private static DataManager instance = new DataManager();
     public static DataManager Instance => instance;
 
+    private PlayerData currentPlayerData;
+
     // 设置数据文件名
     private const string SETTING_FILE_NAME = "setting";
 
@@ -106,6 +108,20 @@ public class DataManager
     }
     #endregion
 
+    public void SetCurrentPlayerData(PlayerData playerData)
+    {
+        currentPlayerData = playerData;
+    }
+
+    public PlayerData GetCurrentPlayerData()
+    {
+        return currentPlayerData;
+    }
+
+    public bool HasCurrentPlayerData()
+    {
+        return currentPlayerData != null;
+    }
 
 
 }
