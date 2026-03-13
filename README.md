@@ -9,11 +9,14 @@
   - 面板生命周期统一：OnCreate / OnShow / OnHide / OnDestroyPanel，内置淡入淡出动画与交互控制
   - 主页面与弹窗管理：主页面单例显示，弹窗支持栈式管理与遮罩
   - 遮罩 UIMask：支持点击遮罩关闭顶层弹窗（按需开启）
+- 多存档系统
+  - 支持保存/读取/删除槽位、查询首个空槽位/最大已用槽位、判断是否存在任意存档、存档摘要列表
+  - 创角成功后自动保存到下一个可用槽位
 - 事件系统
   - 轻量事件总线 EventBus，支持 Publish/Subscribe/Unsubscribe/Clear
   - 事件定义规范化（如 OpenPanelEvent、OpenMainPageEvent、OpenRoleInfoPanelEvent、CreateRoleRequestEvent 等）
 - 创建角色流程
-  - BeginPanel → 相机转场 → CreateRolePanel → RoleInfoPanel（详情弹窗）→ CreateRoleRequest
+  - BeginPanel → 相机转场 → CreateRolePanel → RoleInfoPanel（详情弹窗）→ CreateRoleRequest → MainPanel
   - RoleDataManager 从 JSON 配置加载职业数据，Portrait 头像按职业展示
   - CreateRoleFlowController 响应创角事件，PlayerFactory 生成 PlayerData 并写入 DataManager
 - 资源与数据
@@ -22,6 +25,11 @@
 - 设置与音频
   - SettingPanel 管理音乐/音效开关与音量，实时生效并持久化
   - AudioManager 初始化与默认 BGM 播放，开机自动套用设置
+- 主界面与弹窗
+  - MainPanel 展示玩家基础状态与菜单入口
+  - ContinuePanel 展示与管理多存档
+  - MessageTipPanel 用于常规提示
+  - ConfirmPanel 提供统一二次确认弹窗（如退出游戏、返回标题）
 
 ## 目录结构（核心）
 
@@ -40,10 +48,14 @@ Assets
 │  ├─ Config
 │  │  └─ RoleClassConfig.json
 │  └─ Portrait
-│     ├─ infantry_portrait.png
-│     ├─ sniper_portrait.png
-│     ├─ medic_portrait.png
-│     └─ engineer_portrait.png
+│     ├─ CreateRolePanel
+│     │  ├─ infantry_portrait.png
+│     │  ├─ sniper_portrait.png
+│     │  ├─ medic_portrait.png
+│     │  └─ engineer_portrait.png
+│     └─ MainPanel
+│        ├─ BagImage.png
+│        └─ SettingImage.png
 └─ Scripts
    ├─ Boot
    │  └─ StartGame.cs
@@ -75,8 +87,14 @@ Assets
    │     └─ Panels
    │        ├─ BeginPanel.cs
    │        ├─ SettingPanel.cs
+   │        ├─ MainPanel.cs
+   │        ├─ ContinuePanel.cs
+   │        ├─ ContinueSlotItem.cs
    │        ├─ CreatRolePanel.cs
-   │        └─ RoleInfoPanel.cs
+   │        ├─ RoleInfoPanel.cs
+   │        ├─ MessageTipPanel.cs
+   │        ├─ ConfirmPanel.cs
+   │        └─ AboutPanel.cs
    └─ Game
       ├─ Flow
       │  └─ CreateRoleFlowController.cs
@@ -93,6 +111,7 @@ Assets
          │  ├─ PlayerProgressData.cs
          │  ├─ PlayerAttributeData.cs
          │  ├─ PlayerRuntimeData.cs
+         │  ├─ PlayerSaveMetaData.cs
          │  └─ CreateRoleRequest.cs
          └─ Factory
             └─ PlayerFactory.cs
@@ -111,6 +130,8 @@ Assets
 - 点击“开始游戏”进入创建角色流程  
 - “设置”可调节音乐/音效开关与音量，立即生效并持久化  
 - 在创建角色页面可左右切换职业、查看详情、输入昵称并创建
+- 创角成功后自动保存到下一个可用存档槽位，并进入 MainPanel  
+- 若已有存档，“继续游戏”可打开 ContinuePanel 选择读取或删除
 
 ## UI 框架说明
 
@@ -122,6 +143,7 @@ Assets
   - ShowPanel(name) / ShowMainPage(name)：加载 Resources/UI/Windows 下的同名预制并显示  
   - HidePanel(name)、DestroyPanel(name)：隐藏或销毁面板（支持淡出回调）  
   - Popup 栈与遮罩：弹窗面板（Layer=Popup）进入栈，UIMask 跟随栈顶显示，支持遮罩点击关闭  
+  - ShowConfirm(message, onConfirm, onCancel)：显示通用确认弹窗（ConfirmPanel）
 - 遮罩组件：[UIMask.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/UIMask.cs)
 
 示例：显示一个新面板
@@ -131,6 +153,13 @@ Assets
 EventBus.Publish(new OpenPanelEvent("SettingPanel"));
 // 或直接调用
 UIManager.Instance.ShowPanel("SettingPanel");
+
+// 显示确认弹窗
+UIManager.Instance.ShowConfirm(
+  "是否退出游戏？",
+  onConfirm: () => Application.Quit(),
+  onCancel: null
+);
 ```
 
 ## 事件与数据
@@ -146,6 +175,7 @@ UIManager.Instance.ShowPanel("SettingPanel");
 - 数据持久化  
   - [JsonMgr.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Json/JsonMgr.cs) 负责对象的序列化与反序列化  
   - [SettingData.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Data/SettingData.cs) 保存音量与开关；[DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs) 提供读写接口
+  - 多存档相关：GetFirstEmptySlotId、GetMaxUsedSlotId、GetNextAvailableSlotId、SavePlayerDataToSlot、LoadPlayerDataFromSlot、GetAllPlayerSaveMetaData、HasAnyPlayerSave、DeletePlayerDataInSlot；摘要结构 [PlayerSaveMetaData.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Player/Data/PlayerSaveMetaData.cs)
 
 ## 创建角色流程
 
@@ -159,6 +189,7 @@ UIManager.Instance.ShowPanel("SettingPanel");
    - 弹窗层，可点击遮罩关闭  
 4) CreateRoleFlowController（流程控制）  
    - 订阅 CreateRoleRequestEvent，调用 [PlayerFactory](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Factory/PlayerFactory.cs) 生成 [PlayerData](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Data/PlayerData.cs) 并写入 DataManager  
+   - 自动选择下一个可用槽位（GetNextAvailableSlotId）保存存档，然后打开 MainPanel
 5) RoleDataManager（配置加载）  
    - 从 [Resources/Config/RoleClassConfig.json](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/Config/RoleClassConfig.json) 加载职业配置
 
@@ -168,7 +199,7 @@ UIManager.Instance.ShowPanel("SettingPanel");
   - UI 预制：Resources/UI/Windows/<PanelName>.prefab  
   - 根画布与遮罩：Resources/UI/Root/PanelCanvas.prefab、UIMask.prefab  
   - 配置：Resources/Config  
-  - 头像：Resources/Portrait  
+  - 头像：Resources/Portrait/CreateRolePanel 与 Resources/Portrait/MainPanel
 - 统一加载入口：[ResourceManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/ResourceManager.cs)
 
 ## 常见问题（FAQ）
@@ -179,6 +210,8 @@ UIManager.Instance.ShowPanel("SettingPanel");
   - 确认主摄像机已挂载 CameraEvent，Animator 有 “Turn” 触发器，且动画尾部触发 PlayerOver  
 - 设置面板无效  
   - 确认场景有 AudioManager，SettingPanel 的控件引用已在预制上绑定
+- “继续游戏”不可用  
+  - 确认已有任意槽位存档；无存档时 BeginPanel 会自动禁用该按钮
 
 ## 开发约定
 
