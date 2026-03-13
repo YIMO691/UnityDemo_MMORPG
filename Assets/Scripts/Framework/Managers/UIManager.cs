@@ -207,6 +207,16 @@ public class UIManager
         ShowMainPage(e.PanelName, e.HideOld, e.UseFade);
     }
 
+   public void ShowConfirm(string message, System.Action onConfirm, System.Action onCancel = null)
+    {
+        UIManager.Instance.ShowPanel<ConfirmPanel>();
+        ConfirmPanel panel = UIManager.Instance.GetPanel<ConfirmPanel>();
+        if (panel != null)
+        {
+            panel.SetData(message, onConfirm, onCancel);
+        }
+    }
+
 
     public T ShowPanel<T>() where T : BasePanel
     {
@@ -219,6 +229,7 @@ public class UIManager
 
         if (panelDic.TryGetValue(panelName, out BasePanel existPanel))
         {
+            TryPushPopup(existPanel);
             existPanel.ShowMe();
             Debug.Log($"[UIManager] ReShow Panel: {panelName}");
             return existPanel;
@@ -254,13 +265,16 @@ public class UIManager
         panel.Create();
         panelDic.Add(panelName, panel);
 
-        panel.ShowMe();
-
+        // 先处理 Popup 栈和层级
         TryPushPopup(panel);
+
+        // 再显示面板
+        panel.ShowMe();
 
         Debug.Log($"[UIManager] ShowPanel Success: {panelName}");
         return panel;
     }
+
 
     public T ShowMainPage<T>(bool hideOld = true, bool useFade = false) where T : BasePanel
     {
@@ -397,6 +411,7 @@ public class UIManager
 
         return false;
     }
+
 
     public void Clear()
     {
