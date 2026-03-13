@@ -1,4 +1,4 @@
-﻿using LitJson;
+using LitJson;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -74,6 +74,34 @@ public class JsonMgr
         //把对象返回出去
         return data;
     }
+    /// <summary>
+    /// 删除指定 Json 数据文件
+    /// </summary>
+    public void DeleteData(string fileName)
+    {
+        string path = Application.persistentDataPath + "/" + fileName + ".json";
+
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+            Debug.Log("[JsonMgr] 删除文件成功: " + path);
+        }
+        else
+        {
+            Debug.LogWarning("[JsonMgr] 删除失败，文件不存在: " + path);
+        }
+    }
+
+    /// <summary>
+    /// 判断指定 Json 文件是否存在（只检查 persistentDataPath）
+    /// </summary>
+    public bool HasData(string fileName)
+    {
+        string path = Application.persistentDataPath + "/" + fileName + ".json";
+        return File.Exists(path);
+    }
+
+
 }
 
 /// <summary>
