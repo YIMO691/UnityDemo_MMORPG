@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +18,7 @@ public class CreateRolePanel : BasePanel
     public Text txtRoleName;
 
     [Header("Input")]
-    public InputField inputName;
+    [SerializeField] private TMP_InputField inputName;
 
     [Header("Preview")]
     public Image imgCharacterPreview;
@@ -114,30 +115,64 @@ public class CreateRolePanel : BasePanel
 
     private void OnClickCreate()
     {
+        if (inputName == null)
+        {
+            Debug.LogError("[CreateRolePanel] inputName 未绑定。");
+            return;
+        }
+
+        string playerName = inputName.text.Trim();
+        string className = (classConfigs != null && classConfigs.Count > 0 && currentClassIndex >= 0 && currentClassIndex < classConfigs.Count)
+            ? classConfigs[currentClassIndex].displayName
+            : "未知职业";
+
+        if (string.IsNullOrEmpty(playerName))
+        {
+            if (UIManager.Instance == null)
+            {
+                Debug.LogError("[CreateRolePanel] UIManager.Instance 为空。");
+                return;
+            }
+
+            MessageTipPanel panel = UIManager.Instance.ShowPanel<MessageTipPanel>();
+            if (panel != null)
+            {
+                panel.SetMessage("请输入角色名称");
+            }
+            else
+            {
+                Debug.LogError("[CreateRolePanel] MessageTipPanel 打开失败，请检查 prefab 路径/类名/UIManager。");
+            }
+
+            return;
+        }
+
         if (classConfigs == null || classConfigs.Count == 0)
         {
-            Debug.LogWarning("[CreateRolePanel] 没有职业配置。");
+            Debug.LogError("[CreateRolePanel] classConfigs 为空，职业配置未加载。");
             return;
         }
 
-        string roleName = inputName.text.Trim();
-        if (string.IsNullOrEmpty(roleName))
+        if (currentClassIndex < 0 || currentClassIndex >= classConfigs.Count)
         {
-            Debug.LogWarning("[CreateRolePanel] 请输入昵称。");
+            Debug.LogError("[CreateRolePanel] currentClassIndex 越界。");
             return;
         }
-
-        RoleClassConfig config = classConfigs[currentClassIndex];
 
         CreateRoleRequest request = new CreateRoleRequest
         {
-            playerName = roleName,
-            classId = config.id,
+            playerName = playerName,
+            classId = classConfigs[currentClassIndex].id,
             genderId = 0,
             appearanceId = 0
         };
 
-        EventBus.Publish(new CreateRoleRequestEvent(request));
+        string confirmMessage = $"是否创建角色？\n\n姓名：{playerName}\n职业：{className}";
+
+        UIManager.Instance.ShowConfirm(confirmMessage, () =>
+        {
+            EventBus.Publish(new CreateRoleRequestEvent(request));
+        });
     }
 
 
@@ -169,7 +204,7 @@ public class CreateRolePanel : BasePanel
             return;
         }
 
-        Sprite sp = ResourceManager.Instance.Load<Sprite>("Portrait/" + config.defaultPortraitId);
+        Sprite sp = ResourceManager.Instance.Load<Sprite>("Portrait/CreateRolePanel/" + config.defaultPortraitId);
         imgCharacterPreview.sprite = sp;
     }
 }

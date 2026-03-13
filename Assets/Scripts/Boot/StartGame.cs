@@ -6,6 +6,7 @@ public class StartGame : MonoBehaviour
     private void Start()
     {
         UIManager.Instance.Init();
+        RoleDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();
 
         UIManager.Instance.ShowMainPage("BeginPanel", hideOld: false, useFade: false);
