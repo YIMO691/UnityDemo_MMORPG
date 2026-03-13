@@ -38,9 +38,14 @@ public class CreateRoleFlowController
 
         DataManager.Instance.SetCurrentPlayerData(playerData);
 
-        Debug.Log($"[CreateRoleFlowController] 创角成功：{playerData.baseData.roleName}");
+        int slotId = DataManager.Instance.GetNextAvailableSlotId();
+        DataManager.Instance.SaveCurrentPlayerDataToSlot(slotId);
 
-        // 这里后续再接主界面或加载场景
-        // UIManager.Instance.ShowMainPage<MainPanel>(hideOld: true, useFade: false);
+        Debug.Log("[CreateRoleFlowController] 创角成功，保存到槽位：" + slotId);
+
+        EventBus.Publish(new OpenMainPageEvent("MainPanel", true, false));
     }
+
+
+
 }
