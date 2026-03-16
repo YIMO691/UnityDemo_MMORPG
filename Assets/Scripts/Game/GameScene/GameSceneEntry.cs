@@ -41,7 +41,7 @@ public class GameSceneEntry : MonoBehaviour
     {
         Debug.Log("[GameSceneEntry] CreateAnimator begin");
 
-        GameObject playerPrefab = Resources.Load<GameObject>(UIPaths.PlayerArmature);
+        GameObject playerPrefab = Resources.Load<GameObject>("Role/PlayerAmature/PlayerArmature");
         if (playerPrefab == null)
         {
             Debug.LogError("[GameSceneEntry] PlayerArmature prefab not found.");
@@ -98,13 +98,13 @@ public class GameSceneEntry : MonoBehaviour
         switch (classId)
         {
             case 1:
-                return UIPaths.RoleEngineer;
+                return "Role/Role_NoWeapon/Engineer";
             case 2:
-                return UIPaths.RoleInfantry;
+                return "Role/Role_NoWeapon/Infantry";
             case 3:
-                return UIPaths.RoleMedic;
+                return "Role/Role_NoWeapon/Medic";
             case 4:
-                return UIPaths.RoleSniper;
+                return "Role/Role_NoWeapon/Sniper";
             default:
                 return null;
         }
@@ -146,8 +146,8 @@ public class GameSceneEntry : MonoBehaviour
     {
         Debug.Log("[GameSceneEntry] CreateCamera begin");
 
-        GameObject mainCameraPrefab = Resources.Load<GameObject>(UIPaths.MainCamera);
-        GameObject followCameraPrefab = Resources.Load<GameObject>(UIPaths.PlayerFollowCamera);
+        GameObject mainCameraPrefab = Resources.Load<GameObject>("Role/PlayerAmature/MainCamera");
+        GameObject followCameraPrefab = Resources.Load<GameObject>("Role/PlayerAmature/PlayerFollowCamera");
 
         Debug.Log($"[GameSceneEntry] mainCameraPrefab = {(mainCameraPrefab == null ? "null" : mainCameraPrefab.name)}");
         Debug.Log($"[GameSceneEntry] followCameraPrefab = {(followCameraPrefab == null ? "null" : followCameraPrefab.name)}");
