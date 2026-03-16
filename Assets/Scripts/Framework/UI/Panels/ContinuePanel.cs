@@ -1,5 +1,7 @@
+using Game.Runtime;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ContinuePanel : BasePanel
@@ -84,8 +86,17 @@ public class ContinuePanel : BasePanel
             return;
         }
 
+        PlayerData playerData = DataManager.Instance.GetCurrentPlayerData();
+        if (playerData == null)
+        {
+            ShowMessage("当前角色数据为空");
+            return;
+        }
+
+        GameRuntime.CurrentPlayerData = playerData;
+
         EventBus.Publish(new ClosePanelEvent("ContinuePanel"));
-        EventBus.Publish(new OpenMainPageEvent("MainPanel", true, false));
+        SceneManager.LoadScene("GameScene");
     }
 
 

@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using Game.Runtime;
 
 public class SettingPanel : BasePanel
 {
@@ -161,47 +163,62 @@ public class SettingPanel : BasePanel
             sliderSound.interactable = togSound.isOn;
     }
 
-
     private void OnClickBackToTitle()
     {
         UIManager.Instance.ShowConfirm(
-        "是否返回开始界面？",
-        () =>
-        {
-            DataManager.Instance.SaveSettingData();
-            DataManager.Instance.ClearCurrentPlayerData();
-
-            EventBus.Publish(new ClosePanelEvent("SettingPanel"));
-
-            MainPanel mainPanel = UIManager.Instance.GetPanel<MainPanel>();
-            if (mainPanel != null)
+            "是否返回开始界面？",
+            () =>
             {
-                UIManager.Instance.HidePanel<MainPanel>(useFade: false);
-            }
+                DataManager.Instance.SaveSettingData();
 
-            EventBus.Publish(new OpenMainPageEvent("BeginPanel", true, false));
-        },
-        null
-    );
+                GameSceneEntry entry = Object.FindObjectOfType<GameSceneEntry>();
+                if (entry != null)
+                {
+                    entry.SaveCurrentPlayerTransform();
+                }
+
+                EventBus.Publish(new ClosePanelEvent("SettingPanel"));
+
+                MainPanel mainPanel = UIManager.Instance.GetPanel<MainPanel>();
+                if (mainPanel != null)
+                {
+                    UIManager.Instance.HidePanel<MainPanel>(useFade: false);
+                }
+
+                DataManager.Instance.ClearCurrentPlayerData();
+                Game.Runtime.GameRuntime.CurrentPlayerData = null;
+
+                UnityEngine.SceneManagement.SceneManager.LoadScene("BeginScene");
+            },
+            null
+        );
     }
 
     private void OnClickQuitGame()
     {
         UIManager.Instance.ShowConfirm(
-        "是否退出游戏？",
-        () =>
-        {
-            DataManager.Instance.SaveSettingData();
+            "是否退出游戏？",
+            () =>
+            {
+                DataManager.Instance.SaveSettingData();
+
+                GameSceneEntry entry = Object.FindObjectOfType<GameSceneEntry>();
+                if (entry != null)
+                {
+                    entry.SaveCurrentPlayerTransform();
+                }
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+                UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Application.Quit();
+            Application.Quit();
 #endif
-        },
-        null
-    );
+            },
+            null
+        );
     }
+
+
 
     private void OnClickClose()
     {
