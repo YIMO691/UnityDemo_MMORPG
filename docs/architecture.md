@@ -105,6 +105,90 @@
 - 统一确认流程
   - UIManager.ShowConfirm("内容", onConfirm, onCancel)
 
+## 局内信息保存/读取（模块化流程）
+
+### 模块组成
+
+- 运行期数据容器：
+  - GameRuntime（全局静态）保存 CurrentPlayerData（见 [GameRuntime.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Data/Runtime/GameRuntime.cs)）。
+  - PlayerRuntimeData 保存局内运行期信息（位置、朝向、场景名、当前生命等）（见 [PlayerRuntimeData.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/Data/PlayerRuntimeData.cs)）。
+- 保存服务：
+  - RuntimeSaveService 将 Transform 写入 PlayerRuntimeData，并记录当前场景名（见 [RuntimeSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/RuntimeSaveService.cs)）。
+  - PlayerSaveService 统一保存流程：获取当前 PlayerData → 写入运行期数据 → 更新 DataManager currentSlotId → 落盘到对应槽位（见 [PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/PlayerSaveService.cs)）。
+- 槽位管理：
+  - DataManager 维护 currentSlotId 与当前玩家数据，并提供 SaveCurrentPlayerDataToSlot/LoadPlayerDataFromSlot 等接口（见 [DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs)）。
+- 场景入口：
+  - GameSceneEntry 在场景加载时初始化相机与玩家、根据 PlayerRuntimeData 决定出生点，并打开 MainPanel（见 [GameSceneEntry.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/GameSceneEntry.cs)）。
+
+### 写入流程（保存）
+
+1) 调用点（建议）：
+   - 手动：在 MainPanel 中提供“保存”按钮，调用 GameSceneEntry.SaveCurrentPlayerTransform。
+   - 自动：场景切换前、关键交互点、定时保存（如每 N 分钟），或退出前。
+2) SaveCurrentPlayerTransform（GameSceneEntry）→ PlayerSaveService.SaveCurrentPlayer：
+   - 从 GameRuntime.CurrentPlayerData 或 DataManager.GetCurrentPlayerData() 获取 PlayerData。
+   - RuntimeSaveService.SavePlayerTransform：把 playerTransform 的 position/rotation 与当前场景写入 PlayerRuntimeData。
+   - DataManager.SetCurrentPlayerData(playerData) → 通过 DataManager.GetCurrentSlotId() 获取槽位 → SaveCurrentPlayerDataToSlot(slotId) 落盘。
+3) DataManager.SaveCurrentPlayerDataToSlot：
+   - 封装 SavePlayerDataToSlot(slotId, currentPlayerData)，写入磁盘并刷新 currentSlotId。
+
+### 读取流程（进场景/读档）
+
+1) BeginPanel → ContinuePanel：
+   - ContinuePanel 调用 DataManager.LoadPlayerDataFromSlot(slotId) 读入 PlayerData，内部会设置 currentPlayerData 与 currentSlotId。
+   - 读档成功后 Publish(OpenMainPageEvent("MainPanel", ...)) 或直接加载 GameScene。
+2) CreateRoleFlowController（新角色）：
+   - 创建 PlayerData → 保存到 GetNextAvailableSlotId → 可直接加载 GameScene。
+3) GameSceneEntry.InitScene：
+   - 使用 GameRuntime.CurrentPlayerData 或 DataManager.GetCurrentPlayerData() 作为数据源。
+   - 若 PlayerRuntimeData.hasValidPosition=true，则按存档坐标与朝向生成；否则按 playerSpawnPoint。
+
+### 工程化规范
+
+- 触发点约定：
+  - 场景切换/退出时必须触发一次保存；重要交互点建议保存；提供玩家手动保存入口。
+- 接口边界：
+  - UI/场景仅负责调用 SaveCurrentPlayerTransform；不直接操作 JsonMgr 或磁盘。
+  - 数据写回通过 PlayerSaveService 与 DataManager 完成；槽位逻辑统一由 DataManager 管理。
+- 扩展位：
+  - 扩展 RuntimeSaveService 以保存更多运行态（如任务进度、Buff、装备快照），并与 UI 同步。
+  - 如需云存档，可在 PlayerSaveService 注入策略（本地/远端）并增加冲突解决策略。
+- 日志与容错：
+  - 保存/读取失败必须输出具体原因（空引用/槽位非法/资源缺失），并提供兜底策略（默认出生点、提示用户）。
+
+### 示例（伪代码）
+
+保存按钮：
+
+```csharp
+// 在 MainPanel 或其他 UI 中
+public void OnClickSave()
+{
+    GameSceneEntry entry = FindObjectOfType<GameSceneEntry>();
+    if (entry != null)
+    {
+        entry.SaveCurrentPlayerTransform();
+        UIManager.Instance.ShowPanel<MessageTipPanel>()?.SetMessage("已保存进度");
+    }
+}
+```
+
+读档并进入场景：
+
+```csharp
+// 在 ContinuePanel 中
+bool ok = DataManager.Instance.LoadPlayerDataFromSlot(slotId);
+if (ok)
+{
+    Game.Runtime.GameRuntime.CurrentPlayerData = DataManager.Instance.GetCurrentPlayerData();
+    UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
+}
+else
+{
+    UIManager.Instance.ShowPanel<MessageTipPanel>()?.SetMessage("读档失败");
+}
+```
+
 ## 问题定位建议
 
 - 面板不显示：确认 Resources/UI/Windows 下同名预制；UIManager.Init 已加载 PanelCanvas；检查 Layer 与脚本继承。
@@ -123,4 +207,3 @@
 - [RoleDataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/RoleClass/Manager/RoleDataManager.cs)
 - [DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs)
 - 事件定义（UI）：[OpenPanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenPanelEvent.cs)、[ClosePanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/ClosePanelEvent.cs)、[OpenMainPageEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenMainPageEvent.cs)、[OpenRoleInfoPanelEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/OpenRoleInfoPanelEvent.cs)、[CreateRoleRequestEvent](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Event/EventDefine/UIEvents/CreateRoleRequestEvent.cs)
-
