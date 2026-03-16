@@ -9,6 +9,7 @@ public class DataManager
     public static DataManager Instance => instance;
 
     private PlayerData currentPlayerData;
+    private int currentSlotId = -1;
 
     // 设置数据文件名
     private const string SETTING_FILE_NAME = "setting";
@@ -139,7 +140,24 @@ public class DataManager
     public void ClearCurrentPlayerData()
     {
         currentPlayerData = null;
+        currentSlotId = -1;
     }
+
+    public void SetCurrentSlotId(int slotId)
+    {
+        currentSlotId = slotId;
+    }
+
+    public int GetCurrentSlotId()
+    {
+        return currentSlotId;
+    }
+
+    public void ClearCurrentSlotId()
+    {
+        currentSlotId = -1;
+    }
+
     #endregion
 
     #region 多存档槽位接口
@@ -164,14 +182,16 @@ public class DataManager
             return;
         }
 
-        // 记录真实保存时间
         playerData.saveTime = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
         string fileName = GetPlayerSlotFileName(slotId);
         JsonMgr.Instance.SaveData(playerData, fileName);
 
+        DataManager.Instance.SetCurrentSlotId(slotId);
+
         Debug.Log("[DataManager] 玩家存档保存成功，槽位：" + slotId);
     }
+
 
     /// <summary>
     /// 将当前玩家数据保存到指定槽位
@@ -208,9 +228,12 @@ public class DataManager
         }
 
         currentPlayerData = playerData;
+        currentSlotId = slotId;
+
         Debug.Log("[DataManager] 槽位 " + slotId + " 读档成功。");
         return true;
     }
+
 
     /// <summary>
     /// 获取指定槽位的玩家数据（不影响 currentPlayerData）

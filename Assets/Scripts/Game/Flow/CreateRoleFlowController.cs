@@ -1,4 +1,6 @@
+using Game.Runtime;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class CreateRoleFlowController
 {
@@ -29,6 +31,12 @@ public class CreateRoleFlowController
 
     private void OnCreateRoleRequestEvent(CreateRoleRequestEvent e)
     {
+        if (e.Request == null)
+        {
+            Debug.LogError("[CreateRoleFlowController] CreateRoleRequestEvent 或 Request 为空。");
+            return;
+        }
+
         PlayerData playerData = PlayerFactory.CreatePlayerData(e.Request);
         if (playerData == null)
         {
@@ -39,13 +47,18 @@ public class CreateRoleFlowController
         DataManager.Instance.SetCurrentPlayerData(playerData);
 
         int slotId = DataManager.Instance.GetNextAvailableSlotId();
+        if (slotId < 0)
+        {
+            Debug.LogError("[CreateRoleFlowController] 没有可用存档槽位。");
+            return;
+        }
+
         DataManager.Instance.SaveCurrentPlayerDataToSlot(slotId);
 
         Debug.Log("[CreateRoleFlowController] 创角成功，保存到槽位：" + slotId);
 
-        EventBus.Publish(new OpenMainPageEvent("MainPanel", true, false));
+        GameRuntime.CurrentPlayerData = playerData;
+
+        SceneManager.LoadScene("GameScene");
     }
-
-
-
 }

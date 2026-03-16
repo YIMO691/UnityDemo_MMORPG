@@ -54,13 +54,72 @@ public static class PlayerFactory
             dodgeRate = classConfig.dodgeRate
         };
 
+        PlayerRuntimeData runtimeData = new PlayerRuntimeData
+        {
+            hasValidPosition = false,
+            posX = 0f,
+            posY = 0f,
+            posZ = 0f,
+            rotY = 0f
+        };
+
         PlayerData playerData = new PlayerData
         {
             baseData = baseData,
             progressData = progressData,
-            attributeData = attributeData
+            attributeData = attributeData,
+            runtimeData = runtimeData
         };
 
         return playerData;
     }
+
+    /// <summary>
+    /// 根据玩家数据创建角色对象
+    /// </summary>
+    public static GameObject CreatePlayerObject(PlayerData playerData, Vector3 position, Quaternion rotation)
+    {
+        if (playerData == null)
+        {
+            Debug.LogError("[PlayerFactory] PlayerData is null.");
+            return null;
+        }
+
+        string prefabPath = GetPlayerPrefabPath(playerData.baseData.classId);
+        if (string.IsNullOrEmpty(prefabPath))
+        {
+            Debug.LogError($"[PlayerFactory] Invalid prefab path for classId: {playerData.baseData.classId}");
+            return null;
+        }
+
+        GameObject prefab = Resources.Load<GameObject>(prefabPath);
+        if (prefab == null)
+        {
+            Debug.LogError($"[PlayerFactory] Prefab not found at path: {prefabPath}");
+            return null;
+        }
+
+        GameObject playerObj = UnityEngine.Object.Instantiate(prefab, position, rotation);
+        playerObj.name = $"Player_{playerData.baseData.roleName}_{playerData.baseData.classId}";
+
+        // 新增：组装职业外观
+        PlayerVisualAssembler.AttachRoleVisual(playerObj, playerData);
+
+        return playerObj;
+    }
+
+    private static string GetPlayerPrefabPath(int classId)
+    {
+        switch (classId)
+        {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                return "Role/PlayerAmature/PlayerArmature";
+            default:
+                return null;
+        }
+    }
+
 }
