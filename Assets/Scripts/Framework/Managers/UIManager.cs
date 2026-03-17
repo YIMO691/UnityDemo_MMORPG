@@ -39,7 +39,7 @@ public class UIManager
         GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.PanelCanvas);
         if (canvasPrefab == null)
         {
-            Debug.LogError("[UIManager] PanelCanvas prefab not found: UI/Root/PanelCanvas");
+            Debug.LogError($"[UIManager] PanelCanvas prefab not found: {AssetPaths.PanelCanvas}");
             return;
         }
 
@@ -84,7 +84,7 @@ public class UIManager
         GameObject maskPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.UIMask);
         if (maskPrefab == null)
         {
-            Debug.LogError("[UIManager] UIMask prefab not found: UI/Root/UIMask");
+            Debug.LogError($"[UIManager] UIMask prefab not found: {AssetPaths.UIMask}");
             return;
         }
 

@@ -17,10 +17,10 @@ public class RoleDataManager
 
     private void LoadRoleClassConfigs()
     {
-        TextAsset json = ResourceManager.Instance.Load<TextAsset>("Config/RoleClassConfig");
+        TextAsset json = ResourceManager.Instance.Load<TextAsset>(AssetPaths.RoleClassConfig);
         if (json == null)
         {
-            Debug.LogError("[RoleDataManager] RoleClassConfig not found.");
+            Debug.LogError($"[RoleDataManager] RoleClassConfig not found: {AssetPaths.RoleClassConfig}");
             return;
         }
 

@@ -7,6 +7,9 @@ public static class AssetPaths
     // UI Windows
     public static string Window(string panelName) => $"UI/Windows/{panelName}";
 
+    // Config
+    public const string RoleClassConfig = "Config/RoleClassConfig";
+
     // Player & Camera
     public const string PlayerArmature = "Role/PlayerAmature/PlayerArmature";
     public const string MainCamera = "Role/PlayerAmature/MainCamera";
