@@ -33,7 +33,7 @@ public static class PlayerVisualAssembler
             return;
         }
 
-        GameObject visualPrefab = Resources.Load<GameObject>(visualPath);
+        GameObject visualPrefab = ResourceManager.Instance.Load<GameObject>(visualPath);
         if (visualPrefab == null)
         {
             Debug.LogError($"[PlayerVisualAssembler] Visual prefab not found: {visualPath}");

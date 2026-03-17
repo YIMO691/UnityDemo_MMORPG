@@ -9,7 +9,7 @@ public class RoleClassConfigEditorWindow : EditorWindow
     private Vector2 scrollPos;
 
     // 你可以改成自己的默认路径
-    private string jsonFilePath = "Assets/Resources/Config/RoleClassConfig.json";
+    private string jsonFilePath = "Assets/Resources/" + AssetPaths.RoleClassConfig + ".json";
 
     [MenuItem("Tools/MMORPG/Role Class Config Editor")]
     public static void OpenWindow()

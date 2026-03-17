@@ -92,7 +92,7 @@ public static class PlayerFactory
             return null;
         }
 
-        GameObject prefab = Resources.Load<GameObject>(prefabPath);
+        GameObject prefab = ResourceManager.Instance.Load<GameObject>(prefabPath);
         if (prefab == null)
         {
             Debug.LogError($"[PlayerFactory] Prefab not found at path: {prefabPath}");
@@ -110,16 +110,8 @@ public static class PlayerFactory
 
     private static string GetPlayerPrefabPath(int classId)
     {
-        switch (classId)
-        {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-                return "Role/PlayerAmature/PlayerArmature";
-            default:
-                return null;
-        }
+        // 目前所有职业都使用同一个骨架，后续可按职业扩展
+        return AssetPaths.PlayerArmature;
     }
 
 }

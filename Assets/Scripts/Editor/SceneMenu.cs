@@ -9,7 +9,7 @@ public static class SceneMenu
     {
         if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
         {
-            EditorSceneManager.OpenScene("Assets/Scenes/BeginScene.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene($"Assets/Scenes/{SceneNames.BeginScene}.unity", OpenSceneMode.Single);
         }
     }
 
@@ -18,7 +18,7 @@ public static class SceneMenu
     {
         if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
         {
-            EditorSceneManager.OpenScene("Assets/Scenes/GameScene.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene($"Assets/Scenes/{SceneNames.GameScene}.unity", OpenSceneMode.Single);
         }
     }
 
@@ -36,4 +36,3 @@ public static class SceneMenu
         Debug.Log("[SceneMenu] SaveCurrentPlayerTransform executed.");
     }
 }
-
