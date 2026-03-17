@@ -5,6 +5,7 @@ public class StartGame : MonoBehaviour
 {
     private void Start()
     {
+        DataManager.Instance.Init();
         UIManager.Instance.Init();
         RoleDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();

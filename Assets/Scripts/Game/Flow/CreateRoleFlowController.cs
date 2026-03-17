@@ -44,8 +44,6 @@ public class CreateRoleFlowController
             return;
         }
 
-        DataManager.Instance.SetCurrentPlayerData(playerData);
-
         int slotId = DataManager.Instance.GetNextAvailableSlotId();
         if (slotId < 0)
         {
@@ -53,12 +51,13 @@ public class CreateRoleFlowController
             return;
         }
 
-        DataManager.Instance.SaveCurrentPlayerDataToSlot(slotId);
+        DataManager.Instance.SavePlayerDataToSlot(slotId, playerData);
 
         Debug.Log("[CreateRoleFlowController] 创角成功，保存到槽位：" + slotId);
 
         GameRuntime.CurrentPlayerData = playerData;
+        GameRuntime.CurrentSlotId = slotId;
 
-        SceneManager.LoadScene("GameScene");
+        SceneManager.LoadScene(SceneNames.GameScene);
     }
 }

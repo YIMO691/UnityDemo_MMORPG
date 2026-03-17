@@ -10,6 +10,7 @@ public class DataManager
 
     private PlayerData currentPlayerData;
     private int currentSlotId = -1;
+    private bool isInited = false;
 
     // 设置数据文件名
     private const string SETTING_FILE_NAME = "setting";
@@ -23,9 +24,13 @@ public class DataManager
     public SettingData SettingData { get; private set; }
 
     // 私有构造函数，防止外部实例化
-    private DataManager()
+    private DataManager() { }
+
+    public void Init()
     {
+        if (isInited) return;
         LoadSettingData();
+        isInited = true;
     }
 
     /// <summary>
@@ -141,6 +146,7 @@ public class DataManager
     {
         currentPlayerData = null;
         currentSlotId = -1;
+        isInited = false;
     }
 
     public void SetCurrentSlotId(int slotId)
