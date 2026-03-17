@@ -56,6 +56,10 @@ public class CreateRoleFlowController
 
         Debug.Log("[CreateRoleFlowController] 创角成功，保存到槽位：" + slotId);
 
+        // 立刻注入内存态，确保主界面与头像详情可读取当前角色信息
+        DataManager.Instance.SetCurrentPlayerData(playerData);
+        DataManager.Instance.SetCurrentSlotId(slotId);
+
         GameRuntime.CurrentPlayerData = playerData;
         GameRuntime.CurrentSlotId = slotId;
         
