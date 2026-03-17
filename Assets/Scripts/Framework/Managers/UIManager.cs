@@ -36,7 +36,7 @@ public class UIManager
         EventBus.Subscribe<OpenMainPageEvent>(OnOpenMainPageEvent);
 
 
-        GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>("UI/Root/PanelCanvas");
+        GameObject canvasPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.PanelCanvas);
         if (canvasPrefab == null)
         {
             Debug.LogError("[UIManager] PanelCanvas prefab not found: UI/Root/PanelCanvas");
@@ -81,7 +81,7 @@ public class UIManager
     #region popup相关功能
     private void InitMask()
     {
-        GameObject maskPrefab = ResourceManager.Instance.Load<GameObject>("UI/Root/UIMask");
+        GameObject maskPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.UIMask);
         if (maskPrefab == null)
         {
             Debug.LogError("[UIManager] UIMask prefab not found: UI/Root/UIMask");
@@ -214,12 +214,7 @@ public class UIManager
 
    public void ShowConfirm(string message, System.Action onConfirm, System.Action onCancel = null)
     {
-        UIManager.Instance.ShowPanel<ConfirmPanel>();
-        ConfirmPanel panel = UIManager.Instance.GetPanel<ConfirmPanel>();
-        if (panel != null)
-        {
-            panel.SetData(message, onConfirm, onCancel);
-        }
+        UIDialogService.ShowConfirm(message, onConfirm, onCancel);
     }
 
 
