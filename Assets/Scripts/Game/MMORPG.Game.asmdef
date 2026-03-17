@@ -1,7 +1,10 @@
 {
   "name": "MMORPG.Game",
   "references": [
-    "MMORPG.Framework"
+    "MMORPG.Framework",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "Unity.Cinemachine"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
