@@ -25,19 +25,27 @@ public class GameSceneEntry : MonoBehaviour
         if (GameRuntime.CurrentPlayerData == null)
         {
             Debug.LogError("[GameSceneEntry] CurrentPlayerData is null.");
+            SceneNavigator.EnterBeginScene();
             return;
         }
 
-        CreateCamera();
-        CreatePlayerCharacter();   // 创建 PlayerArmature 并挂载职业外观
-        BindCamera();
+        bool ok =
+            TryCreateCamera() &&
+            TryCreatePlayerCharacter() &&
+            TryBindCamera();
+
+        if (!ok)
+        {
+            CleanupOnFail();
+            SceneNavigator.EnterBeginScene();
+            return;
+        }
         OpenMainPanel();
 
         Debug.Log("[GameSceneEntry] InitScene end");
     }
 
-
-    private void CreatePlayerCharacter()
+    private bool TryCreatePlayerCharacter()
     {
         Debug.Log("[GameSceneEntry] CreatePlayerCharacter begin");
 
@@ -45,7 +53,7 @@ public class GameSceneEntry : MonoBehaviour
         if (playerPrefab == null)
         {
             Debug.LogError("[GameSceneEntry] PlayerArmature prefab not found.");
-            return;
+            return false;
         }
 
         Vector3 spawnPos = GetSpawnPosition();
@@ -56,13 +64,14 @@ public class GameSceneEntry : MonoBehaviour
 
         Debug.Log($"[GameSceneEntry] PlayerArmature created: {playerInstance.name}");
 
-        if (!ValidatePlayerComponents(playerInstance)) return;
+        if (!ValidatePlayerComponents(playerInstance)) return false;
 
         // 把职业模型挂进去
         Transform modelRoot = playerInstance.transform.Find("ModelRoot");
         AttachRoleVisual(modelRoot, GameRuntime.CurrentPlayerData.baseData.classId);
 
         Debug.Log("[GameSceneEntry] CreatePlayerCharacter end");
+        return true;
     }
     private string GetRoleVisualPath(int classId)
     {
@@ -135,7 +144,7 @@ public class GameSceneEntry : MonoBehaviour
     }
 
 
-    private void CreateCamera()
+    private bool TryCreateCamera()
     {
         Debug.Log("[GameSceneEntry] CreateCamera begin");
 
@@ -148,55 +157,57 @@ public class GameSceneEntry : MonoBehaviour
         if (mainCameraPrefab == null)
         {
             Debug.LogError("[GameSceneEntry] MainCamera prefab not found.");
-            return;
+            return false;
         }
 
         if (followCameraPrefab == null)
         {
             Debug.LogError("[GameSceneEntry] PlayerFollowCamera prefab not found.");
-            return;
+            return false;
         }
 
         mainCameraInstance = Instantiate(mainCameraPrefab);
         followCameraInstance = Instantiate(followCameraPrefab);
 
         Debug.Log("[GameSceneEntry] Camera created");
+        return true;
     }
 
-    private void BindCamera()
+    private bool TryBindCamera()
     {
         Debug.Log("[GameSceneEntry] BindCamera begin");
 
         if (playerInstance == null || followCameraInstance == null)
         {
             Debug.LogError("[GameSceneEntry] BindCamera failed, missing player or follow camera.");
-            return;
+            return false;
         }
 
         ThirdPersonController controller = playerInstance.GetComponent<ThirdPersonController>();
         if (controller == null)
         {
             Debug.LogError("[GameSceneEntry] ThirdPersonController not found.");
-            return;
+            return false;
         }
 
         CinemachineVirtualCamera virtualCamera = followCameraInstance.GetComponent<CinemachineVirtualCamera>();
         if (virtualCamera == null)
         {
             Debug.LogError("[GameSceneEntry] CinemachineVirtualCamera not found.");
-            return;
+            return false;
         }
 
         if (controller.CinemachineCameraTarget == null)
         {
             Debug.LogError("[GameSceneEntry] CinemachineCameraTarget is null.");
-            return;
+            return false;
         }
 
         virtualCamera.Follow = controller.CinemachineCameraTarget.transform;
         virtualCamera.LookAt = controller.CinemachineCameraTarget.transform;
 
         Debug.Log("[GameSceneEntry] BindCamera success");
+        return true;
     }
     private Vector3 GetSpawnPosition()
     {
@@ -254,5 +265,24 @@ public class GameSceneEntry : MonoBehaviour
     {
         Debug.Log("[GameSceneEntry] OpenMainPanel");
         UIManager.Instance.ShowMainPage<MainPanel>(true, false);
+    }
+
+    private void CleanupOnFail()
+    {
+        if (playerInstance != null)
+        {
+            Destroy(playerInstance);
+            playerInstance = null;
+        }
+        if (mainCameraInstance != null)
+        {
+            Destroy(mainCameraInstance);
+            mainCameraInstance = null;
+        }
+        if (followCameraInstance != null)
+        {
+            Destroy(followCameraInstance);
+            followCameraInstance = null;
+        }
     }
 }

@@ -59,6 +59,6 @@ public class CreateRoleFlowController
         GameRuntime.CurrentPlayerData = playerData;
         GameRuntime.CurrentSlotId = slotId;
         
-        SceneManager.LoadScene(SceneNames.GameScene);
+        SceneNavigator.EnterGameScene();
     }
 }

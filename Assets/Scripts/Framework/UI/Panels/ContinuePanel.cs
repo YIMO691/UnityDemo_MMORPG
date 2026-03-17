@@ -97,7 +97,7 @@ public class ContinuePanel : BasePanel
         GameRuntime.CurrentSlotId = DataManager.Instance.GetCurrentSlotId();
 
         EventBus.Publish(new ClosePanelEvent(UIRouteNames.ContinuePanel));
-        SceneManager.LoadScene(SceneNames.GameScene);
+        SceneNavigator.EnterGameScene();
     }
 
 
