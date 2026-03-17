@@ -4,7 +4,7 @@
     "MMORPG.Framework",
     "Unity.InputSystem",
     "Unity.TextMeshPro",
-    "Unity.Cinemachine"
+    "Cinemachine"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
