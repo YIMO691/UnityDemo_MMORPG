@@ -397,6 +397,11 @@ public class DataManager
 
         JsonMgr.Instance.DeleteData(fileName);
 
+        if (currentSlotId == slotId)
+        {
+            currentSlotId = -1;
+        }
+
         Debug.Log("[DataManager] 删除存档槽位：" + slotId);
     }
 
