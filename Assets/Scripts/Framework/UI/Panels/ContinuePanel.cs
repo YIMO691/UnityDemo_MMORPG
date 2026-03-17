@@ -118,7 +118,7 @@ public class ContinuePanel : BasePanel
 
     private void OnClickClose()
     {
-        EventBus.Publish(new ClosePanelEvent("ContinuePanel"));
+        EventBus.Publish(new ClosePanelEvent(UIRouteNames.ContinuePanel));
     }
 
     private void ShowMessage(string message)

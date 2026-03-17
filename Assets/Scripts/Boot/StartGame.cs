@@ -10,6 +10,6 @@ public class StartGame : MonoBehaviour
         RoleDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();
 
-        UIManager.Instance.ShowMainPage("BeginPanel", hideOld: false, useFade: false);
+        UIManager.Instance.ShowMainPage(UIRouteNames.BeginPanel, hideOld: false, useFade: false);
     }
 }

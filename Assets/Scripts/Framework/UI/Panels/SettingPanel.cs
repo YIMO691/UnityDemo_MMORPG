@@ -177,7 +177,7 @@ public class SettingPanel : BasePanel
                     entry.SaveCurrentPlayerTransform();
                 }
 
-                EventBus.Publish(new ClosePanelEvent("SettingPanel"));
+                EventBus.Publish(new ClosePanelEvent(UIRouteNames.SettingPanel));
 
                 MainPanel mainPanel = UIManager.Instance.GetPanel<MainPanel>();
                 if (mainPanel != null)
