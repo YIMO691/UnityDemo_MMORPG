@@ -90,7 +90,12 @@ public class UIManager
 
         GameObject maskObj = GameObject.Instantiate(maskPrefab);
 
-        Transform popupLayer = layerDic[UILayer.Popup];
+        if (!layerDic.TryGetValue(UILayer.Popup, out Transform popupLayer))
+        {
+            Debug.LogError("[UIManager] Popup layer not found when InitMask()");
+            GameObject.Destroy(maskObj);
+            return;
+        }
         maskObj.transform.SetParent(popupLayer, false);
 
         uiMask = maskObj.GetComponent<UIMask>();
@@ -351,6 +356,10 @@ public class UIManager
             }
 
             panelDic.Remove(panelName);
+            if (currentMainPage == panel)
+            {
+                currentMainPage = null;
+            }
             Debug.Log($"[UIManager] DestroyPanel Success: {panelName}");
         }
 

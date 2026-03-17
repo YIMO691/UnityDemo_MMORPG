@@ -182,6 +182,11 @@ public class DataManager
     /// </summary>
     public void SavePlayerDataToSlot(int slotId, PlayerData playerData)
     {
+        if (slotId < 1)
+        {
+            Debug.LogError($"[DataManager] 非法槽位ID: {slotId}");
+            return;
+        }
         if (playerData == null)
         {
             Debug.LogWarning("[DataManager] 玩家数据为空，无法保存。");
@@ -218,6 +223,11 @@ public class DataManager
     /// </summary>
     public bool LoadPlayerDataFromSlot(int slotId)
     {
+        if (slotId < 1)
+        {
+            Debug.LogError($"[DataManager] 非法槽位ID: {slotId}");
+            return false;
+        }
         if (!HasPlayerSaveInSlot(slotId))
         {
             Debug.LogWarning("[DataManager] 槽位 " + slotId + " 存档不存在。");
@@ -246,6 +256,10 @@ public class DataManager
     /// </summary>
     public PlayerData GetPlayerDataFromSlot(int slotId)
     {
+        if (slotId < 1)
+        {
+            return null;
+        }
         if (!HasPlayerSaveInSlot(slotId))
         {
             return null;
@@ -368,6 +382,11 @@ public class DataManager
     /// </summary>
     public void DeletePlayerDataInSlot(int slotId)
     {
+        if (slotId < 1)
+        {
+            Debug.LogError($"[DataManager] 非法槽位ID: {slotId}");
+            return;
+        }
         string fileName = GetPlayerSlotFileName(slotId);
 
         JsonMgr.Instance.DeleteData(fileName);
