@@ -131,11 +131,13 @@ public class DataManager
         currentPlayerData = playerData;
     }
 
+    [System.Obsolete("过渡接口：新逻辑请使用 GameRuntime + SavePlayerDataToSlot")]
     public PlayerData GetCurrentPlayerData()
     {
         return currentPlayerData;
     }
 
+    [System.Obsolete("过渡接口：新逻辑请使用 GameRuntime + SavePlayerDataToSlot")]
     public bool HasCurrentPlayerData()
     {
         return currentPlayerData != null;

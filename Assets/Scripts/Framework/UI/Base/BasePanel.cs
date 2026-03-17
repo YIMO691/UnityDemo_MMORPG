@@ -98,6 +98,7 @@ public abstract class BasePanel : MonoBehaviour
             return;
         }
 
+        OnBeforeHide();
         hideCallBack = callBack;
 
         IsVisible = false;
@@ -192,6 +193,7 @@ public abstract class BasePanel : MonoBehaviour
     /// 每次隐藏时调用：停止监听、关闭子界面、保存状态等
     /// </summary>
     protected virtual void OnHide() { }
+    protected virtual void OnBeforeHide() { }
 
     /// <summary>
     /// 需要手动刷新时调用

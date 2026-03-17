@@ -275,6 +275,10 @@ public class UIManager
 
     public BasePanel ShowMainPage(string panelName, bool hideOld = true, bool useFade = false)
     {
+        if (!UIMainPages.IsMainPage(panelName))
+        {
+            Debug.LogWarning($"[UIManager] ShowMainPage called with non-registered main page: {panelName}");
+        }
         BasePanel newPage = ShowPanel(panelName);
         if (newPage == null)
             return null;
@@ -419,7 +423,6 @@ public class UIManager
     {
         EventBus.Unsubscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Unsubscribe<ClosePanelEvent>(OnClosePanelEvent);
-        EventBus.Unsubscribe<OpenRoleInfoPanelEvent>(OnOpenRoleInfoPanelEvent);
         EventBus.Unsubscribe<OpenMainPageEvent>(OnOpenMainPageEvent);
 
         foreach (var kv in panelDic)
