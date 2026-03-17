@@ -146,6 +146,12 @@ public class DataManager
     {
         currentPlayerData = null;
         currentSlotId = -1;
+    }
+
+    public void Clear()
+    {
+        currentPlayerData = null;
+        currentSlotId = -1;
         isInited = false;
     }
 

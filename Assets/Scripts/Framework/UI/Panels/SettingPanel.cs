@@ -188,7 +188,7 @@ public class SettingPanel : BasePanel
                 DataManager.Instance.ClearCurrentPlayerData();
                 Game.Runtime.GameRuntime.CurrentPlayerData = null;
 
-                UnityEngine.SceneManagement.SceneManager.LoadScene("BeginScene");
+                UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.BeginScene);
             },
             null
         );
