@@ -1,0 +1,16 @@
+{
+  "name": "MMORPG.Game",
+  "references": [
+    "MMORPG.Framework"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "rootNamespace": ""
+}
