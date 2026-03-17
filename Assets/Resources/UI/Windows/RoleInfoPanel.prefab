@@ -607,7 +607,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5853298391911710284}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c9684720230a5943abb108dc3c0c228, type: 3}
+  m_Script: {fileID: 11500000, guid: 39810dc476fb19e42a317f65c5e1aa52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   alphaSpeed: 10

@@ -1679,7 +1679,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7572268323071254029}
   - component: {fileID: 1911242936323224880}
-  - component: {fileID: 2254014848444953031}
+  - component: {fileID: 5446350976526626915}
   m_Layer: 5
   m_Name: CreateRolePanel
   m_TagString: Untagged
@@ -1720,7 +1720,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6533200279867415838}
   m_CullTransparentMesh: 1
---- !u!114 &2254014848444953031
+--- !u!114 &5446350976526626915
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1729,7 +1729,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6533200279867415838}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81412fde33d9c594b9bba81462959368, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b654a592b4d05846a143c7d72ca0cb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   alphaSpeed: 10

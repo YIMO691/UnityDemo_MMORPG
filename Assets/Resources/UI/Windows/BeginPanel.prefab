@@ -261,15 +261,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2100560847840968250}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5441bba4df3f1d4191969adea9de9aa, type: 3}
+  m_Script: {fileID: 11500000, guid: f1074097ea5ef204084ff725f9d6d75d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  alphaSpeed: 10
   btnStart: {fileID: 4153572938809349249}
   btnContinue: {fileID: 6801199435199312984}
   btnSetting: {fileID: 7850744821224950748}
   btnAbout: {fileID: 111843003555181795}
   btnExit: {fileID: 8366808861056343664}
-  gameSceneName: BeginScene
 --- !u!1 &2229429653924827650
 GameObject:
   m_ObjectHideFlags: 0
