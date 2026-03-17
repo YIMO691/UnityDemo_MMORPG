@@ -1,5 +1,5 @@
-using StarterAssets;
 using UnityEngine;
+using StarterAssets;
 
 public static class PlayerCharacterAssembler
 {

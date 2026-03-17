@@ -1,6 +1,6 @@
-using Cinemachine;
-using StarterAssets;
 using UnityEngine;
+using StarterAssets;
+using Cinemachine;
 
 public static class CameraRigAssembler
 {
