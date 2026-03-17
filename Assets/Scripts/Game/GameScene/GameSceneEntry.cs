@@ -29,7 +29,7 @@ public class GameSceneEntry : MonoBehaviour
         }
 
         CreateCamera();
-        CreateAnimator();   // 你现在想写在这里也行，本质是创建 PlayerArmature
+        CreatePlayerCharacter();   // 创建 PlayerArmature 并挂载职业外观
         BindCamera();
         OpenMainPanel();
 
@@ -37,11 +37,11 @@ public class GameSceneEntry : MonoBehaviour
     }
 
 
-    private void CreateAnimator()
+    private void CreatePlayerCharacter()
     {
-        Debug.Log("[GameSceneEntry] CreateAnimator begin");
+        Debug.Log("[GameSceneEntry] CreatePlayerCharacter begin");
 
-        GameObject playerPrefab = Resources.Load<GameObject>("Role/PlayerAmature/PlayerArmature");
+        GameObject playerPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.PlayerArmature);
         if (playerPrefab == null)
         {
             Debug.LogError("[GameSceneEntry] PlayerArmature prefab not found.");
@@ -56,58 +56,51 @@ public class GameSceneEntry : MonoBehaviour
 
         Debug.Log($"[GameSceneEntry] PlayerArmature created: {playerInstance.name}");
 
-        // 检查关键组件
-        ThirdPersonController controller = playerInstance.GetComponent<ThirdPersonController>();
-        if (controller == null)
-        {
-            Debug.LogError("[GameSceneEntry] ThirdPersonController not found on PlayerArmature.");
-            return;
-        }
-
-        CharacterController characterController = playerInstance.GetComponent<CharacterController>();
-        if (characterController == null)
-        {
-            Debug.LogError("[GameSceneEntry] CharacterController not found on PlayerArmature.");
-            return;
-        }
-
-        Transform cameraRoot = playerInstance.transform.Find("PlayerCameraRoot");
-        if (cameraRoot == null)
-        {
-            Debug.LogError("[GameSceneEntry] PlayerCameraRoot not found.");
-            return;
-        }
-
-        Transform modelRoot = playerInstance.transform.Find("ModelRoot");
-        if (modelRoot == null)
-        {
-            Debug.LogError("[GameSceneEntry] ModelRoot not found.");
-            return;
-        }
+        if (!ValidatePlayerComponents(playerInstance)) return;
 
         // 把职业模型挂进去
+        Transform modelRoot = playerInstance.transform.Find("ModelRoot");
         AttachRoleVisual(modelRoot, GameRuntime.CurrentPlayerData.baseData.classId);
 
-        // 强制重新找主相机，避免 ThirdPersonController Awake 早于相机创建
-        controller.InitCameraReference();
-
-        Debug.Log("[GameSceneEntry] CreateAnimator end");
+        Debug.Log("[GameSceneEntry] CreatePlayerCharacter end");
     }
     private string GetRoleVisualPath(int classId)
     {
-        switch (classId)
+        return RoleVisualPaths.GetPath(classId);
+    }
+    private bool ValidatePlayerComponents(GameObject player)
+    {
+        ThirdPersonController controller = player.GetComponent<ThirdPersonController>();
+        if (controller == null)
         {
-            case 1:
-                return "Role/Role_NoWeapon/Engineer";
-            case 2:
-                return "Role/Role_NoWeapon/Infantry";
-            case 3:
-                return "Role/Role_NoWeapon/Medic";
-            case 4:
-                return "Role/Role_NoWeapon/Sniper";
-            default:
-                return null;
+            Debug.LogError("[GameSceneEntry] ThirdPersonController not found on PlayerArmature.");
+            return false;
         }
+
+        CharacterController characterController = player.GetComponent<CharacterController>();
+        if (characterController == null)
+        {
+            Debug.LogError("[GameSceneEntry] CharacterController not found on PlayerArmature.");
+            return false;
+        }
+
+        Transform cameraRoot = player.transform.Find("PlayerCameraRoot");
+        if (cameraRoot == null)
+        {
+            Debug.LogError("[GameSceneEntry] PlayerCameraRoot not found.");
+            return false;
+        }
+
+        Transform modelRoot = player.transform.Find("ModelRoot");
+        if (modelRoot == null)
+        {
+            Debug.LogError("[GameSceneEntry] ModelRoot not found.");
+            return false;
+        }
+
+        // 强制重新找主相机，避免 ThirdPersonController Awake 早于相机创建
+        controller.InitCameraReference();
+        return true;
     }
 
     private void AttachRoleVisual(Transform modelRoot, int classId)
@@ -119,7 +112,7 @@ public class GameSceneEntry : MonoBehaviour
             return;
         }
 
-        GameObject visualPrefab = Resources.Load<GameObject>(visualPath);
+        GameObject visualPrefab = ResourceManager.Instance.Load<GameObject>(visualPath);
         if (visualPrefab == null)
         {
             Debug.LogError($"[GameSceneEntry] Role visual prefab not found: {visualPath}");
@@ -146,8 +139,8 @@ public class GameSceneEntry : MonoBehaviour
     {
         Debug.Log("[GameSceneEntry] CreateCamera begin");
 
-        GameObject mainCameraPrefab = Resources.Load<GameObject>("Role/PlayerAmature/MainCamera");
-        GameObject followCameraPrefab = Resources.Load<GameObject>("Role/PlayerAmature/PlayerFollowCamera");
+        GameObject mainCameraPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.MainCamera);
+        GameObject followCameraPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.PlayerFollowCamera);
 
         Debug.Log($"[GameSceneEntry] mainCameraPrefab = {(mainCameraPrefab == null ? "null" : mainCameraPrefab.name)}");
         Debug.Log($"[GameSceneEntry] followCameraPrefab = {(followCameraPrefab == null ? "null" : followCameraPrefab.name)}");
