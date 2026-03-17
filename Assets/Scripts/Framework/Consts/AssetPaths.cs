@@ -4,6 +4,9 @@ public static class AssetPaths
     public const string PanelCanvas = "UI/Root/PanelCanvas";
     public const string UIMask = "UI/Root/UIMask";
 
+    // UI Windows
+    public static string Window(string panelName) => $"UI/Windows/{panelName}";
+
     // Player & Camera
     public const string PlayerArmature = "Role/PlayerAmature/PlayerArmature";
     public const string MainCamera = "Role/PlayerAmature/MainCamera";
@@ -15,4 +18,3 @@ public static class AssetPaths
     public const string MedicVisual = "Role/Role_NoWeapon/Medic";
     public const string SniperVisual = "Role/Role_NoWeapon/Sniper";
 }
-

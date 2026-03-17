@@ -235,10 +235,10 @@ public class UIManager
             return existPanel;
         }
 
-        GameObject panelPrefab = ResourceManager.Instance.Load<GameObject>("UI/Windows/" + panelName);
+        GameObject panelPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.Window(panelName));
         if (panelPrefab == null)
         {
-            Debug.LogError($"[UIManager] Panel prefab not found: UI/Windows/{panelName}");
+            Debug.LogError($"[UIManager] Panel prefab not found: {AssetPaths.Window(panelName)}");
             return null;
         }
 
