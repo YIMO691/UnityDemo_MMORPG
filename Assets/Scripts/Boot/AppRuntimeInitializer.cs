@@ -9,6 +9,6 @@ public static class AppRuntimeInitializer
         UIManager.Instance.Init();
         RoleDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();
+        RoleUIController.Instance.Init();
     }
 }
-

@@ -8,6 +8,7 @@ public class CreateRoleFlowController
     public static CreateRoleFlowController Instance => instance;
 
     private bool isInited = false;
+    public bool IsInited => isInited;
 
     private CreateRoleFlowController() { }
 
@@ -57,7 +58,7 @@ public class CreateRoleFlowController
 
         GameRuntime.CurrentPlayerData = playerData;
         GameRuntime.CurrentSlotId = slotId;
-
+        
         SceneManager.LoadScene(SceneNames.GameScene);
     }
 }

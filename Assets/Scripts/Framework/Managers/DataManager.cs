@@ -26,6 +26,8 @@ public class DataManager
     // 私有构造函数，防止外部实例化
     private DataManager() { }
 
+    public bool IsInited => isInited;
+
     public void Init()
     {
         if (isInited) return;

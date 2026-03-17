@@ -20,6 +20,13 @@ public abstract class BasePanel : MonoBehaviour
     public virtual bool CloseByMask => false;
     public virtual int SortOrder => 0;
 
+    public enum UIPanelCacheMode
+    {
+        CacheAndHide,
+        DestroyOnClose
+    }
+
+    public virtual UIPanelCacheMode CacheMode => UIPanelCacheMode.CacheAndHide;
 
     protected enum PanelState
     {

@@ -223,6 +223,6 @@ public class SettingPanel : BasePanel
     private void OnClickClose()
     {
         DataManager.Instance.SaveSettingData();
-        EventBus.Publish(new ClosePanelEvent("SettingPanel"));
+        EventBus.Publish(new ClosePanelEvent(UIRouteNames.SettingPanel));
     }
 }

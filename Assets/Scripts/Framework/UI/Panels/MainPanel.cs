@@ -191,7 +191,7 @@ public class MainPanel : BasePanel
 
     private void OnClickSetting()
     {
-        EventBus.Publish(new OpenPanelEvent("SettingPanel"));
+        EventBus.Publish(new OpenPanelEvent(UIRouteNames.SettingPanel));
     }
 
     private void ShowMessage(string message)

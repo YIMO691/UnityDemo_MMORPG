@@ -95,7 +95,7 @@ public class BeginPanel : BasePanel
             btnStart.interactable = false;
 
         // 先隐藏开始面板，只保留摄像头画面
-        UIManager.Instance.HidePanel("BeginPanel", useFade: false);
+        UIManager.Instance.HidePanel(UIRouteNames.BeginPanel, useFade: false);
 
         CameraEvent cameraEvent = Camera.main != null ? Camera.main.GetComponent<CameraEvent>() : null;
 
@@ -104,13 +104,13 @@ public class BeginPanel : BasePanel
             cameraEvent.TurnAround(() =>
             {
                 Debug.Log("摄像头动画播放完毕，进入创建角色界面");
-                EventBus.Publish(new OpenMainPageEvent("CreateRolePanel", hideOld: false, useFade: false));
+                EventBus.Publish(new OpenMainPageEvent(UIRouteNames.CreateRolePanel, hideOld: false, useFade: false));
             });
         }
         else
         {
             Debug.LogWarning("[BeginPanel] 未找到 CameraEvent，直接打开 CreateRolePanel");
-            EventBus.Publish(new OpenMainPageEvent("CreateRolePanel", hideOld: false, useFade: false));
+            EventBus.Publish(new OpenMainPageEvent(UIRouteNames.CreateRolePanel, hideOld: false, useFade: false));
         }
     }
 
@@ -129,19 +129,19 @@ public class BeginPanel : BasePanel
             return;
         }
 
-        EventBus.Publish(new OpenPanelEvent("ContinuePanel"));
+        EventBus.Publish(new OpenPanelEvent(UIRouteNames.ContinuePanel));
     }
 
     private void OnClickSetting()
     {
         Debug.Log("点击了 设置");
-        EventBus.Publish(new OpenPanelEvent("SettingPanel"));
+        EventBus.Publish(new OpenPanelEvent(UIRouteNames.SettingPanel));
     }
 
     private void OnClickAbout()
     {
         Debug.Log("点击了 关于");
-        EventBus.Publish(new OpenPanelEvent("AboutPanel"));
+        EventBus.Publish(new OpenPanelEvent(UIRouteNames.AboutPanel));
     }
 
     private void OnClickExitGame()

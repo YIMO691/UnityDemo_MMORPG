@@ -32,7 +32,6 @@ public class UIManager
         EventBus.Subscribe<OpenPanelEvent>(OnOpenPanelEvent);
         EventBus.Subscribe<ClosePanelEvent>(OnClosePanelEvent);
 
-        EventBus.Subscribe<OpenRoleInfoPanelEvent>(OnOpenRoleInfoPanelEvent);
         EventBus.Subscribe<OpenMainPageEvent>(OnOpenMainPageEvent);
 
 
@@ -54,6 +53,8 @@ public class UIManager
         isInited = true;
         Debug.Log("[UIManager] Init Success.");
     }
+
+    public bool IsInited => isInited;
 
     private void InitLayer()
     {
@@ -198,15 +199,6 @@ public class UIManager
         HidePanel(e.PanelName);
     }
 
-    private void OnOpenRoleInfoPanelEvent(OpenRoleInfoPanelEvent e)
-    {
-        RoleInfoPanel panel = ShowPanel<RoleInfoPanel>();
-        if (panel != null)
-        {
-            panel.SetRoleInfo(e.Config);
-        }
-    }
-
     private void OnOpenMainPageEvent(OpenMainPageEvent e)
     {
         ShowMainPage(e.PanelName, e.HideOld, e.UseFade);
@@ -312,6 +304,12 @@ public class UIManager
         if (!panelDic.TryGetValue(panelName, out BasePanel panel))
         {
             Debug.LogWarning($"[UIManager] HidePanel failed, panel not found: {panelName}");
+            return;
+        }
+
+        if (panel.CacheMode == BasePanel.UIPanelCacheMode.DestroyOnClose)
+        {
+            DestroyPanel(panelName, useFade);
             return;
         }
 

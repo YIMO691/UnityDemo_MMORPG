@@ -8,6 +8,7 @@ public class ConfirmPanel : BasePanel
     public override UILayer Layer => UILayer.Popup;
     public override bool UseMask => true;
     public override bool CloseByMask => true;
+    public override UIPanelCacheMode CacheMode => UIPanelCacheMode.DestroyOnClose;
 
     [Header("UI")]
     [SerializeField] private Text txtMessage;
