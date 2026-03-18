@@ -17,6 +17,7 @@ public static class UIPaths
     public const string MessageTipPanel = "MessageTipPanel";
     public const string ConfirmPanel = "ConfirmPanel";
     public const string AboutPanel = "AboutPanel";
+    public const string MapPanel = "MapPanel";
 
     // Portrait
     public const string PortraitCreateRoleRoot = "Portrait/CreateRolePanel/";

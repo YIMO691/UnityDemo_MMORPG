@@ -252,7 +252,7 @@ public class MainPanel : BasePanel
 
     private void OnClickMap()
     {
-        ShowMessage("地图功能开发中");
+        EventBus.Publish(new OpenPanelEvent(UIRouteNames.MapPanel));
     }
 
     private void OnClickRoleDetail()

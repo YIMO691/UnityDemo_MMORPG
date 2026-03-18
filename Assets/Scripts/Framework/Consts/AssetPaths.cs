@@ -9,6 +9,7 @@ public static class AssetPaths
 
     // Config
     public const string RoleClassConfig = "Config/RoleClassConfig";
+    public const string MapConfig = "Config/MapConfig";
 
     // Player & Camera
     public const string PlayerArmature = "Role/PlayerAmature/PlayerArmature";

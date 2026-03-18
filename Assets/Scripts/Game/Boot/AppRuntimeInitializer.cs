@@ -8,6 +8,7 @@ public static class AppRuntimeInitializer
         DataManager.Instance.Init();
         UIManager.Instance.Init();
         RoleDataManager.Instance.Init();
+        MapDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();
         RoleUIController.Instance.Init();
     }
