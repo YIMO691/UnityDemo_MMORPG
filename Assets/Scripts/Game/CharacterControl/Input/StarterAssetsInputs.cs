@@ -68,12 +68,14 @@ namespace Game
 
 		private void OnApplicationFocus(bool hasFocus)
 		{
-			SetCursorState(cursorLocked);
+			// 当应用重新获得焦点时，先解锁并显示鼠标，确保可以点击 UI
+			SetCursorState(false);
 		}
 
 		private void SetCursorState(bool newState)
 		{
 			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+			Cursor.visible = !newState;
 		}
 	}
 	
