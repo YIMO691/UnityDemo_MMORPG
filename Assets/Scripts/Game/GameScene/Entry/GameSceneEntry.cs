@@ -65,6 +65,9 @@ public class GameSceneEntry : MonoBehaviour
                 data.runtimeData.posZ = p.z;
                 data.runtimeData.hasValidPosition = true;
             }
+            var nav = playerInstance.GetComponent<PlayerNavigator>();
+            if (nav == null) nav = playerInstance.AddComponent<PlayerNavigator>();
+            nav.SetAgentId("Player");
         }
 
         Debug.Log("[GameSceneEntry] InitScene end");

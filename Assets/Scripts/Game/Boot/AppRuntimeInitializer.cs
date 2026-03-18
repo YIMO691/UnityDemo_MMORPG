@@ -11,5 +11,6 @@ public static class AppRuntimeInitializer
         MapDataManager.Instance.Init();
         CreateRoleFlowController.Instance.Init();
         RoleUIController.Instance.Init();
+        NavigationService.Instance.Init();
     }
 }
