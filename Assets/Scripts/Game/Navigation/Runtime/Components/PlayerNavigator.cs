@@ -7,7 +7,7 @@ public class PlayerNavigator : BaseNavigator
 {
     [SerializeField] private bool autoSprint = true;
     [SerializeField] private float manualCancelThreshold = 0.2f;
-    [SerializeField] private float cancelGraceTime = 0.25f;
+    [SerializeField] private float cancelGraceTime = 0.8f;
 
     private StarterAssetsInputs input;
     private Camera mainCamera;
@@ -28,6 +28,10 @@ public class PlayerNavigator : BaseNavigator
     {
         base.SetPath(newPath, newStopDistance);
         lastSetPathTime = Time.time;
+        if (newPath != null)
+        {
+            Debug.Log("[PlayerNavigator] SetPath，角点数 = " + newPath.Length);
+        }
     }
 
     protected override void Update()
@@ -36,10 +40,15 @@ public class PlayerNavigator : BaseNavigator
         if (IsNavigating)
         {
             bool inGrace = Time.time - lastSetPathTime < cancelGraceTime;
-            if (!inGrace && HasManualInput())
+            if (!inGrace)
             {
-                StopNavigation();
-                return;
+                string reason;
+                if (HasManualInput(out reason))
+                {
+                    Debug.Log("[PlayerNavigator] 检测到手动输入，取消自动寻路。原因: " + reason);
+                    StopNavigation();
+                    return;
+                }
             }
         }
         base.Update();
@@ -69,10 +78,39 @@ public class PlayerNavigator : BaseNavigator
         input.jump = false;
     }
 
+    private bool HasManualInput(out string reason)
+    {
+        reason = null;
+
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.wKey.isPressed) { reason = "W"; return true; }
+            if (Keyboard.current.aKey.isPressed) { reason = "A"; return true; }
+            if (Keyboard.current.sKey.isPressed) { reason = "S"; return true; }
+            if (Keyboard.current.dKey.isPressed) { reason = "D"; return true; }
+            if (Keyboard.current.spaceKey.isPressed) { reason = "Space"; return true; }
+        }
+
+        if (Mouse.current != null)
+        {
+            // 不再用鼠标 delta 作为取消条件；左键点击地图也不取消
+            if (Mouse.current.rightButton.isPressed) { reason = "MouseRight"; return true; }
+        }
+
+        if (Gamepad.current != null)
+        {
+            if (Gamepad.current.leftStick.ReadValue().sqrMagnitude > 0.01f) { reason = "GamepadLeftStick"; return true; }
+            if (Gamepad.current.rightStick.ReadValue().sqrMagnitude > 0.01f) { reason = "GamepadRightStick"; return true; }
+            if (Gamepad.current.buttonSouth.isPressed) { reason = "GamepadSouth"; return true; }
+        }
+#endif
+        return false;
+    }
+
+    // 保留无参版本给潜在调用
     private bool HasManualInput()
     {
-        if (input == null) return false;
-
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null)
         {
@@ -88,10 +126,7 @@ public class PlayerNavigator : BaseNavigator
 
         if (Mouse.current != null)
         {
-            if (Mouse.current.delta.ReadValue().sqrMagnitude > 0.01f)
-                return true;
-            if (Mouse.current.rightButton.isPressed)
-                return true;
+            if (Mouse.current.rightButton.isPressed) return true;
         }
 
         if (Gamepad.current != null)
@@ -101,8 +136,7 @@ public class PlayerNavigator : BaseNavigator
             if (Gamepad.current.buttonSouth.isPressed) return true;
         }
 #endif
-        return input.move.sqrMagnitude > manualCancelThreshold * manualCancelThreshold
-               || input.jump;
+        return false;
     }
 
     private Vector2 ConvertWorldDirectionToCameraInput(Vector3 worldDir)
