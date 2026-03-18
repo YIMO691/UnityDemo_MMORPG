@@ -6,11 +6,7 @@ public class PlayerSaveService
 
     public void SaveCurrentPlayer(Transform playerTransform)
     {
-        PlayerData playerData = Game.Runtime.GameRuntime.CurrentPlayerData;
-        if (playerData == null)
-        {
-            playerData = DataManager.Instance.GetCurrentPlayerData();
-        }
+        PlayerData playerData = Game.Runtime.GameRuntime.CurrentPlayerData ?? GamePlayerDataService.Instance.GetCurrentPlayerData();
 
         if (playerData == null)
         {
@@ -20,7 +16,7 @@ public class PlayerSaveService
 
         runtimeSaveService.SavePlayerTransform(playerTransform, playerData);
 
-        DataManager.Instance.SetCurrentPlayerData(playerData);
+        GamePlayerDataService.Instance.SetCurrentPlayerData(playerData);
 
         int slotId = DataManager.Instance.GetCurrentSlotId();
         if (slotId < 0)
@@ -29,7 +25,7 @@ public class PlayerSaveService
             return;
         }
 
-        DataManager.Instance.SaveCurrentPlayerDataToSlot(slotId);
+        GamePlayerDataService.Instance.SaveCurrentPlayerDataToSlot(slotId);
 
         Debug.Log("[PlayerSaveService] SaveCurrentPlayer success. slotId=" + slotId);
     }

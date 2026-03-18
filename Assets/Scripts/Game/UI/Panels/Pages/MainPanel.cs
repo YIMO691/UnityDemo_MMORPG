@@ -75,7 +75,7 @@ public class MainPanel : BasePanel
 
     private void RefreshView()
     {
-        currentPlayerData = DataManager.Instance.GetCurrentPlayerData();
+        currentPlayerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
         if (currentPlayerData == null)
         {

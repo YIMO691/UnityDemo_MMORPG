@@ -48,16 +48,7 @@ public class ContinuePanel : BasePanel
     {
         ClearList();
 
-        List<PlayerSaveMetaData> metaList = new List<PlayerSaveMetaData>();
-        for (int i = 1; i <= maxSlotCount; i++)
-        {
-            if (DataManager.Instance.HasPlayerSaveInSlot(i))
-            {
-                var data = DataManager.Instance.GetPlayerDataFromSlot(i);
-                var meta = PlayerSaveMetaMapper.Map(data, i);
-                if (meta != null) metaList.Add(meta);
-            }
-        }
+        List<PlayerSaveMetaData> metaList = GamePlayerDataService.Instance.GetAllPlayerSaveMetaData(maxSlotCount);
 
         for (int i = 0; i < metaList.Count; i++)
         {
@@ -88,14 +79,14 @@ public class ContinuePanel : BasePanel
 
     private void OnClickLoadSlot(int slotId)
     {
-        bool success = DataManager.Instance.LoadPlayerDataFromSlot(slotId);
+        bool success = GamePlayerDataService.Instance.LoadPlayerDataFromSlot(slotId);
         if (!success)
         {
             ShowMessage("读取存档失败");
             return;
         }
 
-        PlayerData playerData = DataManager.Instance.GetCurrentPlayerData();
+        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
         if (playerData == null)
         {
             ShowMessage("当前角色数据为空");

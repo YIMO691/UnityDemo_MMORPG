@@ -42,7 +42,7 @@ public class BeginPanel : BasePanel
     {
         if (btnContinue != null)
         {
-            btnContinue.interactable = DataManager.Instance.HasAnyPlayerSave(100);
+            btnContinue.interactable = GamePlayerDataService.Instance.HasAnyPlayerSave(100);
         }
     }
 
@@ -117,7 +117,7 @@ public class BeginPanel : BasePanel
     private void OnClickContinueGame()
     {
         // 多存档版本：这里只负责打开 ContinuePanel
-        if (!DataManager.Instance.HasAnyPlayerSave(100))
+        if (!GamePlayerDataService.Instance.HasAnyPlayerSave(100))
         {
             MessageTipPanel panel = UIManager.Instance.ShowPanel<MessageTipPanel>();
             if (panel != null)
