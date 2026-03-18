@@ -16,6 +16,7 @@ public class RoleClassConfig
     public float expGrowthRate;
 
     public int maxHp;
+    public int maxStamina;
     public int maxMp;
     public int attack;
     public int defense;
@@ -33,5 +34,6 @@ public class RoleClassConfig
     public float speedGrowth;
 
     public string defaultPortraitId;
+    public string mainHeadId;
     public List<int> starterSkillIds = new List<int>();
 }

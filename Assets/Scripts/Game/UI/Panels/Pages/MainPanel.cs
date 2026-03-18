@@ -20,10 +20,7 @@ public class MainPanel : BasePanel
     [SerializeField] private Button btnSkill3;
 
     [Header("Portrait")]
-    [SerializeField] private GameObject engineerHead;
-    [SerializeField] private GameObject infantryHead;
-    [SerializeField] private GameObject medicHead;
-    [SerializeField] private GameObject sniperHead;
+    [SerializeField] private Image imgRoleHead;
 
     [Header("MenuBar")]
     [SerializeField] private Button btnBag;
@@ -108,6 +105,9 @@ public class MainPanel : BasePanel
 
         if (staminaFill != null)
             staminaFill.fillAmount = 0f;
+
+        if (imgRoleHead != null)
+            imgRoleHead.sprite = null;
     }
 
     private void RefreshPlayerInfo()
@@ -166,9 +166,8 @@ public class MainPanel : BasePanel
 
     private void RefreshStaminaBar()
     {
-        // stamina 以 MP 表示：attributeData.maxMp / runtimeData.currentMp
-        int maxStamina = currentPlayerData.attributeData.maxMp;
-        int currentStamina = currentPlayerData.runtimeData.currentMp;
+        int maxStamina = currentPlayerData.attributeData.maxStamina;
+        int currentStamina = currentPlayerData.runtimeData.currentStamina;
 
         if (staminaFill == null || maxStamina <= 0)
         {
@@ -188,41 +187,47 @@ public class MainPanel : BasePanel
 
     private void RefreshPortrait()
     {
-        SetAllPortraitInactive();
+        if (imgRoleHead == null)
+            return;
 
         if (currentPlayerData == null || currentPlayerData.baseData == null)
         {
-            if (infantryHead != null) infantryHead.SetActive(true);
+            imgRoleHead.sprite = null;
             return;
         }
 
-        int classId = currentPlayerData.baseData.classId;
-        switch (classId)
-        {
-            case 1:
-                if (infantryHead != null) infantryHead.SetActive(true);
-                break;
-            case 2:
-                if (sniperHead != null) sniperHead.SetActive(true);
-                break;
-            case 3:
-                if (medicHead != null) medicHead.SetActive(true);
-                break;
-            case 4:
-                if (engineerHead != null) engineerHead.SetActive(true);
-                break;
-            default:
-                if (infantryHead != null) infantryHead.SetActive(true);
-                break;
-        }
-    }
+        RoleClassConfig config = RoleDataManager.Instance.GetClassConfig(currentPlayerData.baseData.classId);
 
-    private void SetAllPortraitInactive()
-    {
-        if (engineerHead != null) engineerHead.SetActive(false);
-        if (infantryHead != null) infantryHead.SetActive(false);
-        if (medicHead != null) medicHead.SetActive(false);
-        if (sniperHead != null) sniperHead.SetActive(false);
+        if (config == null)
+        {
+            RoleDataManager.Instance.Init();
+            config = RoleDataManager.Instance.GetClassConfig(currentPlayerData.baseData.classId);
+        }
+
+        if (config == null)
+        {
+            Debug.LogWarning("[MainPanel] 职业配置不存在，classId = " + currentPlayerData.baseData.classId);
+            imgRoleHead.sprite = null;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(config.mainHeadId))
+        {
+            Debug.LogWarning("[MainPanel] mainHeadId 为空，无法加载主界面头像。");
+            imgRoleHead.sprite = null;
+            return;
+        }
+
+        string path = UIPaths.PortraitMainRoot + config.mainHeadId;
+        Sprite sp = ResourceManager.Instance.Load<Sprite>(path);
+
+        if (sp == null)
+        {
+            Debug.LogWarning("[MainPanel] 主界面头像资源加载失败：" + path);
+            sp = ResourceManager.Instance.Load<Sprite>(UIPaths.PortraitMainRoot + "default_head");
+        }
+
+        imgRoleHead.sprite = sp;
     }
 
     private void OnClickSkill1()

@@ -29,6 +29,7 @@
       "speedGrowth": 0.25,
 
       "defaultPortraitId": "infantry_portrait",
+      "mainHeadId": "infantry_head",
       "starterSkillIds": [101, 102]
     },
     {
@@ -60,6 +61,7 @@
       "speedGrowth": 0.40,
 
       "defaultPortraitId": "sniper_portrait",
+      "mainHeadId": "sniper_head",
       "starterSkillIds": [201, 202]
     },
     {
@@ -91,6 +93,7 @@
       "speedGrowth": 0.30,
 
       "defaultPortraitId": "medic_portrait",
+      "mainHeadId": "medic_head",
       "starterSkillIds": [301, 302]
     },
     {
@@ -122,6 +125,7 @@
       "speedGrowth": 0.32,
 
       "defaultPortraitId": "engineer_portrait",
+      "mainHeadId": "engineer_head",
       "starterSkillIds": [401, 402]
     }
   ]
