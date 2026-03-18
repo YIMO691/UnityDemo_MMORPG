@@ -21,6 +21,7 @@ public static class UIPaths
     // Portrait
     public const string PortraitCreateRoleRoot = "Portrait/CreateRolePanel/";
     public const string PortraitMainRoot = "Portrait/MainPanel/";
+    public const string PortraitRoleHeadRoot = "Portrait/RoleHead/";
 
     // Role prefab paths
     public const string PlayerArmature = "Role/PlayerAmature/PlayerArmature";
