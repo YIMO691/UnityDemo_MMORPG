@@ -56,6 +56,9 @@ public static class PlayerFactory
 
         PlayerRuntimeData runtimeData = new PlayerRuntimeData
         {
+            currentHp = classConfig.maxHp,
+            currentMp = classConfig.maxMp,
+            isDead = false,
             hasValidPosition = false,
             posX = 0f,
             posY = 0f,
