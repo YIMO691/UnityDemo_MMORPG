@@ -7,4 +7,8 @@ public class MapConfig
     public string sceneName;
     public string displayName;
     public string mapImage;
+    public float worldMinX;
+    public float worldMaxX;
+    public float worldMinZ;
+    public float worldMaxZ;
 }

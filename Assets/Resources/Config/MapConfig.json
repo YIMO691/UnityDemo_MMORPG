@@ -4,7 +4,11 @@
       "id": 1,
       "sceneName": "GameScene",
       "displayName": "测试地图",
-      "mapImage": "map_test"
+      "mapImage": "map_test",
+      "worldMinX": 0,
+      "worldMaxX": 100,
+      "worldMinZ": 0,
+      "worldMaxZ": 100
     }
   ]
 }

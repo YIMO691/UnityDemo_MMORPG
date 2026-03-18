@@ -18,6 +18,7 @@ public static class UIPaths
     public const string ConfirmPanel = "ConfirmPanel";
     public const string AboutPanel = "AboutPanel";
     public const string MapPanel = "MapPanel";
+    public const string MapImageRoot = "Map/";
 
     // Portrait
     public const string PortraitCreateRoleRoot = "Portrait/CreateRolePanel/";
@@ -34,5 +35,9 @@ public static class UIPaths
     public const string RoleInfantry = "Role/Role_NoWeapon/Infantry";
     public const string RoleMedic = "Role/Role_NoWeapon/Medic";
     public const string RoleSniper = "Role/Role_NoWeapon/Sniper";
+
+    // Map image
+    public const string MapImageRoot = "Map/Main/";
+
 }
 
