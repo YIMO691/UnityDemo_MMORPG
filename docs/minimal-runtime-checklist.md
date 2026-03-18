@@ -48,7 +48,7 @@ BeginScene（启动）
 - UIMask.prefab（Popup 栈遮罩，支持点击关闭）
 
 ### 3.2 UI 窗口（Resources/UI/Windows）
-- Pages：BeginPanel、CreateRolePanel、MainPanel、ContinuePanel  
+- Pages：BeginPanel、CreateRolePanel、MainPanel、ContinuePanel、MapPanel  
 - Popups：ConfirmPanel、MessageTipPanel、RoleInfoPanel  
 - Items：Items/ContinueSlotItem
 
@@ -59,6 +59,7 @@ BeginScene（启动）
 
 ### 3.4 配置（Resources/Config）
 - RoleClassConfig.json（职业配置）
+- MapConfig.json（地图配置：sceneName、displayName、mapImage、worldMinX/worldMaxX/worldMinZ/worldMaxZ）
 
 ---
 
@@ -76,7 +77,7 @@ BeginScene（启动）
 ## 5. 脚本（关键运行脚本）
 
 ### 5.1 启动/初始化（Game/Boot）
-- AppRuntimeInitializer：BeforeSceneLoad 初始化 DataManager、UIManager、RoleDataManager、CreateRoleFlowController、RoleUIController  
+- AppRuntimeInitializer：BeforeSceneLoad 初始化 DataManager、UIManager、RoleDataManager、MapDataManager、NavigationService、CreateRoleFlowController、RoleUIController  
 - GameBootstrapper：兜底初始化  
 - StartGame：显示 BeginPanel
 
@@ -85,7 +86,7 @@ BeginScene（启动）
 - RoleUIController：订阅 OpenRoleInfoPanelEvent → 打开 RoleInfoPanel 并填充
 
 ### 5.3 场景装配（Game/GameScene）
-- GameSceneEntry：TryCreate Camera → TryAssemble Player → TryBind VirtualCamera（失败则 FallbackBind 主相机）→ Show MainPanel  
+- GameSceneEntry：TryCreate Camera → TryAssemble Player → TryBind VirtualCamera（失败则 FallbackBind 主相机）→ Show MainPanel → 注册 PlayerLocator、写入 runtime.Scene/pos、挂 PlayerNavigator(AgentId="Player")  
 - PlayerCharacterAssembler：确保 PlayerCameraRoot/CinemachineCameraTarget 存在，重挂职业外观  
 - CameraRigAssembler：从 Resources 创建相机或动态创建主相机；配置虚拟相机或降级
 
@@ -99,6 +100,7 @@ BeginScene（启动）
 
 - UIRouteNames：至少包含 BeginPanel、CreateRolePanel、MainPanel、SettingPanel、ContinuePanel、AboutPanel、RoleInfoPanel、ConfirmPanel、MessageTipPanel  
 - UIMainPages：注册 BeginPanel、MainPanel 等主页面
+- MapPanel：通过 OpenPanelEvent 打开；地图图片 RectTransform 需使用左下角为原点（Anchor/Pivot = 0,0）
 - 输入无效：检查 PlayerInput 的 Actions 绑定
 
 ---
@@ -120,12 +122,17 @@ BeginScene（启动）
   - [ ] MainCamera 与 PlayerFollowCamera 可加载；若缺失，运行时可由 CameraRigAssembler 自动创建主相机
 - 配置
   - [ ] Resources/Config/RoleClassConfig.json 存在且可解析（至少一条职业）
+  - [ ] Resources/Config/MapConfig.json 存在且可解析（当前场景对应一条记录，边界正确）
 - 输入
   - [ ] 仅保留 Game/CharacterControl/Input 下的 StarterAssets.inputactions（消除重复 GUID）
 - 程序集
   - [ ] Framework 与 Game 两个 asmdef 存在并编译通过
 - UI 路由
   - [ ] UIRouteNames 与 UIMainPages 定义齐全（BeginPanel、CreateRolePanel、MainPanel 等）
+- 寻路与地图
+  - [ ] 场景已 Bake NavMesh，Walkable 区域可行走
+  - [ ] MapPanel 可打开，地图图片加载成功，玩家标点随动
+  - [ ] 点击地图可发布导航请求（MapClickReceiver），玩家沿路径移动
 
 ## 8. 运行路径（从最小链路验证）
 1. 启动加载 BeginScene → UIManager 初始化 → 打开 BeginPanel
@@ -135,9 +142,10 @@ BeginScene（启动）
 3. 创角成功：
    - CreateRoleFlowController 保存到槽位 → 注入 DataManager 当前玩家与槽位 → 设置 GameRuntime → 加载 GameScene
 4. GameSceneEntry：
-   - TryCreate Camera → TryAssemble Player → TryBind VirtualCamera（失败则降级）→ 打开 MainPanel
+   - TryCreate Camera → TryAssemble Player → TryBind VirtualCamera（失败则降级）→ 打开 MainPanel → 注册 PlayerLocator、写入 runtime.Scene/pos、挂 PlayerNavigator
 5. MainPanel：
    - 点击头像 → 通过 RoleDataManager + RoleUIController 打开并填充 RoleInfoPanel
+   - 点击地图按钮 → 打开 MapPanel → 点击地图 → 触发自动寻路
 
 > 说明：本清单用于防止后续清理资源/目录时误删主流程所需的最小依赖，确保“BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI”始终可跑通。*** End Patch*** End Patch
 *** End Patch

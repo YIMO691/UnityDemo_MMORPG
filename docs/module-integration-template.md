@@ -26,7 +26,7 @@
 - 形态：Service / MonoBehaviour / ScriptableObject / 其他
 - 生命周期：初始化时机（BeforeSceneLoad / Start / 懒加载），销毁/清理策略
 - 单例与线程：是否单例、是否涉及异步/线程
-- 关键依赖：UIManager / DataManager / RoleDataManager / EventBus / Cinemachine / Input System / TextMeshPro
+- 关键依赖：UIManager / DataManager / RoleDataManager / EventBus / Cinemachine / Input System / TextMeshPro / NavMesh（如需）
 
 ---
 
@@ -51,6 +51,7 @@
 ## 5. 资源路径与常量（AssetPaths/UIPaths）
 - 是否需要新增 AssetPaths / UIPaths 常量
 - 资源归档到 Resources 规则是否满足（或后续 Addressables）
+  - 地图类：UIPaths.MapImageRoot、PortraitRoleHeadRoot 等
 
 ---
 
@@ -64,12 +65,14 @@
   - 通用事件 → Framework/EventDefine
   - 业务事件 → Game/Events
 - 解耦说明：不直接跨层引用类型，使用事件/路由/数据契约
+  - 导航类推荐：NavigationMoveRequestEvent / NavigationStopRequestEvent（负载 NavigationMoveRequest）
 
 ---
 
 ## 7. 输入 & 相机（如适用）
 - Input：是否复用 Player Action Map；是否需要新增 Action/Binding；GUID 统一性
 - Camera：是否需要跟随/锁定；是否依赖 Cinemachine vcam；是否兼容降级（FallbackBind）
+ - 光标：是否需要在焦点切换时解锁显示确保 UI 可点击
 
 ---
 
@@ -79,6 +82,7 @@
   - Save/Mapper（如需摘要或持久化映射）
 - 命名规范：PlayerXxxData、XxxConfig、XxxRequest
 - 序列化约束：字段类型、默认值、兼容策略
+ - 地图：MapConfig（sceneName/displayName/mapImage/worldMinX/worldMaxX/worldMinZ/worldMaxZ）
 
 ---
 
@@ -118,6 +122,7 @@ Assets/Scripts/Game/<Feature>/
 - [ ] 数据模型落位到 Game/Entity/<Domain>/Data
 - [ ] asmdef 依赖更新与循环依赖检查
 - [ ] 最小运行链路回归通过（见 minimal-runtime-checklist）
+ - [ ] 导航类：Bake NavMesh；NavigationService.Init；Registry 注册代理；UI 点击发布 NavigationMoveRequest
 
 ---
 

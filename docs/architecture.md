@@ -63,6 +63,20 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - CreateRoleFlowController：订阅创角事件，写存档、注入内存，切换场景
   - RoleUIController：订阅 OpenRoleInfoPanelEvent，显示并填充 RoleInfoPanel
 
+- 地图系统（Game/Map）
+  - MapConfig：每张地图世界边界与图片资源标识（worldMin/Max X/Z, mapImage）
+  - MapDataManager：从 Resources/Config/MapConfig.json 加载
+  - MapService：获取当前场景、玩家位置、当前地图配置（runtime.Scene 为空时回退 activeScene）
+  - MapPanel：显示地图名称、图片、玩家标点；标点依据 MapConfig 世界边界与 MapImage RectTransform 左下角原点映射
+  - PlayerLocator：注册/获取玩家 Transform，优先实时位置
+
+- 自动寻路（Game/Navigation）
+  - Contracts：INavigationAgent、NavigationMoveRequest
+  - Events：NavigationMoveRequestEvent、NavigationStopRequestEvent
+  - Runtime：NavigationPathSolver（NavMesh.SamplePosition/CalculatePath）、NavigationRegistry（代理注册表）、NavigationService（事件订阅→路径求解→分发）
+  - Components：BaseNavigator（通用路径驱动）、PlayerNavigator（将路径转为 StarterAssetsInputs 移动；支持取消保护时间与手动输入接管）
+  - UI：MapClickReceiver（点击地图 → 世界坐标转换 → 发布 NavigationMoveRequest）
+
 ---
 
 ## 4. 依赖与命名规范
@@ -79,6 +93,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 - 程序集引用
   - MMORPG.Framework：不引用 Game；保留最小依赖
   - MMORPG.Game：按需引用 Cinemachine/Input System/TextMeshPro
+  - 导航相关：依赖 Unity NavMesh（需在场景中 Bake 可走区域）
 
 ---
 
@@ -90,6 +105,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - PlayerFollowCamera：CinemachineVirtualCamera（运行时绑定 Follow/LookAt）
 - 输入资产
   - 仅保留 Game/CharacterControl/Input/StarterAssets.inputactions（GUID: 4419d82f33d36e848b3ed5af4c8da37e）；PlayerInput.m_Actions 必须指向此资产
+  - 光标策略：应用获得焦点时解锁并显示鼠标，保证 UI 可点击；纯移动/战斗场景按需锁定
 
 ---
 
@@ -100,6 +116,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 - 读档流程：GamePlayerDataService.LoadPlayerDataFromSlot → JsonMgr.LoadData
 - 摘要：PlayerSaveMetaMapper 将 PlayerData 转为 PlayerSaveMetaData，用于 Continue 列表
 - 版本：若数据结构变更，PlayerData 增加 version 字段，新增升级器（Upgrade Pipeline）在读档时迁移
+ - 运行时更新：进入场景后写入 runtime.Scene 与当前坐标，避免首次“未知地图”
 
 ---
 
