@@ -1,14 +1,17 @@
 using UnityEngine;
 using Game;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(StarterAssetsInputs))]
 public class PlayerNavigator : BaseNavigator
 {
     [SerializeField] private bool autoSprint = true;
     [SerializeField] private float manualCancelThreshold = 0.2f;
+    [SerializeField] private float cancelGraceTime = 0.25f;
 
     private StarterAssetsInputs input;
     private Camera mainCamera;
+    private float lastSetPathTime;
 
     protected override void Awake()
     {
@@ -21,13 +24,23 @@ public class PlayerNavigator : BaseNavigator
         mainCamera = Camera.main;
     }
 
+    public override void SetPath(Vector3[] newPath, float newStopDistance)
+    {
+        base.SetPath(newPath, newStopDistance);
+        lastSetPathTime = Time.time;
+    }
+
     protected override void Update()
     {
         if (mainCamera == null) mainCamera = Camera.main;
-        if (IsNavigating && HasManualInput())
+        if (IsNavigating)
         {
-            StopNavigation();
-            return;
+            bool inGrace = Time.time - lastSetPathTime < cancelGraceTime;
+            if (!inGrace && HasManualInput())
+            {
+                StopNavigation();
+                return;
+            }
         }
         base.Update();
     }
@@ -59,14 +72,46 @@ public class PlayerNavigator : BaseNavigator
     private bool HasManualInput()
     {
         if (input == null) return false;
+
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.wKey.isPressed ||
+                Keyboard.current.aKey.isPressed ||
+                Keyboard.current.sKey.isPressed ||
+                Keyboard.current.dKey.isPressed ||
+                Keyboard.current.spaceKey.isPressed)
+            {
+                return true;
+            }
+        }
+
+        if (Mouse.current != null)
+        {
+            if (Mouse.current.delta.ReadValue().sqrMagnitude > 0.01f)
+                return true;
+            if (Mouse.current.rightButton.isPressed)
+                return true;
+        }
+
+        if (Gamepad.current != null)
+        {
+            if (Gamepad.current.leftStick.ReadValue().sqrMagnitude > 0.01f) return true;
+            if (Gamepad.current.rightStick.ReadValue().sqrMagnitude > 0.01f) return true;
+            if (Gamepad.current.buttonSouth.isPressed) return true;
+        }
+#endif
         return input.move.sqrMagnitude > manualCancelThreshold * manualCancelThreshold
-               || input.jump
-               || input.look.sqrMagnitude > 0.001f;
+               || input.jump;
     }
 
     private Vector2 ConvertWorldDirectionToCameraInput(Vector3 worldDir)
     {
-        if (mainCamera == null) return new Vector2(worldDir.x, worldDir.z);
+        if (mainCamera == null)
+        {
+            Vector2 v = new Vector2(worldDir.x, worldDir.z);
+            return v.sqrMagnitude > 0.0001f ? v.normalized : Vector2.zero;
+        }
         Vector3 camForward = mainCamera.transform.forward;
         Vector3 camRight = mainCamera.transform.right;
         camForward.y = 0f;
@@ -76,7 +121,8 @@ public class PlayerNavigator : BaseNavigator
         float x = Vector3.Dot(worldDir, camRight);
         float y = Vector3.Dot(worldDir, camForward);
         Vector2 result = new Vector2(x, y);
-        if (result.sqrMagnitude > 1f) result.Normalize();
+        if (result.sqrMagnitude > 0.0001f) result = result.normalized;
+        else result = Vector2.zero;
         return result;
     }
 }
