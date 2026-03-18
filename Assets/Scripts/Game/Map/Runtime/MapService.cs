@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MapService
 {
@@ -10,7 +11,12 @@ public class MapService
     public string GetCurrentScene()
     {
         var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
-        return data?.runtimeData?.Scene;
+        string scene = data?.runtimeData?.Scene;
+        if (string.IsNullOrEmpty(scene))
+        {
+            scene = SceneManager.GetActiveScene().name;
+        }
+        return scene;
     }
 
     public Vector3 GetPlayerPosition()

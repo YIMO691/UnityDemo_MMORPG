@@ -44,8 +44,19 @@ public class MapDataManager
 
     public MapConfig GetByScene(string sceneName)
     {
-        if (string.IsNullOrEmpty(sceneName)) return null;
-        mapDict.TryGetValue(sceneName, out var config);
-        return config;
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        }
+
+        if (mapDict.TryGetValue(sceneName, out var config))
+            return config;
+
+        // 尝试使用当前激活场景名兜底
+        var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (!string.IsNullOrEmpty(active) && mapDict.TryGetValue(active, out config))
+            return config;
+
+        return null;
     }
 }

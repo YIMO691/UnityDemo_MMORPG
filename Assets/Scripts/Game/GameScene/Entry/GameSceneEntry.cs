@@ -54,6 +54,17 @@ public class GameSceneEntry : MonoBehaviour
         if (playerInstance != null)
         {
             PlayerLocator.Instance.Register(playerInstance.transform);
+            var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
+            if (data != null && data.runtimeData != null)
+            {
+                var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                data.runtimeData.Scene = active;
+                var p = playerInstance.transform.position;
+                data.runtimeData.posX = p.x;
+                data.runtimeData.posY = p.y;
+                data.runtimeData.posZ = p.z;
+                data.runtimeData.hasValidPosition = true;
+            }
         }
 
         Debug.Log("[GameSceneEntry] InitScene end");
