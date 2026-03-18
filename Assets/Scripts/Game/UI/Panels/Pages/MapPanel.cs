@@ -21,8 +21,7 @@ public class MapPanel : BasePanel
     [SerializeField] private RectTransform playerMarker;
     [SerializeField] private RectTransform mapImageRect;
 
-    private const float MapWorldWidth = 160f;
-    private const float MapWorldHeight = 160f;
+    // 使用 MapConfig 的 worldMin/Max 驱动映射（不再写死 160x160）
 
     protected override void OnCreate()
     {
@@ -107,12 +106,17 @@ public class MapPanel : BasePanel
         txtCoord.text = $"坐标: ({worldPos.x:F1}, {worldPos.z:F1})";
     }
 
-    private Vector2 WorldToMapPosition(Vector3 worldPos)
+    private Vector2 WorldToMapPosition(Vector3 worldPos, MapConfig config)
     {
-        if (mapImageRect == null) return Vector2.zero;
+        if (mapImageRect == null || config == null) return Vector2.zero;
 
-        float xPercent = Mathf.Clamp01(worldPos.x / MapWorldWidth);
-        float zPercent = Mathf.Clamp01(worldPos.z / MapWorldHeight);
+        float widthWorld = Mathf.Max(0.0001f, (config.worldMaxX - config.worldMinX));
+        float heightWorld = Mathf.Max(0.0001f, (config.worldMaxZ - config.worldMinZ));
+
+        float xPercent = (worldPos.x - config.worldMinX) / widthWorld;
+        float zPercent = (worldPos.z - config.worldMinZ) / heightWorld;
+        xPercent = Mathf.Clamp01(xPercent);
+        zPercent = Mathf.Clamp01(zPercent);
 
         float width = mapImageRect.rect.width;
         float height = mapImageRect.rect.height;
@@ -127,8 +131,15 @@ public class MapPanel : BasePanel
         if (playerMarker == null || mapImageRect == null)
             return;
 
+        MapConfig config = MapService.Instance.GetCurrentMapConfig();
+        if (config == null)
+        {
+            playerMarker.gameObject.SetActive(false);
+            return;
+        }
+
         Vector3 worldPos = GetCurrentPlayerWorldPosition();
-        Vector2 pos = WorldToMapPosition(worldPos);
+        Vector2 pos = WorldToMapPosition(worldPos, config);
         playerMarker.gameObject.SetActive(true);
         playerMarker.anchoredPosition = pos;
     }
