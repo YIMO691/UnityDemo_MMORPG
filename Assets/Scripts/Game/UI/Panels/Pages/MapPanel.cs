@@ -21,6 +21,9 @@ public class MapPanel : BasePanel
     [SerializeField] private RectTransform playerMarker;
     [SerializeField] private RectTransform mapImageRect;
 
+    private const float MapWorldWidth = 160f;
+    private const float MapWorldHeight = 160f;
+
     protected override void OnCreate()
     {
         if (btnClose != null)
@@ -100,31 +103,23 @@ public class MapPanel : BasePanel
         if (txtCoord == null)
             return;
 
-        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
-        if (playerData == null || playerData.runtimeData == null)
-        {
-            txtCoord.text = "坐标: (0, 0, 0)";
-            return;
-        }
-
-        float x = playerData.runtimeData.posX;
-        float y = playerData.runtimeData.posY;
-        float z = playerData.runtimeData.posZ;
-
-        txtCoord.text = $"坐标: ({x:F1}, {y:F1}, {z:F1})";
+        Vector3 worldPos = GetCurrentPlayerWorldPosition();
+        txtCoord.text = $"坐标: ({worldPos.x:F1}, {worldPos.z:F1})";
     }
 
-    private Vector2 WorldToMapPosition(Vector3 worldPos, MapConfig config)
+    private Vector2 WorldToMapPosition(Vector3 worldPos)
     {
-        float xPercent = (worldPos.x - config.worldMinX) / (config.worldMaxX - config.worldMinX);
-        float zPercent = (worldPos.z - config.worldMinZ) / (config.worldMaxZ - config.worldMinZ);
-        xPercent = Mathf.Clamp01(xPercent);
-        zPercent = Mathf.Clamp01(zPercent);
-        float width = mapImageRect != null ? mapImageRect.rect.width : 0f;
-        float height = mapImageRect != null ? mapImageRect.rect.height : 0f;
-        float x = xPercent * width;
-        float y = zPercent * height;
-        return new Vector2(x, y);
+        if (mapImageRect == null) return Vector2.zero;
+
+        float xPercent = Mathf.Clamp01(worldPos.x / MapWorldWidth);
+        float zPercent = Mathf.Clamp01(worldPos.z / MapWorldHeight);
+
+        float width = mapImageRect.rect.width;
+        float height = mapImageRect.rect.height;
+
+        float uiX = xPercent * width;
+        float uiY = zPercent * height;
+        return new Vector2(uiX, uiY);
     }
 
     private void RefreshPlayerMarker()
@@ -132,17 +127,26 @@ public class MapPanel : BasePanel
         if (playerMarker == null || mapImageRect == null)
             return;
 
-        MapConfig config = MapService.Instance.GetCurrentMapConfig();
-        Vector3 worldPos = MapService.Instance.GetPlayerPosition();
-
-        if (config == null)
-        {
-            playerMarker.gameObject.SetActive(false);
-            return;
-        }
-
-        Vector2 pos = WorldToMapPosition(worldPos, config);
+        Vector3 worldPos = GetCurrentPlayerWorldPosition();
+        Vector2 pos = WorldToMapPosition(worldPos);
         playerMarker.gameObject.SetActive(true);
         playerMarker.anchoredPosition = pos;
+    }
+
+    private Vector3 GetCurrentPlayerWorldPosition()
+    {
+        Transform t = PlayerLocator.Instance.GetPlayerTransform();
+        if (t != null) return t.position;
+
+        PlayerData data = GamePlayerDataService.Instance.GetCurrentPlayerData();
+        if (data != null && data.runtimeData != null)
+        {
+            return new Vector3(
+                data.runtimeData.posX,
+                data.runtimeData.posY,
+                data.runtimeData.posZ
+            );
+        }
+        return Vector3.zero;
     }
 }

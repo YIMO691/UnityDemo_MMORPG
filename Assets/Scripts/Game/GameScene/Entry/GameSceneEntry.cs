@@ -11,6 +11,9 @@ public class GameSceneEntry : MonoBehaviour
     private GameObject followCameraInstance;
     private readonly PlayerSaveService playerSaveService = new PlayerSaveService();
 
+    [SerializeField] private Camera miniMapCamera;
+    [SerializeField] private MiniMapCameraController miniMapController;
+
     private void Start()
     {
         Debug.Log("[GameSceneEntry] Start");
@@ -44,10 +47,77 @@ public class GameSceneEntry : MonoBehaviour
             SceneNavigator.EnterBeginScene();
             return;
         }
+
+        InitMiniMap();
         OpenMainPanel();
+
+        if (playerInstance != null)
+        {
+            PlayerLocator.Instance.Register(playerInstance.transform);
+        }
 
         Debug.Log("[GameSceneEntry] InitScene end");
     }
+
+    private void InitMiniMap()
+    {
+        if (miniMapCamera == null)
+        {
+            GameObject go = GameObject.Find("MiniMapCamera");
+            if (go != null)
+            {
+                miniMapCamera = go.GetComponent<Camera>();
+            }
+        }
+
+        if (miniMapCamera == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] miniMapCamera 未找到。");
+            return;
+        }
+
+        if (miniMapController == null)
+        {
+            miniMapController = miniMapCamera.GetComponent<MiniMapCameraController>();
+        }
+
+        if (miniMapController == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] MiniMapCameraController 缺失。");
+            return;
+        }
+
+        RenderTexture rt = ResourceManager.Instance.Load<RenderTexture>(AssetPaths.MiniMapRenderTexture);
+        if (rt == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] 小地图 RenderTexture 加载失败: " + AssetPaths.MiniMapRenderTexture);
+            return;
+        }
+
+        miniMapCamera.targetTexture = rt;
+
+        MiniMapService.Instance.Register(miniMapCamera, rt, miniMapController);
+
+        if (playerInstance == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] playerInstance 为空，无法绑定 MiniMap target。");
+            return;
+        }
+
+        Transform target = playerInstance.transform;
+        if (target == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] PlayerCameraRoot 未找到，改为绑定玩家根节点。");
+            target = playerInstance.transform;
+        }
+
+        miniMapController.SetTarget(target);
+        MiniMapService.Instance.BindTarget(target);
+
+        Debug.Log("[GameSceneEntry] MiniMap 初始化完成，目标 = " + target.name);
+    }
+
+
 
     private bool TryCreatePlayerCharacter() { return false; }
     private string GetRoleVisualPath(int classId) { return null; }
@@ -125,5 +195,7 @@ public class GameSceneEntry : MonoBehaviour
             Destroy(followCameraInstance);
             followCameraInstance = null;
         }
+        MiniMapService.Instance.Clear();
+        PlayerLocator.Instance.Clear();
     }
 }
