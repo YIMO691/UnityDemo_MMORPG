@@ -6,9 +6,9 @@
       "displayName": "测试地图",
       "mapImage": "map_test",
       "worldMinX": 0,
-      "worldMaxX": 100,
+      "worldMaxX": 160,
       "worldMinZ": 0,
-      "worldMaxZ": 100
+      "worldMaxZ": 160
     }
   ]
 }
