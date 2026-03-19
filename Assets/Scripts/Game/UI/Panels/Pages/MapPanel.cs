@@ -37,6 +37,15 @@ public class MapPanel : BasePanel
     {
         if (btnClose != null)
             btnClose.onClick.AddListener(OnClickClose);
+        if (pathRoot != null)
+        {
+            var img = pathRoot.GetComponent<Image>();
+            if (img != null)
+            {
+                img.enabled = false;
+                img.raycastTarget = false;
+            }
+        }
     }
 
     protected override void OnShow()
@@ -191,6 +200,7 @@ public class MapPanel : BasePanel
 
         Image seg = Instantiate(pathSegmentPrefab, pathRoot);
         seg.gameObject.SetActive(true);
+        seg.raycastTarget = false;
         // 确保有可渲染的 Sprite（Image 没有 Sprite 会不渲染）
         if (seg.sprite == null)
         {
