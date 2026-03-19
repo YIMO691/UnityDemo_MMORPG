@@ -183,27 +183,63 @@ public class MapPanel : BasePanel
 
     private void DrawPathSegment(Vector2 from, Vector2 to, Color color)
     {
-        if (pathRoot == null || pathSegmentPrefab == null) return;
+        if (pathRoot == null || pathSegmentPrefab == null)
+        {
+            Debug.LogWarning("[MapPanel] DrawPathSegment 失败，pathRoot 或 pathSegmentPrefab 为空。");
+            return;
+        }
+
         Image seg = Instantiate(pathSegmentPrefab, pathRoot);
+        seg.gameObject.SetActive(true);
+        // 确保有可渲染的 Sprite（Image 没有 Sprite 会不渲染）
+        if (seg.sprite == null)
+        {
+            var builtin = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
+            seg.sprite = builtin;
+        }
+        seg.type = Image.Type.Simple;
+        // 默认色透明度防御
+        if (color.a <= 0f)
+        {
+            color.a = 1f;
+        }
         seg.color = color;
+
+        seg.transform.SetAsLastSibling();
+
         RectTransform rt = seg.rectTransform;
+
         Vector2 dir = to - from;
         float length = dir.magnitude;
+
         rt.anchorMin = new Vector2(0f, 0f);
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
+
         rt.anchoredPosition = (from + to) * 0.5f;
-        rt.sizeDelta = new Vector2(length, pathThickness);
+        float thickness = pathThickness > 0f ? pathThickness : 6f;
+        rt.sizeDelta = new Vector2(length, thickness);
+
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        rt.localEulerAngles = new Vector3(0f, 0f, angle);
+        rt.localRotation = Quaternion.Euler(0f, 0f, angle);
+
         pathSegments.Add(rt);
+
+        Debug.Log($"[MapPanel] 已创建线段，length={length}, pos={rt.anchoredPosition}, angle={angle}");
     }
+
 
     private void RefreshPathVisual()
     {
         ClearPathVisual();
         var state = NavigationService.Instance.GetPlayerVisualState();
+
+        Debug.Log($"[MapPanel] RefreshPathVisual -> hasPath={state.hasPath}, isReachable={state.isReachable}, " +
+             $"pathPointsNull={state.pathPoints == null}, " +
+             $"pathCount={(state.pathPoints == null ? 0 : state.pathPoints.Length)}");
+
         if (!state.hasPath || !state.isReachable || state.pathPoints == null || state.pathPoints.Length == 0) return;
+
         MapConfig config = MapService.Instance.GetCurrentMapConfig();
         if (config == null) return;
         Vector3 playerWorldPos = GetCurrentPlayerWorldPosition();
@@ -216,7 +252,7 @@ public class MapPanel : BasePanel
             lastUiPos = nextUiPos;
         }
     }
-
+        
     private void RefreshDestinationMarker()
     {
         if (destinationMarker == null || mapImageRect == null) return;
