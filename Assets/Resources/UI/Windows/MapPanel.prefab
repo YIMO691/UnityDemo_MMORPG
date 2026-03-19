@@ -754,6 +754,7 @@ MonoBehaviour:
   unreachablePathColor: {r: 0, g: 0, b: 0, a: 0}
   reachableDestinationColor: {r: 0, g: 0, b: 0, a: 0}
   unreachableDestinationColor: {r: 0, g: 0, b: 0, a: 0}
+  enablePathPoolDebugLog: 1
 --- !u!114 &7952855912969873631
 MonoBehaviour:
   m_ObjectHideFlags: 0

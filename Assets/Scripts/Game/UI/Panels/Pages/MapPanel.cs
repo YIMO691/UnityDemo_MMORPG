@@ -263,7 +263,7 @@ public class MapPanel : BasePanel
 
         pathSegments.Add(rt);
 
-        Debug.Log($"[MapPanel] 已创建线段，length={length}, pos={rt.anchoredPosition}, angle={angle}");
+        //Debug.Log($"[MapPanel] 已创建线段，length={length}, pos={rt.anchoredPosition}, angle={angle}");
 
         activePathSegments.Add(go);
         if (enablePathPoolDebugLog)
