@@ -290,8 +290,8 @@ namespace Game
             // move the player
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
-            Debug.Log("_animationBlend" + _animationBlend.ToString());
-            Debug.Log("inputMagnitude" + inputMagnitude.ToString());
+            //Debug.Log("_animationBlend" + _animationBlend.ToString());
+            //Debug.Log("inputMagnitude" + inputMagnitude.ToString());
             // update animator if using character
             if (_hasAnimator)
             {
