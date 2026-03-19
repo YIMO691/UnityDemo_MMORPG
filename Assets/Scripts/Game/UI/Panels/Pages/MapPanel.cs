@@ -21,11 +21,16 @@ public class MapPanel : BasePanel
     [Header("Optional")]
     [SerializeField] private RectTransform playerMarker;
     [SerializeField] private RectTransform mapImageRect;
+    [SerializeField] private RectTransform destinationMarker;
 
     [Header("Path Visual")]
     [SerializeField] private RectTransform pathRoot;
     [SerializeField] private Image pathSegmentPrefab;
     [SerializeField] private float pathThickness = 6f;
+    [SerializeField] private Color reachablePathColor = default;
+    [SerializeField] private Color unreachablePathColor = default;
+    [SerializeField] private Color reachableDestinationColor = default;
+    [SerializeField] private Color unreachableDestinationColor = default;
     private readonly List<RectTransform> pathSegments = new List<RectTransform>();
 
     protected override void OnCreate()
@@ -52,13 +57,17 @@ public class MapPanel : BasePanel
             btnClose.onClick.RemoveListener(OnClickClose);
     }
 
-    private void Update()
-    {
-        if (!IsVisible) return;
-        RefreshPlayerMarker();
-        RefreshPathVisual();
-    }
+    protected override void Update()
+{
+    base.Update();
 
+    if (!IsVisible)
+        return;
+
+    RefreshPlayerMarker();
+    RefreshDestinationMarker();
+    RefreshPathVisual();
+}
     private void OnClickClose()
     {
         UIManager.Instance.HidePanel<MapPanel>();
@@ -172,10 +181,11 @@ public class MapPanel : BasePanel
         pathSegments.Clear();
     }
 
-    private void DrawPathSegment(Vector2 from, Vector2 to)
+    private void DrawPathSegment(Vector2 from, Vector2 to, Color color)
     {
         if (pathRoot == null || pathSegmentPrefab == null) return;
         Image seg = Instantiate(pathSegmentPrefab, pathRoot);
+        seg.color = color;
         RectTransform rt = seg.rectTransform;
         Vector2 dir = to - from;
         float length = dir.magnitude;
@@ -192,20 +202,46 @@ public class MapPanel : BasePanel
     private void RefreshPathVisual()
     {
         ClearPathVisual();
-        PlayerNavigator navigator = GetPlayerNavigator();
-        if (navigator == null || !navigator.HasPath()) return;
-        Vector3[] points = navigator.GetPathPoints();
-        int startIndex = navigator.GetCurrentPathIndex();
-        if (points == null || points.Length < 2) return;
+        var state = NavigationService.Instance.GetPlayerVisualState();
+        if (!state.hasPath || !state.isReachable || state.pathPoints == null || state.pathPoints.Length == 0) return;
         MapConfig config = MapService.Instance.GetCurrentMapConfig();
         if (config == null) return;
         Vector3 playerWorldPos = GetCurrentPlayerWorldPosition();
         Vector2 lastUiPos = WorldToMapPosition(playerWorldPos, config);
-        for (int i = startIndex; i < points.Length; i++)
+        Color color = reachablePathColor == default ? Color.green : reachablePathColor;
+        for (int i = 0; i < state.pathPoints.Length; i++)
         {
-            Vector2 nextUiPos = WorldToMapPosition(points[i], config);
-            DrawPathSegment(lastUiPos, nextUiPos);
+            Vector2 nextUiPos = WorldToMapPosition(state.pathPoints[i], config);
+            DrawPathSegment(lastUiPos, nextUiPos, color);
             lastUiPos = nextUiPos;
+        }
+    }
+
+    private void RefreshDestinationMarker()
+    {
+        if (destinationMarker == null || mapImageRect == null) return;
+        var state = NavigationService.Instance.GetPlayerVisualState();
+        if (!state.hasPath && state.destination == Vector3.zero)
+        {
+            destinationMarker.gameObject.SetActive(false);
+            return;
+        }
+        MapConfig config = MapService.Instance.GetCurrentMapConfig();
+        if (config == null)
+        {
+            destinationMarker.gameObject.SetActive(false);
+            return;
+        }
+        Vector2 uiPos = WorldToMapPosition(state.destination, config);
+        destinationMarker.gameObject.SetActive(true);
+        destinationMarker.anchoredPosition = uiPos;
+        var img = destinationMarker.GetComponent<Image>();
+        if (img != null)
+        {
+            if (state.isReachable)
+                img.color = reachableDestinationColor == default ? Color.green : reachableDestinationColor;
+            else
+                img.color = unreachableDestinationColor == default ? Color.red : unreachableDestinationColor;
         }
     }
 
