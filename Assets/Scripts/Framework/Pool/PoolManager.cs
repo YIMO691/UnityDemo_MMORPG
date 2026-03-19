@@ -65,6 +65,25 @@ public class PoolManager : MonoBehaviour
         return pools.TryGetValue(key, out pool);
     }
 
+    public bool TryGetPoolStats(string key, out PoolStats stats)
+    {
+        stats = default;
+        if (!pools.TryGetValue(key, out var pool)) return false;
+        stats = pool.GetStats();
+        return true;
+    }
+
+    public List<PoolStats> GetAllPoolStats()
+    {
+        var result = new List<PoolStats>();
+        foreach (var kv in pools)
+        {
+            result.Add(kv.Value.GetStats());
+        }
+        result.Sort((a, b) => string.CompareOrdinal(a.PoolKey, b.PoolKey));
+        return result;
+    }
+
     public string GetPoolDebugInfo(string key)
     {
         if (!pools.TryGetValue(key, out var pool))

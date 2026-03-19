@@ -72,4 +72,18 @@ public class ObjectPool
         CreateCount++;
         return go;
     }
+
+    public PoolStats GetStats()
+    {
+        return new PoolStats
+        {
+            PoolKey = Key,
+            Total = TotalCount,
+            Active = ActiveCount,
+            Inactive = InactiveCount,
+            Create = CreateCount,
+            Spawn = SpawnCount,
+            Recycle = RecycleCount
+        };
+    }
 }
