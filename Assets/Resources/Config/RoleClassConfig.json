@@ -1,0 +1,132 @@
+{
+  "list": [
+    {
+      "id": 1,
+      "className": "infantry",
+      "displayName": "步兵",
+      "description": "均衡型前线作战职业，拥有较高生存能力与稳定输出，适合新手与长期培养。",
+      "roleType": "frontline",
+      "baseLevel": 1,
+      "baseExp": 0,
+      "baseExpToLevel": 100,
+      "expGrowthRate": 1.25,
+
+      "maxHp": 180,
+      "maxMp": 60,
+      "attack": 22,
+      "defense": 16,
+      "speed": 9,
+
+      "critRate": 0.05,
+      "critDamage": 1.50,
+      "hitRate": 0.95,
+      "dodgeRate": 0.03,
+
+      "hpGrowth": 24,
+      "mpGrowth": 6,
+      "attackGrowth": 3.2,
+      "defenseGrowth": 2.6,
+      "speedGrowth": 0.25,
+
+      "defaultPortraitId": "infantry_portrait",
+      "mainHeadId": "infantry_head",
+      "starterSkillIds": [101, 102]
+    },
+    {
+      "id": 2,
+      "className": "sniper",
+      "displayName": "狙击手",
+      "description": "高爆发远程职业，拥有优秀的命中与暴击能力，但身板较脆，依赖站位与操作。",
+      "roleType": "ranged_dps",
+      "baseLevel": 1,
+      "baseExp": 0,
+      "baseExpToLevel": 100,
+      "expGrowthRate": 1.22,
+
+      "maxHp": 110,
+      "maxMp": 80,
+      "attack": 31,
+      "defense": 8,
+      "speed": 13,
+
+      "critRate": 0.16,
+      "critDamage": 1.80,
+      "hitRate": 0.98,
+      "dodgeRate": 0.07,
+
+      "hpGrowth": 14,
+      "mpGrowth": 8,
+      "attackGrowth": 4.4,
+      "defenseGrowth": 1.2,
+      "speedGrowth": 0.40,
+
+      "defaultPortraitId": "sniper_portrait",
+      "mainHeadId": "sniper_head",
+      "starterSkillIds": [201, 202]
+    },
+    {
+      "id": 3,
+      "className": "medic",
+      "displayName": "医疗兵",
+      "description": "擅长治疗、恢复与辅助的支援职业，输出较低，但能有效提升团队续航。",
+      "roleType": "support",
+      "baseLevel": 1,
+      "baseExp": 0,
+      "baseExpToLevel": 100,
+      "expGrowthRate": 1.20,
+
+      "maxHp": 135,
+      "maxMp": 150,
+      "attack": 16,
+      "defense": 11,
+      "speed": 10,
+
+      "critRate": 0.04,
+      "critDamage": 1.40,
+      "hitRate": 0.93,
+      "dodgeRate": 0.05,
+
+      "hpGrowth": 18,
+      "mpGrowth": 16,
+      "attackGrowth": 2.1,
+      "defenseGrowth": 1.8,
+      "speedGrowth": 0.30,
+
+      "defaultPortraitId": "medic_portrait",
+      "mainHeadId": "medic_head",
+      "starterSkillIds": [301, 302]
+    },
+    {
+      "id": 4,
+      "className": "engineer",
+      "displayName": "工程师",
+      "description": "擅长装置部署、控场与持续作战的功能型职业，综合能力均衡，战术上限较高。",
+      "roleType": "utility",
+      "baseLevel": 1,
+      "baseExp": 0,
+      "baseExpToLevel": 100,
+      "expGrowthRate": 1.23,
+
+      "maxHp": 145,
+      "maxMp": 120,
+      "attack": 21,
+      "defense": 12,
+      "speed": 11,
+
+      "critRate": 0.08,
+      "critDamage": 1.55,
+      "hitRate": 0.95,
+      "dodgeRate": 0.05,
+
+      "hpGrowth": 19,
+      "mpGrowth": 12,
+      "attackGrowth": 3.0,
+      "defenseGrowth": 2.0,
+      "speedGrowth": 0.32,
+
+      "defaultPortraitId": "engineer_portrait",
+      "mainHeadId": "engineer_head",
+      "starterSkillIds": [401, 402]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+using UnityEngine;
+
+// 游戏启动入口：初始化 UIManager、创角流程控制器，并显示主菜单界面
+public class StartGame : MonoBehaviour
+{
+    private void Start()
+    {
+        DataManager.Instance.Init();
+        UIManager.Instance.Init();
+        RoleDataManager.Instance.Init();
+        CreateRoleFlowController.Instance.Init();
+        RoleUIController.Instance.Init();
+
+        UIManager.Instance.ShowMainPage(UIRouteNames.BeginPanel, hideOld: false, useFade: false);
+    }
+}
