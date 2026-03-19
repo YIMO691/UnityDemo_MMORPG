@@ -60,6 +60,18 @@ public class PoolManager : MonoBehaviour
         return pool.Spawn(parent);
     }
 
+    public bool TryGetPool(string key, out ObjectPool pool)
+    {
+        return pools.TryGetValue(key, out pool);
+    }
+
+    public string GetPoolDebugInfo(string key)
+    {
+        if (!pools.TryGetValue(key, out var pool))
+            return $"Pool[{key}] not found";
+        return $"Pool[{key}] Total={pool.TotalCount}, Active={pool.ActiveCount}, Inactive={pool.InactiveCount}, Create={pool.CreateCount}, Spawn={pool.SpawnCount}, Recycle={pool.RecycleCount}";
+    }
+
     public void Recycle(GameObject go)
     {
         if (go == null) return;

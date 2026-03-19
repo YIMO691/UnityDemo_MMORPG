@@ -32,6 +32,8 @@ public class MapPanel : BasePanel
     [SerializeField] private Color reachableDestinationColor = default;
     [SerializeField] private Color unreachableDestinationColor = default;
     private readonly List<RectTransform> pathSegments = new List<RectTransform>();
+    [SerializeField] private bool enablePathPoolDebugLog = false;
+    private readonly List<GameObject> activePathSegments = new List<GameObject>();
 
     protected override void OnCreate()
     {
@@ -82,6 +84,12 @@ public class MapPanel : BasePanel
         RefreshPlayerMarker();
         RefreshDestinationMarker();
         RefreshPathVisual();
+    }
+
+    protected override void OnHide()
+    {
+        ClearPathVisual();
+        base.OnHide();
     }
 
     private void OnClickClose()
@@ -190,11 +198,22 @@ public class MapPanel : BasePanel
 
     private void ClearPathVisual()
     {
-        for (int i = 0; i < pathSegments.Count; i++)
+        if (enablePathPoolDebugLog)
         {
-            if (pathSegments[i] != null) PoolManager.Instance.Recycle(pathSegments[i].gameObject);
+            Debug.Log($"[MapPanel] ClearPathVisual before activeCount={activePathSegments.Count}");
         }
+        for (int i = 0; i < activePathSegments.Count; i++)
+        {
+            var go = activePathSegments[i];
+            if (go != null) PoolManager.Instance.Recycle(go);
+        }
+        activePathSegments.Clear();
         pathSegments.Clear();
+        if (enablePathPoolDebugLog)
+        {
+            Debug.Log($"[MapPanel] ClearPathVisual after activeCount={activePathSegments.Count}");
+            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+        }
     }
 
     private void DrawPathSegment(Vector2 from, Vector2 to, Color color)
@@ -245,26 +264,59 @@ public class MapPanel : BasePanel
         pathSegments.Add(rt);
 
         Debug.Log($"[MapPanel] 已创建线段，length={length}, pos={rt.anchoredPosition}, angle={angle}");
+
+        activePathSegments.Add(go);
+        if (enablePathPoolDebugLog)
+        {
+            Debug.Log($"[MapPanel] DrawPathSegment activeCount={activePathSegments.Count}, len={length:F2}");
+        }
     }
 
 
     private void RefreshPathVisual()
     {
+        if (enablePathPoolDebugLog)
+        {
+            Debug.Log("[MapPanel] RefreshPathVisual begin");
+            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+        }
         ClearPathVisual();
         PlayerNavigator navigator = GetPlayerNavigator();
-        if (navigator == null || !navigator.HasPath()) return;
+        if (navigator == null || !navigator.HasPath())
+        {
+            if (enablePathPoolDebugLog)
+            {
+                Debug.Log("[MapPanel] 无可绘制路径");
+                Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+            }
+            return;
+        }
         Vector3[] points = navigator.GetPathPoints();
         int startIndex = navigator.GetCurrentPathIndex();
-        if (points == null || points.Length < 2) return;
+        if (points == null || points.Length < 2)
+        {
+            if (enablePathPoolDebugLog)
+            {
+                Debug.Log("[MapPanel] 路径点不足");
+                Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+            }
+            return;
+        }
         MapConfig config = MapService.Instance.GetCurrentMapConfig();
         if (config == null) return;
         Vector3 playerWorldPos = GetCurrentPlayerWorldPosition();
         Vector2 lastUiPos = WorldToMapPosition(playerWorldPos, config);
+        Color color = reachablePathColor == default ? Color.green : reachablePathColor;
         for (int i = startIndex; i < points.Length; i++)
         {
             Vector2 nextUiPos = WorldToMapPosition(points[i], config);
-            DrawPathSegment(lastUiPos, nextUiPos,Color.green);
+            DrawPathSegment(lastUiPos, nextUiPos, color);
             lastUiPos = nextUiPos;
+        }
+        if (enablePathPoolDebugLog)
+        {
+            Debug.Log($"[MapPanel] RefreshPathVisual end activeCount={activePathSegments.Count}");
+            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
         }
     }
 
