@@ -12,12 +12,17 @@
   - 分层渲染（Bottom/Normal/Popup/Top），主页面独占呈现
   - 路由常量与主页面注册（UIRouteNames、UIMainPages）
   - 通用确认弹窗通过路由+反射解耦
-- 角色控制与输入
-  - StarterAssets 驱动：ThirdPersonController、StarterAssetsInputs、BasicRigidBodyPush
-  - 唯一 StarterAssets.inputactions（GUID 固定）绑定到 PlayerInput
+- 角色控制与输入（已去除外部 StarterAssets 依赖）
+  - ThirdPersonController、StarterAssetsInputs 源码已纳入 Game/CharacterControl
+  - 输入资产 StarterAssets.inputactions 已随项目放置于 Game 下，由 PlayerInput 直接引用
 - 场景装配与相机降级
   - GameSceneEntry + Assemblers（角色/相机）
   - 无虚拟相机或绑定失败时，主相机自动降级为跟随 LookAt
+- 地图与导航
+  - MapConfig（世界边界）+ MapPanel（X-Z 映射、红点/终点/路径显示）
+  - NavigationService + PathSolver + PlayerNavigator（事件解耦，取消保护时间）
+- 轻量对象池
+  - Framework/Pool 提供 IPoolable、PoolManager、ObjectPool（Map 路径段等已接入）
 - 存档体系
   - GamePlayerDataService 管理当前玩家与槽位读写
   - PlayerSaveMetaMapper 构建 Continue 列表摘要
@@ -28,13 +33,13 @@
 
 1) 打开项目（Unity 2022.3.62f3）  
 2) 安装/确认包  
-   - Cinemachine、Input System、TextMeshPro  
+   - Cinemachine、Input System、TextMeshPro（无需外部 StarterAssets 包）  
 3) 设置 Build Settings  
    - 加入 Assets/Scenes/BeginScene.unity 与 Assets/Scenes/GameScene.unity  
 4) 校验输入绑定  
    - PlayerArmature 的 PlayerInput.m_Actions 指向  
      Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions  
-   - GUID 为 4419d82f33d36e848b3ed5af4c8da37e  
+   - 该输入资产随项目提供，无需额外导入包  
 5) 运行 BeginScene  
    - 开始游戏 → 创角 → 自动存档并进入 GameScene  
    - 继续游戏 → 打开 ContinuePanel 选择存档  
@@ -58,134 +63,18 @@
   - 创角流程：[CreateRoleFlowController.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Flow/CreateRoleFlowController.cs)  
   - 存档服务：[GamePlayerDataService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/GamePlayerDataService.cs)、[PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/PlayerSaveService.cs)
 
-## 目录速览
+## 目录速览（简版）
 
 ```
 Assets
-├─ Scenes
-│  ├─ BeginScene.unity
-│  └─ GameScene.unity
-│
+├─ Scenes/BeginScene.unity | GameScene.unity
 ├─ Resources
-│  ├─ UI
-│  │  ├─ Root
-│  │  │  ├─ PanelCanvas.prefab
-│  │  │  └─ UIMask.prefab
-│  │  └─ Windows
-│  │     ├─ Pages
-│  │     │  ├─ BeginPanel.prefab
-│  │     │  ├─ CreateRolePanel.prefab
-│  │     │  ├─ ContinuePanel.prefab
-│  │     │  └─ MainPanel.prefab
-│  │     ├─ Popups
-│  │     │  ├─ RoleInfoPanel.prefab
-│  │     │  ├─ MessageTipPanel.prefab
-│  │     │  └─ ConfirmPanel.prefab
-│  │     └─ AboutPanel.prefab
-│  │
-│  ├─ Role
-│  │  └─ PlayerAmature
-│  │     ├─ PlayerArmature.prefab
-│  │     ├─ MainCamera.prefab
-│  │     └─ PlayerFollowCamera.prefab
-│  │
-│  └─ Config
-│     └─ RoleClassConfig.json
-│
+│  ├─ UI/Root, UI/Windows（页面/弹窗）
+│  ├─ Map/Main（地图图片）
+│  └─ Config（RoleClassConfig.json、MapConfig.json）
 └─ Scripts
-   ├─ Framework                          # 基础设施（无业务模型）
-   │  ├─ UI
-   │  │  ├─ Base
-   │  │  │  └─ BasePanel.cs
-   │  │  ├─ Services
-   │  │  │  └─ UIDialogService.cs
-   │  │  ├─ UIMainPages.cs
-   │  │  └─ UIRouteNames.cs
-   │  ├─ Event
-   │  │  ├─ EventBus.cs
-   │  │  └─ EventDefine
-   │  │     └─ UIEvents/*.cs
-   │  ├─ Managers
-   │  │  ├─ UIManager.cs
-   │  │  ├─ ResourceManager.cs
-   │  │  ├─ AudioManager.cs
-   │  │  └─ DataManager.cs                # 设置/槽位/文件名/基础 IO
-   │  ├─ Json
-   │  │  └─ JsonMgr.cs
-   │  └─ Consts
-   │     ├─ AssetPaths.cs
-   │     └─ UIPaths.cs
-   │
-   ├─ Game                                # 业务域
-   │  ├─ Boot
-   │  │  ├─ AppRuntimeInitializer.cs
-   │  │  ├─ GameBootstrapper.cs
-   │  │  └─ StartGame.cs
-   │  │
-   │  ├─ CharacterControl
-   │  │  ├─ Input
-   │  │  │  ├─ StarterAssets.inputactions
-   │  │  │  └─ StarterAssetsInputs.cs
-   │  │  └─ ThirdPerson
-   │  │     ├─ ThirdPersonController.cs
-   │  │     └─ BasicRigidBodyPush.cs
-   │  │
-   │  ├─ GameScene
-   │  │  ├─ Entry
-   │  │  │  └─ GameSceneEntry.cs
-   │  │  └─ Assemblers
-   │  │     ├─ PlayerCharacterAssembler.cs
-   │  │     └─ CameraRigAssembler.cs
-   │  │
-   │  ├─ Entity
-   │  │  ├─ Player
-   │  │  │  └─ Data
-   │  │  │     ├─ Base
-   │  │  │     │  ├─ PlayerData.cs
-   │  │  │     │  ├─ PlayerBaseData.cs
-   │  │  │     │  └─ PlayerAttributeData.cs
-   │  │  │     ├─ Progress
-   │  │  │     │  └─ PlayerProgressData.cs
-   │  │  │     └─ Runtime
-   │  │  │        └─ PlayerRuntimeData.cs
-   │  │  └─ RoleClass
-   │  │     ├─ Data
-   │  │     │  ├─ RoleClassConfig.cs
-   │  │     │  └─ RoleClassConfigList.cs
-   │  │     └─ Manager
-   │  │        └─ RoleDataManager.cs
-   │  │
-   │  ├─ Save
-   │  │  ├─ Mapper
-   │  │  │  └─ PlayerSaveMetaMapper.cs
-   │  │  ├─ GamePlayerDataService.cs
-   │  │  └─ PlayerSaveService.cs
-   │  │
-   │  ├─ Flow
-   │  │  └─ CreateRoleFlowController.cs
-   │  │
-   │  └─ UI
-   │     ├─ Controllers
-   │     │  └─ RoleUIController.cs
-   │     └─ Panels
-   │        ├─ Pages
-   │        │  ├─ BeginPanel.cs
-   │        │  ├─ CreateRolePanel.cs
-   │        │  ├─ ContinuePanel.cs
-   │        │  ├─ MainPanel.cs
-   │        │  └─ SettingPanel.cs
-   │        ├─ Popups
-   │        │  ├─ RoleInfoPanel.cs
-   │        │  ├─ MessageTipPanel.cs
-   │        │  └─ AboutPanel.cs
-   │        └─ Items
-   │           └─ ContinueSlotItem.cs
-   │
-   └─ Editor                              # 编辑器扩展
-      ├─ Config
-      │  └─ RoleClassConfigEditorWindow.cs
-      └─ Scene
-         └─ SceneMenu.cs
+   ├─ Framework（UI/Event/Managers/Json/Consts/Pool）
+   └─ Game（Boot/CharacterControl/GameScene/Entity/Save/Flow/UI/Map/Navigation）
 ```
 
 ## UI 与事件清单
@@ -215,8 +104,8 @@ Assets
 ## 输入与相机
 
 - 输入  
-  - 资产：Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions（GUID: 4419d82f33d36e848b3ed5af4c8da37e）  
-  - 代码：[StarterAssetsInputs.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/CharacterControl/Input/StarterAssetsInputs.cs)
+  - 资产：Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions（项目内提供）  
+  - 代码：StarterAssetsInputs.cs（项目内源码，无外部包依赖）
 - 相机  
   - 跟随相机使用 CinemachineVirtualCamera；失败则降级  
   - 降级逻辑见 CameraRigAssembler.FallbackBind
