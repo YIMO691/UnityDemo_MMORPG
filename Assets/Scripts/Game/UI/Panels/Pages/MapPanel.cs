@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class MapPanel : BasePanel
 {
@@ -21,7 +22,11 @@ public class MapPanel : BasePanel
     [SerializeField] private RectTransform playerMarker;
     [SerializeField] private RectTransform mapImageRect;
 
-    // 使用 MapConfig 的 worldMin/Max 驱动映射（不再写死 160x160）
+    [Header("Path Visual")]
+    [SerializeField] private RectTransform pathRoot;
+    [SerializeField] private Image pathSegmentPrefab;
+    [SerializeField] private float pathThickness = 6f;
+    private readonly List<RectTransform> pathSegments = new List<RectTransform>();
 
     protected override void OnCreate()
     {
@@ -45,6 +50,13 @@ public class MapPanel : BasePanel
     {
         if (btnClose != null)
             btnClose.onClick.RemoveListener(OnClickClose);
+    }
+
+    private void Update()
+    {
+        if (!IsVisible) return;
+        RefreshPlayerMarker();
+        RefreshPathVisual();
     }
 
     private void OnClickClose()
@@ -142,6 +154,59 @@ public class MapPanel : BasePanel
         Vector2 pos = WorldToMapPosition(worldPos, config);
         playerMarker.gameObject.SetActive(true);
         playerMarker.anchoredPosition = pos;
+    }
+
+    private PlayerNavigator GetPlayerNavigator()
+    {
+        Transform t = PlayerLocator.Instance.GetPlayerTransform();
+        if (t == null) return null;
+        return t.GetComponent<PlayerNavigator>();
+    }
+
+    private void ClearPathVisual()
+    {
+        for (int i = 0; i < pathSegments.Count; i++)
+        {
+            if (pathSegments[i] != null) Destroy(pathSegments[i].gameObject);
+        }
+        pathSegments.Clear();
+    }
+
+    private void DrawPathSegment(Vector2 from, Vector2 to)
+    {
+        if (pathRoot == null || pathSegmentPrefab == null) return;
+        Image seg = Instantiate(pathSegmentPrefab, pathRoot);
+        RectTransform rt = seg.rectTransform;
+        Vector2 dir = to - from;
+        float length = dir.magnitude;
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(0f, 0f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = (from + to) * 0.5f;
+        rt.sizeDelta = new Vector2(length, pathThickness);
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        rt.localEulerAngles = new Vector3(0f, 0f, angle);
+        pathSegments.Add(rt);
+    }
+
+    private void RefreshPathVisual()
+    {
+        ClearPathVisual();
+        PlayerNavigator navigator = GetPlayerNavigator();
+        if (navigator == null || !navigator.HasPath()) return;
+        Vector3[] points = navigator.GetPathPoints();
+        int startIndex = navigator.GetCurrentPathIndex();
+        if (points == null || points.Length < 2) return;
+        MapConfig config = MapService.Instance.GetCurrentMapConfig();
+        if (config == null) return;
+        Vector3 playerWorldPos = GetCurrentPlayerWorldPosition();
+        Vector2 lastUiPos = WorldToMapPosition(playerWorldPos, config);
+        for (int i = startIndex; i < points.Length; i++)
+        {
+            Vector2 nextUiPos = WorldToMapPosition(points[i], config);
+            DrawPathSegment(lastUiPos, nextUiPos);
+            lastUiPos = nextUiPos;
+        }
     }
 
     private Vector3 GetCurrentPlayerWorldPosition()

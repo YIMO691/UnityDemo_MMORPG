@@ -15,17 +15,22 @@ public abstract class BaseNavigator : MonoBehaviour, INavigationAgent
 
     protected virtual void Awake()
     {
-        if (string.IsNullOrEmpty(agentId)) agentId = gameObject.name;
+        if (string.IsNullOrEmpty(agentId))
+        {
+            agentId = gameObject.name;
+        }
     }
 
     protected virtual void OnEnable()
     {
         NavigationRegistry.Instance.Register(this);
+        Debug.Log("[BaseNavigator] 注册导航对象: " + AgentId);
     }
 
     protected virtual void OnDisable()
     {
         NavigationRegistry.Instance.Unregister(this);
+        Debug.Log("[BaseNavigator] 注销导航对象: " + AgentId);
     }
 
     public void SetAgentId(string id)
@@ -40,6 +45,7 @@ public abstract class BaseNavigator : MonoBehaviour, INavigationAgent
             StopNavigation();
             return;
         }
+
         pathPoints = newPath;
         currentIndex = 0;
         stopDistance = newStopDistance;
@@ -56,20 +62,41 @@ public abstract class BaseNavigator : MonoBehaviour, INavigationAgent
 
     protected virtual void Update()
     {
-        if (!IsNavigating || pathPoints == null || currentIndex >= pathPoints.Length) return;
+        if (!IsNavigating || pathPoints == null || currentIndex >= pathPoints.Length)
+            return;
+
         TickNavigation();
     }
 
     protected void AdvanceIfReached(float distance)
     {
-        float reach = currentIndex == pathPoints.Length - 1 ? stopDistance : cornerReachDistance;
-        if (distance <= reach)
+        float reachDistance = currentIndex == pathPoints.Length - 1 ? stopDistance : cornerReachDistance;
+
+        if (distance <= reachDistance)
         {
             currentIndex++;
-            if (currentIndex >= pathPoints.Length) StopNavigation();
+            if (currentIndex >= pathPoints.Length)
+            {
+                StopNavigation();
+            }
         }
     }
 
     protected abstract void TickNavigation();
     protected abstract void OnNavigationStopped();
+
+    public Vector3[] GetPathPoints()
+    {
+        return pathPoints;
+    }
+
+    public int GetCurrentPathIndex()
+    {
+        return currentIndex;
+    }
+
+    public bool HasPath()
+    {
+        return IsNavigating && pathPoints != null && currentIndex < pathPoints.Length;
+    }
 }
