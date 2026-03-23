@@ -52,6 +52,12 @@
 - 是否需要新增 AssetPaths / UIPaths 常量
 - 资源归档到 Resources 规则是否满足（或后续 Addressables）
   - 地图类：UIPaths.MapImageRoot、PortraitRoleHeadRoot 等
+ - 避免硬编码：
+   - 资源路径统一使用 AssetPaths（如 DebugCanvas、PoolMonitorPanel、MapImageRoot）
+   - 面板路由/面板名统一使用 UIPaths/UIRouteNames/UIMainPages
+   - 对象名集中到 ObjectNames（如 MiniMapCamera、PlayerCameraRoot）
+   - 导航 AgentId 集中到 NavigationConsts（如 PlayerAgentId）
+   - 在实现前，若需要新路径或常量，先补常量再编码；不得直接写魔法字符串
 
 ---
 

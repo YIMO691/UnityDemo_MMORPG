@@ -118,6 +118,20 @@ Assets
 - 新模块接入模板：  
   - [docs/module-integration-template.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/module-integration-template.md)
 
+## 资源与常量规范（避免硬编码）
+
+- 资源路径
+  - 统一使用 AssetPaths 加载 Resources 资源（PanelCanvas、UIMask、DebugCanvas、PoolMonitorPanel、MapImageRoot 等）
+  - 示例：ResourceManager.Instance.Load<GameObject>(AssetPaths.DebugCanvas)
+- UI 路由/面板名
+  - 使用 UIRouteNames/UIMainPages 与 UIPaths（面板名与预制/脚本一致）
+- 对象与 Agent 常量
+  - 对象名集中于 ObjectNames（MiniMapCamera、PlayerCameraRoot）
+  - 导航 AgentId 集中于 NavigationConsts（PlayerAgentId）
+- 约定
+  - 不在业务代码中出现魔法字符串（如 "MiniMapCamera"、"Player"、"UI/Windows/..."）
+  - 新增资源或对象名时，先补充常量再引用；对已有散落硬编码统一替换为常量
+
 ## 常见问题（FAQ）
 
 - 启动后没有 UI  
