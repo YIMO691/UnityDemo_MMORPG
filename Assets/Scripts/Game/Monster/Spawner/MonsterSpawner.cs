@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 public static class MonsterSpawner
 {
+    private static int spawnIndex = 0;
     public static GameObject SpawnMonster(int configId, Vector3 position)
     {
         var cfg = MonsterConfigManager.Instance.GetConfig(configId);
         if (cfg == null) return null;
-        if (MonsterAssembler.TryAssemble(cfg, position, out var go, out var _))
+        spawnIndex++;
+        if (MonsterAssembler.TryAssemble(cfg, position, spawnIndex, out var go, out var _))
         {
             return go;
         }

@@ -13,7 +13,7 @@ public class MonsterConfigManager
     public void Init()
     {
         if (inited) return;
-        var ta = ResourceManager.Instance.Load<TextAsset>("Config/MonsterConfig");
+        var ta = ResourceManager.Instance.Load<TextAsset>(AssetPaths.MonsterConfig);
         if (ta != null)
         {
             var wrapper = JsonUtility.FromJson<MonsterConfigList>(ta.text);
