@@ -20,4 +20,8 @@ public class MonsterAnimationEvents : MonoBehaviour
     {
         if (entity != null) entity.OnAttackEvent();
     }
+    public void AttackOver()
+    {
+        if (entity != null) entity.OnAttackOver();
+    }
 }

@@ -16,15 +16,14 @@ public class MonsterEntity : MonoBehaviour
     private float pathTimer;
     private float pathInterval = 0.3f;
     private MonsterAnimatorDriver anim;
-    private float attackHoldTimer;
-    private float attackHoldDuration = 0.6f;
     private Vector3 spawnPosition;
     private float chaseCooldown = 1f;
     private float chaseCooldownTimer;
     private float attackEntryCooldown = 0.3f;
     private float attackEntryCooldownTimer;
     private bool attackFrozen;
-    private Vector3 attackFreezePosition;
+    private float attackFailSafeTimeout = 2f;
+    private float attackFailSafeTimer;
 
     public void Init(MonsterConfig cfg, Vector3 spawnPos)
     {
@@ -130,9 +129,8 @@ public class MonsterEntity : MonoBehaviour
         {
             CurrentState = MonsterStateType.Attack;
             navigator.StopNavigation();
-            attackHoldTimer = attackHoldDuration;
             attackFrozen = true;
-            attackFreezePosition = transform.position;
+            attackFailSafeTimer = 0f;
             return;
         }
         float chaseSpeed = navigator != null ? navigator.CurrentSpeed : 0f;
@@ -156,22 +154,17 @@ public class MonsterEntity : MonoBehaviour
         // Freeze locomotion while attacking
         anim?.SetIdle();
         float dist = Vector3.Distance(transform.position, CurrentTarget.position);
-        if (attackFrozen) transform.position = attackFreezePosition;
         attackTimer += Time.deltaTime;
+        attackFailSafeTimer += Time.deltaTime;
+        if (attackFailSafeTimer >= attackFailSafeTimeout) attackFrozen = false;
         if (attackTimer >= config.attackInterval)
         {
             attackTimer = 0f;
             anim?.TriggerAttack();
         }
-        if (attackHoldTimer > 0f)
-        {
-            attackHoldTimer -= Time.deltaTime;
-            return;
-        }
-        if (dist > config.attackRange * 1.2f)
+        if (!attackFrozen && dist > config.attackRange * 1.2f)
         {
             CurrentState = MonsterStateType.Chase;
-            attackFrozen = false;
         }
     }
 
@@ -218,6 +211,10 @@ public class MonsterEntity : MonoBehaviour
     public void OnBornOver() { }
     public void OnAttackEvent()
     {
-        attackHoldTimer = 0f;
+    }
+    public void OnAttackOver()
+    {
+        attackFrozen = false;
+        attackFailSafeTimer = 0f;
     }
 }
