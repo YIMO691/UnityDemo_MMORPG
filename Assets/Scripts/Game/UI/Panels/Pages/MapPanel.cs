@@ -132,12 +132,12 @@ public class MapPanel : BasePanel
 
         if (imgMap != null)
         {
-            Sprite sp = ResourceManager.Instance.Load<Sprite>(UIPaths.MapImageRoot + config.mapImage);
+            Sprite sp = ResourceManager.Instance.Load<Sprite>(AssetPaths.MapImageRoot + config.mapImage);
             imgMap.sprite = sp;
 
             if (sp == null)
             {
-                Debug.LogWarning("[MapPanel] 地图图片加载失败: " + UIPaths.MapImageRoot + config.mapImage);
+                Debug.LogWarning("[MapPanel] 地图图片加载失败: " + AssetPaths.MapImageRoot + config.mapImage);
             }
         }
     }

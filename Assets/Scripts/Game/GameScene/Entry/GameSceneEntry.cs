@@ -93,6 +93,7 @@ public class GameSceneEntry : MonoBehaviour
         RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
         NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);
         EnsureDebugCanvas();
+        InitMonsterModule();
     }
 
     private void EnsureDebugCanvas()
@@ -141,6 +142,12 @@ public class GameSceneEntry : MonoBehaviour
     private string GetRoleVisualPath(int classId) { return null; }
     private bool ValidatePlayerComponents(GameObject player) { return false; }
     private void AttachRoleVisual(Transform modelRoot, int classId) { }
+
+    private void InitMonsterModule()
+    {
+        var pos = playerInstance != null ? playerInstance.transform.position + new Vector3(6f, 0f, 6f) : Vector3.zero;
+        MonsterSpawner.SpawnFirst(pos);
+    }
     private bool TryCreateCamera() { return false; }
     private bool TryBindCamera() { return false; }
     private Vector3 GetSpawnPosition()
