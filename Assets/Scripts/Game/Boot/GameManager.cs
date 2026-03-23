@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
         if (initialized) return;
         Debug.Log("[GameManager] Initialize start");
         InitCoreManagers();
+        MonsterConfigManager.Instance.Init();
         EnterBeginFlow();
         initialized = true;
         Debug.Log("[GameManager] Initialize success");
