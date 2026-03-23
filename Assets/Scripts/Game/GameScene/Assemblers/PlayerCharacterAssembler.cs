@@ -19,7 +19,7 @@ public static class PlayerCharacterAssembler
         CharacterController cc = playerInstance.GetComponent<CharacterController>();
         if (cc == null) return false;
 
-        Transform cameraRoot = playerInstance.transform.Find("PlayerCameraRoot");
+        Transform cameraRoot = playerInstance.transform.Find(ObjectNames.PlayerCameraRoot);
         if (cameraRoot == null) return false;
 
         Transform modelRoot = playerInstance.transform.Find("ModelRoot");
