@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game;
 using Cinemachine;
 
 public static class CameraRigAssembler

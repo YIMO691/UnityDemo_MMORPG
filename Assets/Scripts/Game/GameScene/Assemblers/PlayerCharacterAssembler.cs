@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game;
 
 public static class PlayerCharacterAssembler
 {

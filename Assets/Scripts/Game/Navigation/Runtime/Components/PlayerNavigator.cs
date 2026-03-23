@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(StarterAssetsInputs))]
