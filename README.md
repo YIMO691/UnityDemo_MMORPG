@@ -100,6 +100,7 @@ Assets
   - 槽位与文件名：DataManager（Framework）  
   - 业务数据读写：GamePlayerDataService（Game/Save）  
   - 摘要映射：[PlayerSaveMetaMapper.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/Mapper/PlayerSaveMetaMapper.cs)
+  - 槽位策略：新增存档始终追加到尾部（不在中间空槽插入）；DataManager.GetNextAvailableSlotId 返回 MaxUsedSlotId+1
 
 ## 输入与相机
 

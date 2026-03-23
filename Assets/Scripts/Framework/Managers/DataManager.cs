@@ -205,21 +205,11 @@ public class DataManager
     }
 
     /// <summary>
-    /// 获取下一个可用槽位ID
-    /// 优先复用空槽位；如果没有空槽位，则追加到末尾
+    /// 获取下一个可用槽位ID（前移策略）
+    /// 不在中间空槽插入新存档，始终在当前最大槽位之后新增
     /// </summary>
     public int GetNextAvailableSlotId(int searchMax = 999)
     {
-        // 先找空槽位
-        for (int i = 1; i <= searchMax; i++)
-        {
-            if (!HasPlayerSaveInSlot(i))
-            {
-                return i;
-            }
-        }
-
-        // 如果 searchMax 范围内都满了，就继续追加
         return GetMaxUsedSlotId(searchMax) + 1;
     }
 
