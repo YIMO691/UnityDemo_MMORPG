@@ -26,6 +26,16 @@ public class GamePlayerDataService
         DataManager.Instance.ClearCurrentSlotId();
     }
 
+    public int GetCurrentSlotId()
+    {
+        return DataManager.Instance.GetCurrentSlotId();
+    }
+
+    public bool HasCurrentSession()
+    {
+        return currentPlayerData != null && GetCurrentSlotId() > 0;
+    }
+
     public void SavePlayerDataToSlot(int slotId, PlayerData playerData)
     {
         if (slotId < 1)
@@ -58,6 +68,23 @@ public class GamePlayerDataService
         }
 
         SavePlayerDataToSlot(slotId, currentPlayerData);
+    }
+
+    public bool SaveCurrentToCurrentSlot()
+    {
+        if (currentPlayerData == null)
+        {
+            Debug.LogWarning("[GamePlayerDataService] SaveCurrentToCurrentSlot 失败：当前玩家为空。");
+            return false;
+        }
+        int slotId = GetCurrentSlotId();
+        if (slotId < 1)
+        {
+            Debug.LogWarning("[GamePlayerDataService] SaveCurrentToCurrentSlot 失败：当前槽位非法。");
+            return false;
+        }
+        SavePlayerDataToSlot(slotId, currentPlayerData);
+        return true;
     }
 
     public bool LoadPlayerDataFromSlot(int slotId)

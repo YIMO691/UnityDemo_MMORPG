@@ -6,7 +6,7 @@ public class PlayerSaveService
 
     public void SaveCurrentPlayer(Transform playerTransform)
     {
-        PlayerData playerData = Game.Runtime.GameRuntime.CurrentPlayerData ?? GamePlayerDataService.Instance.GetCurrentPlayerData();
+        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
         if (playerData == null)
         {
@@ -16,16 +16,14 @@ public class PlayerSaveService
 
         runtimeSaveService.SavePlayerTransform(playerTransform, playerData);
 
-        GamePlayerDataService.Instance.SetCurrentPlayerData(playerData);
-
-        int slotId = DataManager.Instance.GetCurrentSlotId();
-        if (slotId < 0)
+        int slotId = GamePlayerDataService.Instance.GetCurrentSlotId();
+        if (slotId < 1)
         {
             Debug.LogWarning("[PlayerSaveService] Save failed, current slot id invalid.");
             return;
         }
 
-        GamePlayerDataService.Instance.SaveCurrentPlayerDataToSlot(slotId);
+        GamePlayerDataService.Instance.SavePlayerDataToSlot(slotId, playerData);
 
         Debug.Log("[PlayerSaveService] SaveCurrentPlayer success. slotId=" + slotId);
     }

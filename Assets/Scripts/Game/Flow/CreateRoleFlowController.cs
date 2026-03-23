@@ -46,7 +46,7 @@ public class CreateRoleFlowController
         }
 
         int slotId = DataManager.Instance.GetNextAvailableSlotId();
-        if (slotId < 0)
+        if (slotId < 1)
         {
             Debug.LogError("[CreateRoleFlowController] 没有可用存档槽位。");
             return;
@@ -58,10 +58,7 @@ public class CreateRoleFlowController
 
         // 立刻注入内存态，确保主界面与头像详情可读取当前角色信息
         GamePlayerDataService.Instance.SetCurrentPlayerData(playerData);
-        DataManager.Instance.SetCurrentSlotId(slotId);
-
-        GameRuntime.CurrentPlayerData = playerData;
-        GameRuntime.CurrentSlotId = slotId;
+        // SavePlayerDataToSlot 已设置当前槽位，无需重复设置
         
         SceneNavigator.EnterGameScene();
     }

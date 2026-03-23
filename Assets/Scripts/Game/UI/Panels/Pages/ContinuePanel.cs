@@ -93,8 +93,7 @@ public class ContinuePanel : BasePanel
             return;
         }
 
-        GameRuntime.CurrentPlayerData = playerData;
-        GameRuntime.CurrentSlotId = DataManager.Instance.GetCurrentSlotId();
+        // 会话真源与当前槽位已在 GamePlayerDataService 内部维护，无需重复写入其他全局
 
         EventBus.Publish(new ClosePanelEvent(UIRouteNames.ContinuePanel));
         SceneNavigator.EnterGameScene();

@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-
-
 public class SettingPanel : BasePanel
 {
     public override UILayer Layer => UILayer.Popup;
@@ -184,10 +182,14 @@ public class SettingPanel : BasePanel
                     UIManager.Instance.HidePanel<MainPanel>(useFade: false);
                 }
 
-                GamePlayerDataService.Instance.ClearCurrent();
-                Game.Runtime.GameRuntime.CurrentPlayerData = null;
-
-                SceneNavigator.EnterBeginScene();
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.ReturnToBeginFlow();
+                }
+                else
+                {
+                    SceneNavigator.EnterBeginScene();
+                }
             },
             null
         );
