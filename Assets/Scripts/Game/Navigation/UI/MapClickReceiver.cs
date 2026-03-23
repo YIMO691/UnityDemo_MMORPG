@@ -18,6 +18,6 @@ public class MapClickReceiver : MonoBehaviour, IPointerClickHandler
         float worldX = Mathf.Lerp(config.worldMinX, config.worldMaxX, percentX);
         float worldZ = Mathf.Lerp(config.worldMinZ, config.worldMaxZ, percentY);
         Vector3 targetWorldPos = new Vector3(worldX, sampleHeight, worldZ);
-        EventBus.Publish(new NavigationMoveRequestEvent(new NavigationMoveRequest("Player", targetWorldPos, 0.25f)));
+        EventBus.Publish(new NavigationMoveRequestEvent(new NavigationMoveRequest(NavigationConsts.PlayerAgentId, targetWorldPos, 0.25f)));
     }
 }

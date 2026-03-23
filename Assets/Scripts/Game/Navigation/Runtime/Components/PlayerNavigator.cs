@@ -51,7 +51,7 @@ public class PlayerNavigator : BaseNavigator
                 {
                     Debug.Log("[PlayerNavigator] 检测到手动输入，取消自动寻路。原因: " + reason);
                     // 让服务端统一清理可视化状态与路径
-                    EventBus.Publish(new NavigationStopRequestEvent("Player"));
+                    EventBus.Publish(new NavigationStopRequestEvent(NavigationConsts.PlayerAgentId));
                     return;
                 }
             }

@@ -40,7 +40,7 @@ public class NavigationService
         if (!NavigationRegistry.Instance.TryGet(req.agentId, out INavigationAgent agent))
         {
             Debug.LogWarning("[NavigationService] 未找到导航对象: " + req.agentId);
-            if (req.agentId == "Player")
+            if (req.agentId == NavigationConsts.PlayerAgentId)
             {
                 currentPlayerVisualState = new NavigationVisualState
                 {
@@ -58,7 +58,7 @@ public class NavigationService
         if (!pathSolver.TryBuildPath(agent.AgentTransform.position, req.targetPosition, out Vector3 sampledTarget, out Vector3[] corners))
         {
             Debug.LogWarning("[NavigationService] 路径计算失败。");
-            if (req.agentId == "Player")
+            if (req.agentId == NavigationConsts.PlayerAgentId)
             {
                 currentPlayerVisualState = new NavigationVisualState
                 {
@@ -73,7 +73,7 @@ public class NavigationService
 
         Debug.Log("[NavigationService] 路径计算成功，角点数 = " + corners.Length);
 
-        if (req.agentId == "Player")
+        if (req.agentId == NavigationConsts.PlayerAgentId)
         {
             currentPlayerVisualState = new NavigationVisualState
             {
@@ -93,7 +93,7 @@ public class NavigationService
         if (NavigationRegistry.Instance.TryGet(e.agentId, out INavigationAgent agent))
             agent.StopNavigation();
 
-        if (e.agentId == "Player")
+        if (e.agentId == NavigationConsts.PlayerAgentId)
         {
             currentPlayerVisualState = new NavigationVisualState
             {
