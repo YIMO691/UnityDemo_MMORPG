@@ -145,8 +145,12 @@ public class GameSceneEntry : MonoBehaviour
 
     private void InitMonsterModule()
     {
-        var pos = playerInstance != null ? playerInstance.transform.position + new Vector3(6f, 0f, 6f) : Vector3.zero;
-        MonsterSpawner.SpawnFirst(pos);
+        var spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
+        Debug.Log($"[Monster] SpawnPoints found: {spawnPoints.Length}");
+        for (int i = 0; i < spawnPoints.Length; i++)
+        {
+            spawnPoints[i].Init();
+        }
     }
     private bool TryCreateCamera() { return false; }
     private bool TryBindCamera() { return false; }

@@ -10,6 +10,7 @@ public class NavigationRegistry
     public void Register(INavigationAgent agent)
     {
         if (agent == null || string.IsNullOrEmpty(agent.AgentId)) return;
+        UnityEngine.Debug.Log($"[NavigationRegistry] Register {agent.AgentId}");
         agents[agent.AgentId] = agent;
     }
 
@@ -17,7 +18,10 @@ public class NavigationRegistry
     {
         if (agent == null || string.IsNullOrEmpty(agent.AgentId)) return;
         if (agents.TryGetValue(agent.AgentId, out var current) && current == agent)
+        {
             agents.Remove(agent.AgentId);
+            UnityEngine.Debug.Log($"[NavigationRegistry] Unregister {agent.AgentId}");
+        }
     }
 
     public bool TryGet(string agentId, out INavigationAgent agent)

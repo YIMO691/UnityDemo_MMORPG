@@ -12,6 +12,7 @@ public static class AssetPaths
     // Config
     public const string RoleClassConfig = "Config/RoleClassConfig";
     public const string MapConfig = "Config/MapConfig";
+    public const string MonsterConfig = "Config/MonsterConfig";
     public const string MapImageRoot = "Map/Main/";
     public const string MonsterRoot = "Monster/";
 
