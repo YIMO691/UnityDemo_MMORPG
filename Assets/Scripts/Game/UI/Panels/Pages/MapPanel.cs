@@ -198,10 +198,10 @@ public class MapPanel : BasePanel
 
     private void ClearPathVisual()
     {
-        if (enablePathPoolDebugLog)
-        {
-            Debug.Log($"[MapPanel] ClearPathVisual before activeCount={activePathSegments.Count}");
-        }
+        //if (enablePathPoolDebugLog)
+        //{
+        //    Debug.Log($"[MapPanel] ClearPathVisual before activeCount={activePathSegments.Count}");
+        //}
         for (int i = 0; i < activePathSegments.Count; i++)
         {
             var go = activePathSegments[i];
@@ -209,11 +209,11 @@ public class MapPanel : BasePanel
         }
         activePathSegments.Clear();
         pathSegments.Clear();
-        if (enablePathPoolDebugLog)
-        {
-            Debug.Log($"[MapPanel] ClearPathVisual after activeCount={activePathSegments.Count}");
-            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
-        }
+        //if (enablePathPoolDebugLog)
+        //{
+        //    Debug.Log($"[MapPanel] ClearPathVisual after activeCount={activePathSegments.Count}");
+        //    //Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+        //}
     }
 
     private void DrawPathSegment(Vector2 from, Vector2 to, Color color)
@@ -266,20 +266,20 @@ public class MapPanel : BasePanel
         //Debug.Log($"[MapPanel] 已创建线段，length={length}, pos={rt.anchoredPosition}, angle={angle}");
 
         activePathSegments.Add(go);
-        if (enablePathPoolDebugLog)
-        {
-            Debug.Log($"[MapPanel] DrawPathSegment activeCount={activePathSegments.Count}, len={length:F2}");
-        }
+        //if (enablePathPoolDebugLog)
+        //{
+        //    Debug.Log($"[MapPanel] DrawPathSegment activeCount={activePathSegments.Count}, len={length:F2}");
+        //}
     }
 
-
+   
     private void RefreshPathVisual()
     {
-        if (enablePathPoolDebugLog)
-        {
-            Debug.Log("[MapPanel] RefreshPathVisual begin");
-            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
-        }
+        //if (enablePathPoolDebugLog)
+        //{
+        //    Debug.Log("[MapPanel] RefreshPathVisual begin");
+        //    Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+        //}
         ClearPathVisual();
         PlayerNavigator navigator = GetPlayerNavigator();
         if (navigator == null || !navigator.HasPath())
@@ -313,11 +313,11 @@ public class MapPanel : BasePanel
             DrawPathSegment(lastUiPos, nextUiPos, color);
             lastUiPos = nextUiPos;
         }
-        if (enablePathPoolDebugLog)
-        {
-            Debug.Log($"[MapPanel] RefreshPathVisual end activeCount={activePathSegments.Count}");
-            Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
-        }
+        //if (enablePathPoolDebugLog)
+        //{
+        //    Debug.Log($"[MapPanel] RefreshPathVisual end activeCount={activePathSegments.Count}");
+        //    Debug.Log(PoolManager.Instance.GetPoolDebugInfo(PoolKey.MapPathSegment));
+        //}
     }
 
     private void RefreshDestinationMarker()

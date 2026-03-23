@@ -6,6 +6,8 @@ public static class AssetPaths
 
     // UI Windows
     public static string Window(string panelName) => $"UI/Windows/{panelName}";
+    public const string DebugCanvas = "UI/Root/DebugCanvas";
+    public const string PoolMonitorPanel = "UI/Windows/PoolMonitorPanel";
 
     // Config
     public const string RoleClassConfig = "Config/RoleClassConfig";

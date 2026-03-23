@@ -101,7 +101,7 @@ public class GameSceneEntry : MonoBehaviour
         GameObject existing = GameObject.Find("[DebugCanvas]");
         if (existing != null) return;
 
-        GameObject prefab = ResourceManager.Instance.Load<GameObject>("UI/Root/DebugCanvas");
+        GameObject prefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.DebugCanvas);
         if (prefab == null)
         {
             Debug.LogWarning("[GameSceneEntry] DebugCanvas prefab not found: UI/Root/DebugCanvas");
@@ -112,7 +112,7 @@ public class GameSceneEntry : MonoBehaviour
         // 可按需是否跨场景常驻，这里保持场景级
 
         // 挂载 PoolMonitorPanel 预制（包含已配置的 itemPrefab 与热键逻辑）
-        GameObject monitorPrefab = ResourceManager.Instance.Load<GameObject>("UI/Windows/PoolMonitorPanel");
+        GameObject monitorPrefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.PoolMonitorPanel);
         if (monitorPrefab == null)
         {
             Debug.LogWarning("[GameSceneEntry] PoolMonitorPanel prefab not found: UI/Windows/PoolMonitorPanel");
