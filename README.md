@@ -1,151 +1,185 @@
 # UnityDemo_MMORPG
 
-基于 Unity 2022.3.62f3 的 MMORPG 客户端原型，强调“最小可运行主链路 + 可持续扩展”。采用 Framework / Game / Editor 三层架构，主流程为：BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI。
+基于 Unity 2022.3.62f3 的 MMORPG 客户端原型。目标：最小可运行主链路 + 明确职责边界 + 数据/资源常量化 + 可持续扩展。
 
-## 亮点特性
+**总体流程**
+- BeginScene → 创角/读档 → 进入 GameScene → 角色/相机/UI 装配 → 导航/地图/怪物模块运行
 
-- 分层架构可演进
-  - Framework：UI 框架、事件总线、资源与设置、路径常量
-  - Game：角色控制、场景装配、业务流程与页面、存档服务
-  - Editor：配置编辑与场景工具
-- UI 与路由
-  - 分层渲染（Bottom/Normal/Popup/Top），主页面独占呈现
-  - 路由常量与主页面注册（UIRouteNames、UIMainPages）
-  - 通用确认弹窗通过路由+反射解耦
-- 角色控制与输入（已去除外部 StarterAssets 依赖）
-  - ThirdPersonController、StarterAssetsInputs 源码已纳入 Game/CharacterControl
-  - 输入资产 StarterAssets.inputactions 已随项目放置于 Game 下，由 PlayerInput 直接引用
-- 场景装配与相机降级
-  - GameSceneEntry + Assemblers（角色/相机）
-  - 无虚拟相机或绑定失败时，主相机自动降级为跟随 LookAt
-- 地图与导航
-  - MapConfig（世界边界）+ MapPanel（X-Z 映射、红点/终点/路径显示）
-  - NavigationService + PathSolver + PlayerNavigator（事件解耦，取消保护时间）
-- 轻量对象池
-  - Framework/Pool 提供 IPoolable、PoolManager、ObjectPool（Map 路径段等已接入）
-- 存档体系
-  - GamePlayerDataService 管理当前玩家与槽位读写
-  - PlayerSaveMetaMapper 构建 Continue 列表摘要
-- 文档完善
-  - 最小链路清单与模块接入模板，保障后续开发制度化
+**架构分层**
+- Framework：UI 框架、事件总线、资源/路径常量、对象池、通用管理器
+- Game：业务域（启动/流程/场景装配/存档/导航/地图/怪物/页面）
+- Resources：UI、配置、怪物 Prefab、动画/AnimatorController
+
+---
 
 ## 快速开始
+- 打开 Unity 2022.3.62f3
+- 必要包：Input System、Cinemachine、TextMeshPro
+- Build Settings：添加 [BeginScene.unity](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scenes/BeginScene.unity) 与 [GameScene.unity](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scenes/GameScene.unity)
+- 输入资产：在玩家对象 PlayerInput 的 Actions 指向 [StarterAssets.inputactions](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions)
+- 运行 BeginScene：开始游戏（创角→自动存档→进入游戏）或继续游戏（选择存档）
 
-1) 打开项目（Unity 2022.3.62f3）  
-2) 安装/确认包  
-   - Cinemachine、Input System、TextMeshPro（无需外部 StarterAssets 包）  
-3) 设置 Build Settings  
-   - 加入 Assets/Scenes/BeginScene.unity 与 Assets/Scenes/GameScene.unity  
-4) 校验输入绑定  
-   - PlayerArmature 的 PlayerInput.m_Actions 指向  
-     Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions  
-   - 该输入资产随项目提供，无需额外导入包  
-5) 运行 BeginScene  
-   - 开始游戏 → 创角 → 自动存档并进入 GameScene  
-   - 继续游戏 → 打开 ContinuePanel 选择存档  
-6) 头像详情  
-   - 在 MainPanel 点击头像，弹出 RoleInfoPanel（职业详情）
+---
 
-最小运行依赖与自检清单：  
-- [docs/minimal-runtime-checklist.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/minimal-runtime-checklist.md)
-
-## 场景与核心脚本
-
-- BeginScene  
-  - 启动入口：[StartGame.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Boot/StartGame.cs)  
-  - 主页面：BeginPanel（创建/继续/设置/关于/退出）
-- GameScene  
-  - 场景入口：[GameSceneEntry.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/Entry/GameSceneEntry.cs)  
-  - 装配器：  
-    - [PlayerCharacterAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/Assemblers/PlayerCharacterAssembler.cs)  
-    - [CameraRigAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/Assemblers/CameraRigAssembler.cs)
-- 流程与服务  
-  - 创角流程：[CreateRoleFlowController.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Flow/CreateRoleFlowController.cs)  
-  - 存档服务：[GamePlayerDataService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/GamePlayerDataService.cs)、[PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/PlayerSaveService.cs)
-
-## 目录速览（简版）
-
+## 目录结构
 ```
 Assets
-├─ Scenes/BeginScene.unity | GameScene.unity
+├─ Scenes
+│  ├─ BeginScene.unity
+│  └─ GameScene.unity
 ├─ Resources
-│  ├─ UI/Root, UI/Windows（页面/弹窗）
-│  ├─ Map/Main（地图图片）
-│  └─ Config（RoleClassConfig.json、MapConfig.json）
+│  ├─ UI
+│  │  ├─ Root（DebugCanvas 等）
+│  │  └─ Windows（页面/弹窗）
+│  ├─ Map
+│  │  └─ Main（地图图片）
+│  ├─ Monster（Zombie/Z1~Z4 等 Prefab）
+│  ├─ AnimatorController/Monster（基础移动/攻击等控制器）
+│  └─ Config（RoleClassConfig.json、MapConfig.json、MonsterConfig.json）
 └─ Scripts
    ├─ Framework（UI/Event/Managers/Json/Consts/Pool）
-   └─ Game（Boot/CharacterControl/GameScene/Entity/Save/Flow/UI/Map/Navigation）
+   └─ Game
+      ├─ Boot（GameManager、StartGame）
+      ├─ CharacterControl（ThirdPersonController、StarterAssetsInputs、输入资产）
+      ├─ GameScene（Entry + Assemblers + MiniMap + RuntimeCommit）
+      ├─ Navigation（Service/Registry/Events/Agents）
+      ├─ Map（Panel、Config、Assembler）
+      ├─ Monster（Config/Assembler/Navigation/Runtime/Spawner/Debug）
+      ├─ Save（GamePlayerDataService、PlayerSaveService、Mapper）
+      ├─ Flow（CreateRoleFlowController 等）
+      └─ UI（Panels/Pages/Popups 等）
 ```
 
-## UI 与事件清单
+---
 
-- UI 基础  
-  - 基类：[BasePanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/BasePanel.cs)  
-  - 管理器：[UIManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/UIManager.cs)  
-  - 路由/主页面：[UIRouteNames.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UIRouteNames.cs)、[UIMainPages.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UIMainPages.cs)  
-  - 通用确认：[UIDialogService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Services/UIDialogService.cs)
-- 常用事件  
-  - 打开/关闭面板：OpenPanelEvent / ClosePanelEvent / OpenMainPageEvent  
-  - 创角请求：CreateRoleRequestEvent  
-  - 职业详情：OpenRoleInfoPanelEvent
+## 启动与场景装配
+- 应用级管理器：[GameManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Boot/GameManager.cs)
+  - 单例 + DontDestroyOnLoad
+  - Initialize：核心管理器→怪物配置→进入 Begin 流程
+  - ReturnToBeginFlow：清理小地图等→跳转 BeginScene
+- Game 场景入口：[GameSceneEntry.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/Entry/GameSceneEntry.cs)
+  - 两阶段：TryAssembleScene(...) → CommitScene(...)
+  - Commit 内容：打开主页面、定位玩家、写入场景上下文、小地图绑定、导航代理接线、DebugCanvas
+- 小地图装配：[MiniMapAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Map/Runtime/MiniMapAssembler.cs)
+- 场景运行时提交：[RuntimeSceneCommitter.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/RuntimeSceneCommitter.cs)
+- 常量
+  - 资源路径：[AssetPaths.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/AssetPaths.cs)
+  - 对象名：[ObjectNames.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/ObjectNames.cs)
+  - 导航 Agent 常量：[NavigationConsts.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/NavigationConsts.cs)
 
-## 数据与存档
+---
 
-- 职业配置  
-  - 管理器：[RoleDataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Entity/RoleClass/Manager/RoleDataManager.cs)  
-  - 数据源：Resources/Config/RoleClassConfig.json  
-- 玩家数据模型（Game 层）  
-  - Base/Progress/Runtime/Attribute 位于 Game/Entity/Player/Data 下  
-- 存档读写  
-  - 槽位与文件名：DataManager（Framework）  
-  - 业务数据读写：GamePlayerDataService（Game/Save）  
-  - 摘要映射：[PlayerSaveMetaMapper.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/Mapper/PlayerSaveMetaMapper.cs)
-  - 槽位策略：新增存档始终追加到尾部（不在中间空槽插入）；DataManager.GetNextAvailableSlotId 返回 MaxUsedSlotId+1
+## UI 系统
+- 基类：[BasePanel.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Base/BasePanel.cs)
+- 管理器：[UIManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/UIManager.cs)
+- 路由与主页面：[UIRouteNames.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UIRouteNames.cs)、[UIMainPages.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UIMainPages.cs)
+- 对话服务：[UIDialogService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/Services/UIDialogService.cs)
+- 层级约定：Bottom/Normal/Popup/Top；主页面独占呈现
 
-## 输入与相机
+---
 
-- 输入  
-  - 资产：Assets/Scripts/Game/CharacterControl/Input/StarterAssets.inputactions（项目内提供）  
-  - 代码：StarterAssetsInputs.cs（项目内源码，无外部包依赖）
-- 相机  
-  - 跟随相机使用 CinemachineVirtualCamera；失败则降级  
-  - 降级逻辑见 CameraRigAssembler.FallbackBind
+## 存档与数据
+- 当前玩家与槽位： [GamePlayerDataService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/GamePlayerDataService.cs)
+- 存档执行： [PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/PlayerSaveService.cs)
+- 槽位策略： [DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs) 采用“尾部追加”（MaxUsedSlotId+1）
+- 摘要映射： [PlayerSaveMetaMapper.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/Mapper/PlayerSaveMetaMapper.cs)
 
-## 架构与接入规范
+---
 
-- 架构详解：  
-  - [docs/architecture.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/architecture.md)
-- 新模块接入模板：  
-  - [docs/module-integration-template.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/module-integration-template.md)
+## 导航与地图
+- 服务/注册/事件
+  - NavigationService：订阅移动/停走事件，计算路径并下发
+  - NavigationRegistry：登记/注销 INavigationAgent
+  - 事件：NavigationMoveRequestEvent / NavigationStopRequestEvent
+- 代理实现
+  - PlayerNavigator（玩家）
+  - MonsterNavigator（怪物）：平面转向、速度驱动动画、角点推进处理
+- 路径下发约束
+  - Attack/Dead/Stun 门禁拒收
+  - stopDistance 建议小值（如 0.2）避免“未移动即判到达”
+- 地图与 UI
+  - MapPanel：坐标映射与可视化
+  - 静态图路径使用 AssetPaths.MapImageRoot
 
-## 资源与常量规范（避免硬编码）
+---
 
-- 资源路径
-  - 统一使用 AssetPaths 加载 Resources 资源（PanelCanvas、UIMask、DebugCanvas、PoolMonitorPanel、MapImageRoot 等）
-  - 示例：ResourceManager.Instance.Load<GameObject>(AssetPaths.DebugCanvas)
-- UI 路由/面板名
-  - 使用 UIRouteNames/UIMainPages 与 UIPaths（面板名与预制/脚本一致）
-- 对象与 Agent 常量
-  - 对象名集中于 ObjectNames（MiniMapCamera、PlayerCameraRoot）
-  - 导航 AgentId 集中于 NavigationConsts（PlayerAgentId）
-- 约定
-  - 不在业务代码中出现魔法字符串（如 "MiniMapCamera"、"Player"、"UI/Windows/..."）
-  - 新增资源或对象名时，先补充常量再引用；对已有散落硬编码统一替换为常量
+## 怪物系统
+- 配置
+  - JSON：[Resources/Config/MonsterConfig.json](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/Config/MonsterConfig.json)
+  - 管理器：[MonsterConfigManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Config/MonsterConfigManager.cs)
+- 运行实体与状态机
+  - 实体：[MonsterEntity.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterEntity.cs)（Idle/Chase/Attack/Return/Dead）
+  - 攻击控制：Attack 期间 navigator.StopNavigation；退出 Attack 由动画事件 AttackOver 触发；设失败保护超时
+  - 追击/回家：detectRange 触发追击；越界进入 Return；Return→Chase 有冷却防抖
+  - 动画驱动：速度用 MonsterNavigator.CurrentSpeed，转向用平面 Slerp
+- 导航代理
+  - [MonsterNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs)：平面方向、角点推进、速度采样
+- 装配与生成
+  - 装配器：[MonsterAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Assembler/MonsterAssembler.cs)
+  - 生成器：[MonsterSpawner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Spawner/MonsterSpawner.cs)
+  - 刷怪点：[MonsterSpawnPoint.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Spawner/MonsterSpawnPoint.cs)：重生/上限/NavMesh 采样
+- 动画与事件
+  - 驱动器：[MonsterAnimatorDriver.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimatorDriver.cs)
+  - 事件接线：[MonsterAnimationEvents.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimationEvents.cs)（BornOver/AtkEvent/AttackOver）
+  - Animator 配置建议：
+    - Attack → Locomotion：开启 Has Exit Time 或加条件（如 IsChasing）
+    - 攻击剪辑末帧添加 AttackOver 事件
 
-## 常见问题（FAQ）
+---
 
-- 启动后没有 UI  
-  - 检查 Resources/UI/Root/PanelCanvas 是否存在；UIManager.Init 是否执行  
-- 相机无画面  
-  - 检查 MainCamera 与 PlayerFollowCamera 预制是否存在；或依赖降级由运行时自动创建主相机  
-- 头像详情为空  
-  - 确认 RoleDataManager 已加载配置；创角成功后已 SetCurrentPlayerData / SetCurrentSlotId  
-- 输入无效  
-  - 确认 PlayerInput 绑定的 Actions 指向唯一的 StarterAssets.inputactions（GUID 匹配）
+## 调试与工具
+- DebugCanvas + PoolMonitorPanel
+  - 资源：AssetPaths.DebugCanvas / AssetPaths.PoolMonitorPanel
+  - 使用：GameSceneEntry.EnsureDebugCanvas()
+- 怪物伤害调试（K 键）
+  - [MonsterDamageDebugInput.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput.cs)
+  - 挂到玩家或任意空物体；按 K 对附近最近怪调用 TakeDamage()
 
-## 路线图
+---
 
-- Player* 数据完全归口 Game，PlayerSaveMetaData 迁至 Game/Save  
-- Addressables/AssetBundle 接入抽象 ResourceManager  
-- Play Mode/编辑器测试覆盖主链路与关键模块  
-- 背包/装备/技能等系统，按接入模板制度化接入
+## 常量与资源规范
+- 统一使用常量：AssetPaths/ObjectNames/NavigationConsts
+- 禁止魔法字符串：新增资源/对象名先补常量再引用
+- 资源加载：ResourceManager.Instance.Load<T>(AssetPaths.Xxx)
+
+---
+
+## 代码约定
+- 单一移动源：避免脚本位移与 Root Motion 同时驱动
+- 攻击控制：Attack 期间仅停止导航；不再强制位置回拉；退出由动画事件控制
+- 导航门禁：Attack/Dead 状态拒收路径；Return→Chase 立即下发追击并有进入攻击冷却
+- UI：主页面独占；弹窗经 UIDialogService；路由统一 UIRouteNames/UIMainPages
+
+---
+
+## 构建与运行自检
+- 场景包含 BeginScene/GameScene；EventSystem 存在
+- PlayerInput 指向唯一输入资产
+- 资源路径与对象名引用均来自常量
+- DebugCanvas 可加载；Pool 监控可显示
+
+---
+
+## 故障排查
+- 收到路径但不动
+  - stopDistance 过大；建议 0.2
+  - Attack 状态拒收路径；先退出 Attack（AttackOver 事件）
+- 攻击后一直不动
+  - Animator 未触发 AttackOver 或过渡不正确；检查 Has Exit Time/条件
+  - 失败保护超时触发后应恢复追击
+- 转向“趴下/闪烁”
+  - 使用平面转向（y=0）；Animator 使用真实速度驱动；SkinnedMeshRenderer bounds 合理
+
+---
+
+## 提交与规范
+- 提交信息：模块/资源/场景修改分批说明（中文或英文均可）
+- 资源大改与代码逻辑拆分为多次 commit 便于回溯
+- 推送前确认场景与脚本无未提交更改
+
+---
+
+## 参考文档
+- 最小链路自检：[docs/minimal-runtime-checklist.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/minimal-runtime-checklist.md)
+- 架构说明：[docs/architecture.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/architecture.md)
+- 模块接入模板（避免硬编码）：[docs/module-integration-template.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/module-integration-template.md)

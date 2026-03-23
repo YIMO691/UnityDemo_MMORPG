@@ -4,6 +4,34 @@
 - 最小链路清单：[docs/minimal-runtime-checklist.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/minimal-runtime-checklist.md)
 - 新模块接入模板：[docs/module-integration-template.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/module-integration-template.md)
 
+## 目录
+- 1. 分层模型与程序集
+- 2. 黄金链路
+- 3. 模块职责矩阵
+- 4. 依赖与命名规范
+- 5. 资源与输入规范
+- 6. 存档与版本策略
+- 7. 相机降级方案
+- 8. UI 分层与遮罩
+- 9. 工程目录（摘要）
+- 10. 新模块接入流程
+- 11. 验收与回归
+- 12. 后续演进
+- 13. 怪物系统架构
+- 14. 导航策略与门禁
+- 15. Debug 与可观测性
+- 16. 常量与资源命名规范
+- 17. 动画集成规范
+- 18. 代码风格与行为约束
+- 19. 性能与测试
+- 20. 提交与发布规范
+- 21. 术语表与职责边界
+- 22. 错误处理与健壮性策略
+- 23. Animator 配置检查清单
+- 24. 配置与版本管理规范
+- 25. 性能预算与节流建议
+- 26. 测试策略细化
+
 ---
 
 ## 1. 分层模型与程序集
@@ -192,3 +220,204 @@ Assets/Scripts
 - 将 PlayerSaveMetaData 迁至 Game/Save（当依赖关系更明确时）
 - Addressables/Bundle 化资源加载，ResourceManager 抽象加载后端
 - 引入 Play Mode + Edit Mode 测试覆盖关键流程
+
+---
+
+## 13. 怪物系统架构（Monster Module）
+
+- 配置与加载
+  - MonsterConfig.json：id/name/maxHp/moveSpeed/detectRange/attackRange/attackInterval/prefabPath
+  - MonsterConfigManager：初始化时从 Resources/Config 读取，提供 GetConfig/GetAllConfigs
+- 运行实体（MonsterEntity）
+  - 状态机：Idle/Chase/Attack/Return/Dead
+  - 进入追击：距离 ≤ detectRange
+  - 攻击期：navigator.StopNavigation，仅动画驱动，不修改 transform
+  - 退出攻击：动画事件 AttackOver 解锁；提供失败保护超时（避免卡死）
+  - 回家：超出 detectRange → Return；到达 spawnPosition → Idle
+  - 防抖：Return→Chase 有冷却（chaseCooldown），切回时立即下发一次追击并开启 attackEntryCooldown（避免同帧进入 Attack）
+- 导航代理（MonsterNavigator）
+  - 平面转向：将方向投影到 XZ 平面，Quaternion.Slerp 平滑旋转
+  - 角点推进：平面方向为零（仅高度差）时推进到下一角点，避免卡住
+  - 速度采样：CurrentSpeed 用于动画驱动（真实速度）
+- 装配与生成
+  - MonsterAssembler：加载 Prefab、创建实体/导航组件、注册 NavigationRegistry、设置唯一 AgentId
+  - MonsterSpawner：按配置生成怪物
+  - MonsterSpawnPoint：刷怪点生命周期、重生上限、NavMesh.SamplePosition 采样
+- 动画与事件
+  - MonsterAnimatorDriver：参数 Speed/IsChasing/Dead/Attack
+  - MonsterAnimationEvents：BornOver/AtkEvent/AttackOver（末帧触发以解锁攻击）
+- 关键约束
+  - 攻击期间只靠 StopNavigation 控制位移，不强制回位
+  - 退出攻击必须由动画事件或失败保护触发，避免时间锁错位
+
+---
+
+## 14. 导航策略与门禁
+
+- 事件流
+  - 请求：NavigationMoveRequestEvent(agentId, target, stopDistance)
+  - 求解：NavigationPathSolver → corners（NavMeshPath）
+  - 分发：NavigationService → agent.SetPath(corners, stopDistance)
+- 门禁规则
+  - Attack/Dead/Stun 状态拒收路径（SetPath 早退）
+  - Return→Chase 切换时强制触发一次追击下发（或拉满 pathTimer 下一帧必发）
+  - 攻击进入冷却：从 Idle/Return 切回 Chase 后，延迟一个窗口再允许进入 Attack
+- 距离与停止策略
+  - stopDistance 建议小值（如 0.2），避免“未移动即判到达”
+  - 路线角点仅高度差时推进到下一角点，避免原地抖动
+- 动画融合
+  - Speed 使用 CurrentSpeed（真实位移速度），避免用配置常量
+  - 转向仅平面旋转，避免俯仰导致“趴下”
+
+---
+
+## 15. Debug 与可观测性
+
+- DebugCanvas
+  - 资源路径：AssetPaths.DebugCanvas
+  - PoolMonitorPanel：AssetPaths.PoolMonitorPanel
+  - GameSceneEntry.EnsureDebugCanvas 自动接入
+- 导航调试
+  - 记录每次路径下发与拒收原因（Attack/Dead/门禁冷却）
+  - 关键日志：收到请求、路径求解状态（PathComplete/Partial/Invalid）、角点数量
+- 怪物调试
+  - K 键最近怪伤害：MonsterDamageDebugInput（测试 Die/OnDead/重生链路）
+  - 状态机切换日志：Idle/Chase/Attack/Return/Dead
+
+---
+
+## 16. 常量与资源命名规范
+
+- 资源路径常量：AssetPaths
+  - 示例：UI/Root/DebugCanvas、UI/Windows/PoolMonitorPanel、Map/Main/、Monster/
+- 对象名常量：ObjectNames
+  - 示例：MiniMapCamera、PlayerCameraRoot
+- 导航 Agent 常量：NavigationConsts
+  - 示例：PlayerAgentId
+- 规范
+  - 禁止魔法字符串；新增资源与对象名必须先补常量
+  - 统一通过 ResourceManager.Instance.Load<T>(AssetPaths.Xxx) 加载
+
+---
+
+## 17. 动画集成规范
+
+- 参数约定
+  - Speed：0–正值；由真实速度驱动
+  - IsChasing：布尔；追击期为 true，Attack/Idle 为 false
+  - Dead：布尔；死亡为 true
+  - Attack：触发器；由逻辑定时或事件触发
+- 过渡与事件
+  - Attack → Locomotion：勾选 Has Exit Time 或增加条件（如 IsChasing=true）
+  - 在攻击剪辑末帧添加 AttackOver 事件，调用 MonsterAnimationEvents.AttackOver → MonsterEntity.OnAttackOver
+- Root Motion
+  - 目前不启用 Root Motion；位移由导航驱动
+  - 若启用 Root Motion，必须移除脚本位移，保持单一位移源
+
+---
+
+## 18. 代码风格与行为约束
+
+- 单一位移源：避免脚本位移与 Root Motion 双驱动
+- 攻击控制：Attack 期间仅停止导航；不使用“固定时间 + 强制回位”
+- 冷却与防抖：Return→Chase 冷却；进入追击冷却避免同帧进攻
+- 事件解耦：跨模块通信用 EventBus；禁止直接持有跨层对象
+- 常量化：路径、对象名、AgentId 统一常量引用
+
+---
+
+## 19. 性能与测试
+
+- 对象池：Framework/Pool（IPoolable、ObjectPool、PoolManager）
+- 导航频率：路径下发节流（pathInterval），避免高频求解
+- 测试
+  - Play Mode：黄金链路、导航下发门禁、怪物状态机
+  - Edit Mode：配置加载、常量引用、ResourceManager
+
+---
+
+## 20. 提交与发布规范
+
+- 提交拆分
+  - 逻辑改动与资源改动分批提交
+  - 场景、AnimatorController、Prefab 的大改独立提交
+- 信息格式
+  - 模块名：简述内容；关键影响点（例如“攻击行为规范化：删除时间锁与强制回位；引入 AttackOver 事件”）
+- 发布前检查
+  - 场景与脚本无未提交更改
+  - README/architecture/模板已同步更新
+  - README/architecture/模板已同步更新
+
+---
+
+## 21. 术语表与职责边界
+- App：应用级生命周期（GameManager、场景切换）
+- Scene Entry：场景装配入口（GameSceneEntry），两阶段（组装→提交）
+- Assembler：装配器（相机/角色/小地图等），只负责构建与绑定，不做业务决策
+- Service：跨模块能力（NavigationService、UIDialogService、PlayerSaveService）
+- Registry：运行态注册表（NavigationRegistry、PlayerLocator）
+- Agent：导航代理（PlayerNavigator/MonsterNavigator），只接受路径与停止指令
+- Event：领域事件（NavigationMoveRequestEvent 等），用于解耦发布/订阅
+
+---
+
+## 22. 错误处理与健壮性策略
+- 资源加载失败
+  - ResourceManager.Load 返回 null 时早退并记录错误；必要时提供降级（相机 Fallback）
+- 事件处理
+  - 订阅方需判空与状态早退（IsDead/Attack 门禁）；避免抛异常阻断总线
+- 导航求解失败
+  - PathSolver 返回 Invalid/Partial 时记录日志并不下发；调用方可重试或降级走向目标点
+- 怪物状态机
+  - AttackOver 未触发：使用失败保护超时自动解锁；日志提示 Animator 配置缺失
+- 存档与版本
+  - 若字段缺失或版本不匹配：升级器迁移；保留旧文件备份并打印版本信息
+
+---
+
+## 23. Animator 配置检查清单
+- 控制器
+  - 基础移动与攻击控制器存在；怪物 Prefab 正确挂载 Animator 且控制器引用有效
+- 参数
+  - Speed（float）、IsChasing（bool）、Dead（bool）、Attack（trigger）
+- 过渡
+  - Attack → Locomotion：Has Exit Time 或条件（IsChasing）
+  - Dead：进入后保持，退出需重生流程重置
+- 事件
+  - 攻击末帧添加 AttackOver，接口指向 MonsterAnimationEvents.AttackOver
+- Root Motion
+  - 若未使用 Root Motion，则关闭 Apply Root Motion；避免与脚本位移冲突
+
+---
+
+## 24. 配置与版本管理规范
+- JSON 文件
+  - 所有配置位于 Resources/Config，统一通过 JsonMgr 读取
+  - 推荐包含 version 字段，便于将来迁移
+- 路径与命名
+  - 资源路径常量化（AssetPaths），配置文件名与类名一致
+- 升级流程
+  - 读档时根据 version 选择升级器；升级后写回新版本，旧版本保留备份
+
+---
+
+## 25. 性能预算与节流建议
+- 导航
+  - 路径求解节流（pathInterval ≥ 0.3s）；批量怪物时分批下发请求
+- 动画
+  - Speed 采用真实速度，Blend 节点数量合理；避免过多触发器抖动
+- 事件总线
+  - 高频事件合并或降采样；订阅方尽量无阻塞执行
+- 对象池
+  - Map 路径段、临时指示器进入 Pool；避免频繁 Instantiate/Destroy
+
+---
+
+## 26. 测试策略细化
+- Play Mode
+  - 黄金链路：Begin→创角→GameScene→MainPanel 打开
+  - 怪物行为：Idle→Chase→Attack→Return→Idle 循环；AttackOver 正常触发；失败保护生效
+  - 导航门禁：Attack/Dead 拒收路径；stopDistance 正确导致抵达
+- Edit Mode
+  - 配置加载：Role/Map/Monster JSON 正确解析；AssetPaths 引用存在
+  - 常量化检查：随机扫描代码避免魔法字符串；CI 提示异常引用
