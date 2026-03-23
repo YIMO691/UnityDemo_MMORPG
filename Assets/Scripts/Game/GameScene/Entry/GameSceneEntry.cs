@@ -1,5 +1,4 @@
-using Cinemachine;
-using Game.Runtime;
+
 using UnityEngine;
 
 public class GameSceneEntry : MonoBehaviour
@@ -24,32 +23,25 @@ public class GameSceneEntry : MonoBehaviour
     {
         Debug.Log("[GameSceneEntry] InitScene begin");
 
-        if (GameRuntime.CurrentPlayerData == null)
+        if (GamePlayerDataService.Instance.GetCurrentPlayerData() == null)
         {
             Debug.LogError("[GameSceneEntry] CurrentPlayerData is null.");
             SceneNavigator.EnterBeginScene();
             return;
         }
 
-        bool okCreate = CameraRigAssembler.TryCreate(out mainCameraInstance, out followCameraInstance);
-        bool okAssemble = PlayerCharacterAssembler.TryAssemble(GameRuntime.CurrentPlayerData, GetSpawnPosition(), GetSpawnRotation(), out playerInstance, out var controller);
-        bool okBind = okAssemble && followCameraInstance != null && CameraRigAssembler.TryBind(controller, followCameraInstance);
+        ThirdPersonController controller;
 
-        if (!okBind && okCreate && okAssemble)
-        {
-            CameraRigAssembler.FallbackBind(controller, mainCameraInstance);
-            okBind = true;
-        }
+        bool okAssemble = TryAssembleScene(out controller);
 
-        if (!(okCreate && okAssemble && okBind))
+        if (!okAssemble)
         {
             CleanupOnFail();
             SceneNavigator.EnterBeginScene();
             return;
         }
 
-        InitMiniMap();
-        OpenMainPanel();
+        CommitScene(controller);
 
         if (playerInstance != null)
         {
@@ -73,63 +65,77 @@ public class GameSceneEntry : MonoBehaviour
         Debug.Log("[GameSceneEntry] InitScene end");
     }
 
-    private void InitMiniMap()
+    private bool TryAssembleScene(out ThirdPersonController controller)
     {
-        if (miniMapCamera == null)
+        controller = null;
+        bool okCreate = CameraRigAssembler.TryCreate(out mainCameraInstance, out followCameraInstance);
+        bool okAssemble = PlayerCharacterAssembler.TryAssemble(GamePlayerDataService.Instance.GetCurrentPlayerData(), GetSpawnPosition(), GetSpawnRotation(), out playerInstance, out controller);
+        bool okBind = okAssemble && followCameraInstance != null && CameraRigAssembler.TryBind(controller, followCameraInstance);
+        if (!okBind && okCreate && okAssemble)
         {
-            GameObject go = GameObject.Find("MiniMapCamera");
-            if (go != null)
-            {
-                miniMapCamera = go.GetComponent<Camera>();
-            }
+            CameraRigAssembler.FallbackBind(controller, mainCameraInstance);
+            okBind = true;
         }
-
-        if (miniMapCamera == null)
+        if (!(okCreate && okAssemble && okBind))
         {
-            Debug.LogWarning("[GameSceneEntry] miniMapCamera 未找到。");
-            return;
+            return false;
         }
-
-        if (miniMapController == null)
-        {
-            miniMapController = miniMapCamera.GetComponent<MiniMapCameraController>();
-        }
-
-        if (miniMapController == null)
-        {
-            Debug.LogWarning("[GameSceneEntry] MiniMapCameraController 缺失。");
-            return;
-        }
-
-        RenderTexture rt = ResourceManager.Instance.Load<RenderTexture>(AssetPaths.MiniMapRenderTexture);
-        if (rt == null)
-        {
-            Debug.LogWarning("[GameSceneEntry] 小地图 RenderTexture 加载失败: " + AssetPaths.MiniMapRenderTexture);
-            return;
-        }
-
-        miniMapCamera.targetTexture = rt;
-
-        MiniMapService.Instance.Register(miniMapCamera, rt, miniMapController);
-
-        if (playerInstance == null)
-        {
-            Debug.LogWarning("[GameSceneEntry] playerInstance 为空，无法绑定 MiniMap target。");
-            return;
-        }
-
-        Transform target = playerInstance.transform.Find("PlayerCameraRoot");
-        if (target == null)
-        {
-            Debug.LogWarning("[GameSceneEntry] PlayerCameraRoot 未找到，改为绑定玩家根节点。");
-            target = playerInstance.transform;
-        }
-
-        miniMapController.SetTarget(target);
-        MiniMapService.Instance.BindTarget(target);
-
-        Debug.Log("[GameSceneEntry] MiniMap 初始化完成，目标 = " + target.name);
+        MiniMapAssembler.TryInitObjects(ref miniMapCamera, ref miniMapController);
+        return true;
     }
+
+    private void CommitScene(ThirdPersonController controller)
+    {
+        OpenMainPanel();
+        MiniMapAssembler.BindTarget(miniMapCamera, miniMapController, playerInstance.transform);
+        PlayerLocator.Instance.Register(playerInstance.transform);
+        var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
+        RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
+        NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);
+        EnsureDebugCanvas();
+    }
+
+    private void EnsureDebugCanvas()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        GameObject existing = GameObject.Find("[DebugCanvas]");
+        if (existing != null) return;
+
+        GameObject prefab = ResourceManager.Instance.Load<GameObject>("UI/Root/DebugCanvas");
+        if (prefab == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] DebugCanvas prefab not found: UI/Root/DebugCanvas");
+            return;
+        }
+        GameObject go = Instantiate(prefab);
+        go.name = "[DebugCanvas]";
+        // 可按需是否跨场景常驻，这里保持场景级
+
+        // 挂载 PoolMonitorPanel 预制（包含已配置的 itemPrefab 与热键逻辑）
+        GameObject monitorPrefab = ResourceManager.Instance.Load<GameObject>("UI/Windows/PoolMonitorPanel");
+        if (monitorPrefab == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] PoolMonitorPanel prefab not found: UI/Windows/PoolMonitorPanel");
+            return;
+        }
+        var monitorObj = Instantiate(monitorPrefab, go.transform, false);
+        var monitorRect = monitorObj.GetComponent<RectTransform>();
+        if (monitorRect != null)
+        {
+            monitorRect.anchorMin = new Vector2(0f, 0f);
+            monitorRect.anchorMax = new Vector2(1f, 1f);
+            monitorRect.offsetMin = Vector2.zero;
+            monitorRect.offsetMax = Vector2.zero;
+        }
+        var monitor = monitorObj.GetComponent<PoolMonitorPanel>();
+        if (monitor != null)
+        {
+            monitor.SetVisible(false);
+        }
+#endif
+    }
+
+    // MiniMap 初始化迁移至 MiniMapAssembler
 
     private bool TryCreatePlayerCharacter() { return false; }
     private string GetRoleVisualPath(int classId) { return null; }
@@ -139,7 +145,7 @@ public class GameSceneEntry : MonoBehaviour
     private bool TryBindCamera() { return false; }
     private Vector3 GetSpawnPosition()
     {
-        PlayerData playerData = GameRuntime.CurrentPlayerData;
+        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
         if (playerData != null &&
             playerData.runtimeData != null &&
@@ -161,7 +167,7 @@ public class GameSceneEntry : MonoBehaviour
 
     private Quaternion GetSpawnRotation()
     {
-        PlayerData playerData = GameRuntime.CurrentPlayerData;
+        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
         if (playerData != null &&
             playerData.runtimeData != null &&
