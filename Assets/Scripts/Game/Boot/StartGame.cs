@@ -5,12 +5,11 @@ public class StartGame : MonoBehaviour
 {
     private void Start()
     {
-        DataManager.Instance.Init();
-        UIManager.Instance.Init();
-        RoleDataManager.Instance.Init();
-        CreateRoleFlowController.Instance.Init();
-        RoleUIController.Instance.Init();
-
-        UIManager.Instance.ShowMainPage(UIRouteNames.BeginPanel, hideOld: false, useFade: false);
+        if (GameManager.Instance == null)
+        {
+            var go = new GameObject("[GameManager]");
+            go.AddComponent<GameManager>();
+        }
+        GameManager.Instance.Initialize();
     }
 }
