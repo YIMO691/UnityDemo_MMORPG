@@ -63,7 +63,7 @@ public class GameSceneEntry : MonoBehaviour
             }
             var nav = playerInstance.GetComponent<PlayerNavigator>();
             if (nav == null) nav = playerInstance.AddComponent<PlayerNavigator>();
-            nav.SetAgentId("Player");
+            nav.SetAgentId(NavigationConsts.PlayerAgentId);
         }
 
         Debug.Log("[GameSceneEntry] InitScene end");
@@ -103,12 +103,13 @@ public class GameSceneEntry : MonoBehaviour
         EnsureDebugCanvas();
         RestoreMonstersIfAny();
         InitMonsterModule();
+        EnsureBattleRuntime();
     }
 
     private void EnsureDebugCanvas()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        GameObject existing = GameObject.Find("[DebugCanvas]");
+        GameObject existing = GameObject.Find(ObjectNames.DebugCanvasRoot);
         if (existing != null) return;
 
         GameObject prefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.DebugCanvas);
@@ -118,7 +119,7 @@ public class GameSceneEntry : MonoBehaviour
             return;
         }
         GameObject go = Instantiate(prefab);
-        go.name = "[DebugCanvas]";
+        go.name = ObjectNames.DebugCanvasRoot;
         // 可按需是否跨场景常驻，这里保持场景级
 
         // 挂载 PoolMonitorPanel 预制（包含已配置的 itemPrefab 与热键逻辑）
@@ -159,6 +160,25 @@ public class GameSceneEntry : MonoBehaviour
         for (int i = 0; i < spawnPoints.Length; i++)
         {
             spawnPoints[i].Init();
+        }
+    }
+    private void EnsureBattleRuntime()
+    {
+        GameObject existing = GameObject.Find(ObjectNames.BattleRuntime);
+        if (existing != null) return;
+        GameObject go = new GameObject(ObjectNames.BattleRuntime);
+        go.AddComponent<DamageFeedbackListener>();
+        if (!PoolManager.Instance.Contains(PoolKey.DamageText))
+        {
+            var prefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.DamageText);
+            if (prefab != null)
+            {
+                PoolManager.Instance.RegisterPool(PoolKey.DamageText, prefab, 20);
+            }
+            else
+            {
+                Debug.LogWarning("[GameSceneEntry] DamageText prefab not found at UI/DamageText");
+            }
         }
     }
     private void RestoreMonstersIfAny()
