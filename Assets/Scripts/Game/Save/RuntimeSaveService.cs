@@ -33,4 +33,11 @@ public class RuntimeSaveService
 
         Debug.Log($"[RuntimeSaveService] SavePlayerTransform success. pos={pos}, rotY={rot.y}");
     }
+
+    public void SaveMonsters(PlayerData playerData)
+    {
+        if (playerData == null) return;
+        var service = new MonsterSaveService();
+        playerData.monsterData = service.CaptureScene();
+    }
 }

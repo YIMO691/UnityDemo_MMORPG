@@ -24,6 +24,8 @@ public class MonsterEntity : MonoBehaviour
     private bool attackFrozen;
     private float attackFailSafeTimeout = 2f;
     private float attackFailSafeTimer;
+    public string RuntimeId { get; private set; }
+    public string SpawnPointId { get; private set; }
 
     public void Init(MonsterConfig cfg, Vector3 spawnPos)
     {
@@ -60,6 +62,7 @@ public class MonsterEntity : MonoBehaviour
         OnDead?.Invoke(this);
         if (navigator != null) navigator.StopNavigation();
         NavigationRegistry.Instance.Unregister(navigator);
+        MonsterRuntimeRegistry.Instance.Unregister(this);
         anim?.SetDead();
         Destroy(gameObject);
     }
@@ -216,5 +219,41 @@ public class MonsterEntity : MonoBehaviour
     {
         attackFrozen = false;
         attackFailSafeTimer = 0f;
+    }
+
+    public void SetIdentity(string runtimeId, string spawnPointId = null)
+    {
+        RuntimeId = runtimeId;
+        SpawnPointId = spawnPointId;
+    }
+
+    public MonsterSaveData BuildSaveData()
+    {
+        return new MonsterSaveData
+        {
+            runtimeId = RuntimeId,
+            configId = ConfigId,
+            sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+            posX = transform.position.x,
+            posY = transform.position.y,
+            posZ = transform.position.z,
+            rotY = transform.eulerAngles.y,
+            currentHp = CurrentHp,
+            isDead = IsDead,
+            spawnPointId = SpawnPointId
+        };
+    }
+
+    public void ApplySaveData(MonsterSaveData data)
+    {
+        transform.position = new Vector3(data.posX, data.posY, data.posZ);
+        transform.rotation = Quaternion.Euler(0f, data.rotY, 0f);
+        CurrentHp = data.currentHp;
+        if (data.isDead)
+        {
+            Die();
+            return;
+        }
+        CurrentState = MonsterStateType.Idle;
     }
 }

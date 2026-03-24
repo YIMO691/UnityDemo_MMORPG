@@ -15,6 +15,7 @@ public class PlayerSaveService
         }
 
         runtimeSaveService.SavePlayerTransform(playerTransform, playerData);
+        runtimeSaveService.SaveMonsters(playerData);
 
         int slotId = GamePlayerDataService.Instance.GetCurrentSlotId();
         if (slotId < 1)

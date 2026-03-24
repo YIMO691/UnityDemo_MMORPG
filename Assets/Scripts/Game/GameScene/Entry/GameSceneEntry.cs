@@ -93,6 +93,7 @@ public class GameSceneEntry : MonoBehaviour
         RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
         NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);
         EnsureDebugCanvas();
+        RestoreMonstersIfAny();
         InitMonsterModule();
     }
 
@@ -151,6 +152,14 @@ public class GameSceneEntry : MonoBehaviour
         {
             spawnPoints[i].Init();
         }
+    }
+    private void RestoreMonstersIfAny()
+    {
+        var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
+        if (data == null) return;
+        if (data.monsterData == null || data.monsterData.Count == 0) return;
+        var svc = new MonsterSaveService();
+        svc.RestoreScene(data.monsterData);
     }
     private bool TryCreateCamera() { return false; }
     private bool TryBindCamera() { return false; }
@@ -226,5 +235,11 @@ public class GameSceneEntry : MonoBehaviour
         }
         MiniMapService.Instance.Clear();
         PlayerLocator.Instance.Clear();
+        MonsterRuntimeRegistry.Instance.Clear();
+    }
+
+    private void OnDestroy()
+    {
+        MonsterRuntimeRegistry.Instance.Clear();
     }
 }

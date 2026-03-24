@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 public class PlayerData
@@ -7,6 +8,7 @@ public class PlayerData
     public PlayerProgressData progressData;
     public PlayerAttributeData attributeData;
     public PlayerRuntimeData runtimeData;
+    public List<MonsterSaveData> monsterData;
 
     public string saveTime;
 }
