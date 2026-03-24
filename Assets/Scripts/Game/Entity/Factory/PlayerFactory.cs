@@ -108,6 +108,14 @@ public static class PlayerFactory
         // 新增：组装职业外观
         PlayerVisualAssembler.AttachRoleVisual(playerObj, playerData);
 
+        // 新增：初始化运行时实体壳
+        var entity = playerObj.GetComponent<PlayerEntity>();
+        if (entity == null) entity = playerObj.AddComponent<PlayerEntity>();
+        string runtimeId = $"Player_{playerData.baseData.roleId}";
+        entity.Init(playerData, runtimeId);
+        // 应用存档位移（如存在）
+        entity.ApplyRuntimeSnapshot();
+
         return playerObj;
     }
 

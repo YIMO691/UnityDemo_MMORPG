@@ -45,7 +45,11 @@ public class GameSceneEntry : MonoBehaviour
 
         if (playerInstance != null)
         {
-            PlayerLocator.Instance.Register(playerInstance.transform);
+            var entity = playerInstance.GetComponent<PlayerEntity>();
+            if (entity != null)
+                PlayerLocator.Instance.Register(entity);
+            else
+                PlayerLocator.Instance.Register(playerInstance.transform);
             var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
             if (data != null && data.runtimeData != null)
             {
@@ -88,7 +92,11 @@ public class GameSceneEntry : MonoBehaviour
     {
         OpenMainPanel();
         MiniMapAssembler.BindTarget(miniMapCamera, miniMapController, playerInstance.transform);
-        PlayerLocator.Instance.Register(playerInstance.transform);
+        var entityCommit = playerInstance.GetComponent<PlayerEntity>();
+        if (entityCommit != null)
+            PlayerLocator.Instance.Register(entityCommit);
+        else
+            PlayerLocator.Instance.Register(playerInstance.transform);
         var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
         RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
         NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);

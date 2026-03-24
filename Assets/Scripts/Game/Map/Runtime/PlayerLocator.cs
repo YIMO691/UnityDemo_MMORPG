@@ -6,6 +6,7 @@ public class PlayerLocator
     public static PlayerLocator Instance => instance;
 
     private Transform playerTransform;
+    private PlayerEntity playerEntity;
 
     private PlayerLocator() { }
 
@@ -14,13 +15,25 @@ public class PlayerLocator
         playerTransform = target;
     }
 
+    public void Register(PlayerEntity entity)
+    {
+        playerEntity = entity;
+        playerTransform = entity != null ? entity.transform : null;
+    }
+
     public Transform GetPlayerTransform()
     {
         return playerTransform;
     }
 
+    public PlayerEntity GetPlayerEntity()
+    {
+        return playerEntity;
+    }
+
     public void Clear()
     {
         playerTransform = null;
+        playerEntity = null;
     }
 }
