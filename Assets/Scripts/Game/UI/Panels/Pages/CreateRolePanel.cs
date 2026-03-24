@@ -205,7 +205,7 @@ public class CreateRolePanel : BasePanel
             return;
         }
 
-        Sprite sp = ResourceManager.Instance.Load<Sprite>(UIPaths.PortraitCreateRoleRoot + config.defaultPortraitId);
+        Sprite sp = ResourceManager.Instance.Load<Sprite>(AssetPaths.PortraitCreateRoleRoot + config.defaultPortraitId);
         imgCharacterPreview.sprite = sp;
     }
 }

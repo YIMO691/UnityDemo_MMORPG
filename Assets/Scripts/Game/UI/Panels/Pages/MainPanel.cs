@@ -223,13 +223,13 @@ public class MainPanel : BasePanel
             return;
         }
 
-        string path = UIPaths.PortraitRoleHeadRoot + config.mainHeadId;
+        string path = AssetPaths.PortraitRoleHeadRoot + config.mainHeadId;
         Sprite sp = ResourceManager.Instance.Load<Sprite>(path);
 
         if (sp == null)
         {
             Debug.LogWarning("[MainPanel] 主界面头像资源加载失败：" + path);
-            sp = ResourceManager.Instance.Load<Sprite>(UIPaths.PortraitRoleHeadRoot + "default_head");
+            sp = ResourceManager.Instance.Load<Sprite>(AssetPaths.PortraitRoleHeadRoot + "default_head");
         }
 
         imgRoleHead.sprite = sp;
