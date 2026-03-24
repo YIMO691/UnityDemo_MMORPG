@@ -101,8 +101,7 @@ public class GameSceneEntry : MonoBehaviour
         RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
         NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);
         EnsureDebugCanvas();
-        RestoreMonstersIfAny();
-        InitMonsterModule();
+        MonsterModule.InitForScene();
         EnsureBattleRuntime();
     }
 
@@ -153,15 +152,7 @@ public class GameSceneEntry : MonoBehaviour
     private bool ValidatePlayerComponents(GameObject player) { return false; }
     private void AttachRoleVisual(Transform modelRoot, int classId) { }
 
-    private void InitMonsterModule()
-    {
-        var spawnPoints = FindObjectsOfType<MonsterSpawnPoint>();
-        Debug.Log($"[Monster] SpawnPoints found: {spawnPoints.Length}");
-        for (int i = 0; i < spawnPoints.Length; i++)
-        {
-            spawnPoints[i].Init();
-        }
-    }
+   
     private void EnsureBattleRuntime()
     {
         GameObject existing = GameObject.Find(ObjectNames.BattleRuntime);
@@ -181,14 +172,7 @@ public class GameSceneEntry : MonoBehaviour
             }
         }
     }
-    private void RestoreMonstersIfAny()
-    {
-        var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
-        if (data == null) return;
-        if (data.monsterData == null || data.monsterData.Count == 0) return;
-        var svc = new MonsterSaveService();
-        svc.RestoreScene(data.monsterData);
-    }
+    
     private bool TryCreateCamera() { return false; }
     private bool TryBindCamera() { return false; }
     private Vector3 GetSpawnPosition()

@@ -7,32 +7,35 @@ public class MonsterNavigator : MonoBehaviour, INavigationAgent
     public bool IsNavigating => navigating;
     public float CurrentSpeed => currentSpeed;
 
+    private readonly NavigationPathSolver pathSolver = new NavigationPathSolver();
+
     private Vector3[] path;
     private int index;
     private float stopDistance;
     private bool navigating;
-    private MonsterEntity entity;
     private Vector3 lastPosition;
     private float currentSpeed;
     private float turnSpeed = 8f;
+    private MonsterEntity entity;
 
     public void SetAgentId(string id)
     {
         AgentId = id;
     }
 
+    public void MoveTo(Vector3 destination, float stopDist)
+    {
+        if (!pathSolver.TryBuildPath(transform.position, destination, out Vector3 sampledTarget, out Vector3[] corners))
+        {
+            StopNavigation();
+            return;
+        }
+
+        SetPath(corners, stopDist);
+    }
+
     public void SetPath(Vector3[] pathPoints, float stopDist)
     {
-        if (entity != null)
-        {
-            if (entity.IsDead || entity.CurrentState == MonsterStateType.Attack)
-            {
-                navigating = false;
-                path = null;
-                index = 0;
-                return;
-            }
-        }
         path = pathPoints;
         stopDistance = stopDist;
         index = 0;
@@ -54,11 +57,7 @@ public class MonsterNavigator : MonoBehaviour, INavigationAgent
 
     private void Update()
     {
-        if (entity != null)
-        {
-            if (entity.IsDead || entity.CurrentState == MonsterStateType.Attack)
-                return;
-        }
+        if (entity != null && entity.IsDead) return;
         if (!navigating || path == null || index >= path.Length) return;
         float speed = entity != null ? entity.GetMoveSpeed() : 3f;
         Vector3 target = path[index];
@@ -87,6 +86,7 @@ public class MonsterNavigator : MonoBehaviour, INavigationAgent
             if (index >= path.Length)
             {
                 navigating = false;
+                currentSpeed = 0f;
                 return;
             }
         }
@@ -96,6 +96,7 @@ public class MonsterNavigator : MonoBehaviour, INavigationAgent
         if (endDist <= stopDistance)
         {
             navigating = false;
+            currentSpeed = 0f;
         }
     }
 }

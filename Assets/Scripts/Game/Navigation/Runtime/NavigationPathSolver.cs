@@ -25,10 +25,10 @@ public class NavigationPathSolver
         NavMeshPath path = new NavMeshPath();
         bool ok = NavMesh.CalculatePath(startPos, targetPos, NavMesh.AllAreas, path);
 
-        Debug.Log(
-            $"[NavigationPathSolver] CalculatePath ok={ok}, status={path.status}, " +
-            $"start={startPos}, target={targetPos}, corners={(path.corners == null ? 0 : path.corners.Length)}"
-        );
+        // Debug.Log(
+        //     $"[NavigationPathSolver] CalculatePath ok={ok}, status={path.status}, " +
+        //     $"start={startPos}, target={targetPos}, corners={(path.corners == null ? 0 : path.corners.Length)}"
+        // );
 
         if (!ok || path.status != NavMeshPathStatus.PathComplete || path.corners == null || path.corners.Length == 0)
             return false;

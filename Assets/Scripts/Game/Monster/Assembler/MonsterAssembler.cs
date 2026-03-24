@@ -10,16 +10,16 @@ public static class MonsterAssembler
         var prefab = ResourceManager.Instance.Load<GameObject>(AssetPaths.MonsterRoot + config.prefabPath);
         if (prefab == null) return false;
         monster = Object.Instantiate(prefab, position, Quaternion.identity);
-        var nav = monster.GetComponent<MonsterNavigator>();
-        if (nav == null) nav = monster.AddComponent<MonsterNavigator>();
+        var nav = monster.GetComponent<MonsterNavigator>() ?? monster.AddComponent<MonsterNavigator>();
         entity = monster.GetComponent<MonsterEntity>();
         if (entity == null) entity = monster.AddComponent<MonsterEntity>();
+        var brain = monster.GetComponent<MonsterBrain>() ?? monster.AddComponent<MonsterBrain>();
+        var anim = monster.GetComponent<MonsterAnimatorDriver>() ?? monster.AddComponent<MonsterAnimatorDriver>();
         entity.Init(config, position);
         var id = MonsterAgentId.Create(config.id, spawnIndex);
         nav.SetAgentId(id);
         NavigationRegistry.Instance.Register(nav);
-        if (monster.GetComponent<MonsterAnimationEvents>() == null)
-            monster.AddComponent<MonsterAnimationEvents>();
+        if (monster.GetComponent<MonsterAnimationEvents>() == null) monster.AddComponent<MonsterAnimationEvents>();
         return true;
     }
 }

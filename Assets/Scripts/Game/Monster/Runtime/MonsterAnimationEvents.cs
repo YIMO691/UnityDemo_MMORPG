@@ -2,26 +2,24 @@ using UnityEngine;
 
 public class MonsterAnimationEvents : MonoBehaviour
 {
-    private MonsterEntity entity;
+    private MonsterBrain brain;
 
     private void Awake()
     {
-        entity = GetComponent<MonsterEntity>();
+        brain = GetComponent<MonsterBrain>();
     }
 
-    // Called by animation event "BornOver"
     public void BornOver()
     {
-        if (entity != null) entity.OnBornOver();
+        if (brain != null) brain.OnBornOver();
     }
 
-    // Called by animation event "AtkEvent"
     public void AtkEvent()
     {
-        if (entity != null) entity.OnAttackEvent();
+        if (brain != null) brain.OnAttackEvent();
     }
     public void AttackOver()
     {
-        if (entity != null) entity.OnAttackOver();
+        if (brain != null) brain.OnAttackOver();
     }
 }
