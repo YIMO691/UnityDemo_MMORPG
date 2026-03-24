@@ -90,6 +90,11 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 - 流程（Game/Flow）
   - CreateRoleFlowController：订阅创角事件，写存档、注入内存，切换场景
   - RoleUIController：订阅 OpenRoleInfoPanelEvent，显示并填充 RoleInfoPanel
+- 怪物（Game/Monster）
+  - RuntimeRegistry：运行时怪物注册/反注册/查询（Get/HasAlive/CountAliveBySpawnPoint）
+  - RuntimeService：统一创建/恢复/注册入口（CreateFromSpawnPoint/RestoreFromSave）
+  - Module：场景级门面（先 Restore 再 InitSpawnPoints）
+  - SpawnPoint：点位配置与补怪入口（不再维护 alive 列表，不再监听单体死亡）
 
 - 地图系统（Game/Map）
   - MapConfig：每张地图世界边界与图片资源标识（worldMin/Max X/Z, mapImage）
@@ -194,12 +199,12 @@ Assets/Scripts
 │  ├─ Monster/
 │  │  ├─ Config/{MonsterConfig,MonsterConfigList,MonsterConfigManager}
 │  │  ├─ Factory/{MonsterFactory}
-│  │  ├─ Runtime/{MonsterEntity,MonsterAnimatorDriver,MonsterAnimationEvents,MonsterStateType,MonsterRuntimeRegistry}
+│  │  ├─ Runtime/{MonsterEntity,MonsterBrain,MonsterAnimatorDriver,MonsterAnimationEvents,MonsterStateType,MonsterRuntimeRegistry,MonsterRuntimeService,MonsterModule}
 │  │  ├─ Navigation/{MonsterNavigator,MonsterAgentId}
 │  │  ├─ Save/{MonsterSaveData,MonsterSaveService}
 │  │  ├─ Spawner/{MonsterSpawnPoint,MonsterSpawner}
 │  │  ├─ Assembler/{MonsterAssembler}
-│  │  └─ Debug/{MonsterDamageDebugInput1}
+│  │  └─ Debug/{MonsterDamageDebugInput}
 │  ├─ Map/
 │  │  ├─ Manager/{MapDataManager}
 │  │  ├─ Runtime/{MiniMapService,MiniMapAssembler,MiniMapCameraController,MapService}
@@ -251,26 +256,30 @@ Assets/Scripts
   - MonsterConfig.json：id/name/maxHp/moveSpeed/detectRange/attackRange/attackInterval/prefabPath
   - MonsterConfigManager：初始化时从 Resources/Config 读取，提供 GetConfig/GetAllConfigs
 - 运行实体（MonsterEntity）
-  - 状态机：Idle/Chase/Attack/Return/Dead
-  - 进入追击：距离 ≤ detectRange
-  - 攻击期：navigator.StopNavigation，仅动画驱动，不修改 transform
-  - 退出攻击：动画事件 AttackOver 解锁；提供失败保护超时（避免卡死）
-  - 回家：超出 detectRange → Return；到达 spawnPosition → Idle
-  - 防抖：Return→Chase 有冷却（chaseCooldown），切回时立即下发一次追击并开启 attackEntryCooldown（避免同帧进入 Attack）
+  - 仅持有数据/身份/血量/死亡/存档：ConfigId/RuntimeId/SpawnPointId/SpawnPosition/CurrentHp/IsDead
+  - 提供 SetState/SetTarget/ClearTarget/GetMoveSpeed 等最小接口
+  - Die()：停止导航、注销 NavigationRegistry 与 MonsterRuntimeRegistry、驱动动画、销毁
+- AI 脑（MonsterBrain）
+  - 管状态切换与决策（Idle/Chase/Attack/Return）
+  - 追击/返回/攻击节流与门禁（pathInterval/chaseCooldown/attackEntryCooldown/attackFailSafeTimeout）
+  - 使用 MonsterNavigator.MoveTo(...) 驱动移动，不直接碰事件总线
+  - OnAttackOver 解锁失败保护；OnAttackEvent 为后续伤害结算扩展位
 - 导航代理（MonsterNavigator）
+  - 只负责“怎么走”：内部使用 NavigationPathSolver 求路；不再读取 MonsterEntity.CurrentState 做门禁
   - 平面转向：将方向投影到 XZ 平面，Quaternion.Slerp 平滑旋转
   - 角点推进：平面方向为零（仅高度差）时推进到下一角点，避免卡住
   - 速度采样：CurrentSpeed 用于动画驱动（真实速度）
 - 装配与生成
-  - MonsterAssembler：加载 Prefab、创建实体/导航组件、注册 NavigationRegistry、设置唯一 AgentId
-  - MonsterSpawner：按配置生成怪物
-  - MonsterSpawnPoint：刷怪点生命周期、重生上限、NavMesh.SamplePosition 采样
+  - MonsterAssembler：加载 Prefab、补齐 MonsterNavigator/MonsterBrain/MonsterAnimatorDriver/MonsterAnimationEvents、注册 NavigationRegistry、设置唯一 AgentId
+  - MonsterRuntimeService：CreateFromSpawnPoint/RestoreFromSave（统一创建/恢复/注册；Restore 时以 SpawnPoint 为 home）
+  - MonsterSpawner/MonsterSpawnPoint：按配置生成/补怪；SpawnPoint 只做点位逻辑与入口
 - 动画与事件
   - MonsterAnimatorDriver：参数 Speed/IsChasing/Dead/Attack
-  - MonsterAnimationEvents：BornOver/AtkEvent/AttackOver（末帧触发以解锁攻击）
+  - MonsterAnimationEvents：BornOver/AtkEvent/AttackOver（末帧触发以解锁攻击，事件转发至 MonsterBrain）
 - 关键约束
   - 攻击期间只靠 StopNavigation 控制位移，不强制回位
   - 退出攻击必须由动画事件或失败保护触发，避免时间锁错位
+  - 恢复后“归家点”指向 SpawnPoint 位置，当前位置为存档位置（Return 归家至 SpawnPoint）
 
 ---
 

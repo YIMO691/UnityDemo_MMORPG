@@ -120,23 +120,20 @@ Assets
 - 配置
   - JSON：[Resources/Config/MonsterConfig.json](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Resources/Config/MonsterConfig.json)
   - 管理器：[MonsterConfigManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Config/MonsterConfigManager.cs)
-- 运行实体与状态机
-  - 实体：[MonsterEntity.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterEntity.cs)（Idle/Chase/Attack/Return/Dead）
-  - 攻击控制：Attack 期间 navigator.StopNavigation；退出 Attack 由动画事件 AttackOver 触发；设失败保护超时
-  - 追击/回家：detectRange 触发追击；越界进入 Return；Return→Chase 有冷却防抖
-  - 动画驱动：速度用 MonsterNavigator.CurrentSpeed，转向用平面 Slerp
-- 导航代理
-  - [MonsterNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs)：平面方向、角点推进、速度采样
-- 装配与生成
+- 运行与职责分层
+  - 实体：[MonsterEntity.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterEntity.cs)：仅持数据/身份/血量/死亡/存档
+  - AI 脑：[MonsterBrain.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterBrain.cs)：状态切换与决策（Idle/Chase/Attack/Return），调用导航 MoveTo
+  - 导航代理：[MonsterNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs)：内部求路（NavigationPathSolver），平面转向与速度采样
+  - 动画驱动与事件：
+    - 驱动器：[MonsterAnimatorDriver.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimatorDriver.cs)
+    - 事件转发：[MonsterAnimationEvents.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimationEvents.cs) → MonsterBrain
+- 运行时服务与注册表
+  - 注册表：[MonsterRuntimeRegistry.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterRuntimeRegistry.cs)：Register/Unregister/Get/HasAlive/CountAliveBySpawnPoint
+  - 服务：[MonsterRuntimeService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterRuntimeService.cs)：CreateFromSpawnPoint/RestoreFromSave（恢复后归家点设为 SpawnPoint 位置）
+  - 模块入口：[MonsterModule.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterModule.cs)：InitForScene（先恢复再初始化刷怪点）
+- 装配与刷怪
   - 装配器：[MonsterAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Assembler/MonsterAssembler.cs)
-  - 生成器：[MonsterSpawner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Spawner/MonsterSpawner.cs)
-  - 刷怪点：[MonsterSpawnPoint.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Spawner/MonsterSpawnPoint.cs)：重生/上限/NavMesh 采样
-- 动画与事件
-  - 驱动器：[MonsterAnimatorDriver.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimatorDriver.cs)
-  - 事件接线：[MonsterAnimationEvents.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimationEvents.cs)（BornOver/AtkEvent/AttackOver）
-  - Animator 配置建议：
-    - Attack → Locomotion：开启 Has Exit Time 或加条件（如 IsChasing）
-    - 攻击剪辑末帧添加 AttackOver 事件
+  - 刷怪点：[MonsterSpawnPoint.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Spawner/MonsterSpawnPoint.cs)：按 spawnPointId 统计活怪补齐，不再维护本地列表
 
 ---
 
@@ -147,6 +144,9 @@ Assets
 - 怪物伤害调试（K 键）
   - [MonsterDamageDebugInput.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput.cs)
   - 挂到玩家或任意空物体；按 K 对附近最近怪调用 TakeDamage()
+- 路径硬编码扫描（Editor）
+  - [PathUsageScanner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Editor/Tools/PathUsageScanner.cs)
+  - 菜单：Tools/Path Scanner/Scan Hardcoded Paths
 - 路径硬编码扫描（Editor）
   - [PathUsageScanner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Editor/Tools/PathUsageScanner.cs)
   - 菜单：Tools/Path Scanner/Scan Hardcoded Paths
