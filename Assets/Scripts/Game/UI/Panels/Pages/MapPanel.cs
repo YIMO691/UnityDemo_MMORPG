@@ -107,7 +107,7 @@ public class MapPanel : BasePanel
     private void RefreshMapInfo()
     {
         if (txtTitle != null)
-            txtTitle.text = "地图";
+            txtTitle.text = UIStrings.MapTitle;
 
         MapConfig config = null;
 
@@ -119,7 +119,7 @@ public class MapPanel : BasePanel
         if (config == null)
         {
             if (txtMapName != null)
-                txtMapName.text = "未知地图";
+                txtMapName.text = UIStrings.UnknownMap;
 
             if (imgMap != null)
                 imgMap.sprite = null;
@@ -148,7 +148,7 @@ public class MapPanel : BasePanel
             return;
 
         Vector3 worldPos = GetCurrentPlayerWorldPosition();
-        txtCoord.text = $"坐标: ({worldPos.x:F1}, {worldPos.z:F1})";
+        txtCoord.text = $"{UIStrings.CoordPrefix}({worldPos.x:F1}, {worldPos.z:F1})";
     }
 
     private Vector2 WorldToMapPosition(Vector3 worldPos, MapConfig config)

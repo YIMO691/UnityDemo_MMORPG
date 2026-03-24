@@ -16,7 +16,7 @@ public static class PlayerVisualConfig
             case 1:
                 return new RoleVisualSetting
                 {
-                    path = "Role/Role_NoWeapon/Engineer",
+                    path = AssetPaths.EngineerVisual,
                     localPosition = Vector3.zero,
                     localRotation = Vector3.zero,
                     localScale = Vector3.one
@@ -24,7 +24,7 @@ public static class PlayerVisualConfig
             case 2:
                 return new RoleVisualSetting
                 {
-                    path = "Role/Role_NoWeapon/Infantry",
+                    path = AssetPaths.InfantryVisual,
                     localPosition = Vector3.zero,
                     localRotation = Vector3.zero,
                     localScale = Vector3.one
@@ -32,7 +32,7 @@ public static class PlayerVisualConfig
             case 3:
                 return new RoleVisualSetting
                 {
-                    path = "Role/Role_NoWeapon/Medic",
+                    path = AssetPaths.MedicVisual,
                     localPosition = Vector3.zero,
                     localRotation = Vector3.zero,
                     localScale = Vector3.one
@@ -40,7 +40,7 @@ public static class PlayerVisualConfig
             case 4:
                 return new RoleVisualSetting
                 {
-                    path = "Role/Role_NoWeapon/Sniper",
+                    path = AssetPaths.SniperVisual,
                     localPosition = Vector3.zero,
                     localRotation = Vector3.zero,
                     localScale = Vector3.one

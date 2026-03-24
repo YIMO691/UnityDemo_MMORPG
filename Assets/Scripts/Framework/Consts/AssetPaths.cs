@@ -28,4 +28,12 @@ public static class AssetPaths
     public const string SniperVisual = "Role/Role_NoWeapon/Sniper";
 
     public const string MiniMapRenderTexture = "Map/RT_MiniMap";
+
+    // Battle UI
+    public const string DamageText = "UI/DamageText";
+
+    // Portrait
+    public const string PortraitCreateRoleRoot = "Portrait/CreateRolePanel/";
+    public const string PortraitMainRoot = "Portrait/MainPanel/";
+    public const string PortraitRoleHeadRoot = "Portrait/RoleHead/";
 }

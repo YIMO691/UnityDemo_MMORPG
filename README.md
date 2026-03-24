@@ -77,6 +77,8 @@ Assets
   - 资源路径：[AssetPaths.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/AssetPaths.cs)
   - 对象名：[ObjectNames.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/ObjectNames.cs)
   - 导航 Agent 常量：[NavigationConsts.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/NavigationConsts.cs)
+  - UI 名称常量：[UINames.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/UI/UINames.cs)
+  - UI 文案常量：[UIStrings.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Consts/UIStrings.cs)
 
 ---
 
@@ -143,15 +145,20 @@ Assets
   - 资源：AssetPaths.DebugCanvas / AssetPaths.PoolMonitorPanel
   - 使用：GameSceneEntry.EnsureDebugCanvas()
 - 怪物伤害调试（K 键）
-  - [MonsterDamageDebugInput1.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput1.cs)
+  - [MonsterDamageDebugInput.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput.cs)
   - 挂到玩家或任意空物体；按 K 对附近最近怪调用 TakeDamage()
+- 路径硬编码扫描（Editor）
+  - [PathUsageScanner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Editor/Tools/PathUsageScanner.cs)
+  - 菜单：Tools/Path Scanner/Scan Hardcoded Paths
+  - 功能：扫描 Scripts 下的 .cs，报告疑似硬编码路径与 Resources/ResourceManager 的字面量路径使用，排除 AssetPaths.cs
 
 ---
 
 ## 常量与资源规范
-- 统一使用常量：AssetPaths/ObjectNames/NavigationConsts
+- 统一使用常量：AssetPaths（路径）/UINames（UI 名称）/UIStrings（UI 文案）/ObjectNames（运行期对象名）/PoolKey（对象池键）/NavigationConsts
 - 禁止魔法字符串：新增资源/对象名先补常量再引用
 - 资源加载：ResourceManager.Instance.Load<T>(AssetPaths.Xxx)
+  - UI 窗口统一通过 AssetPaths.Window(UINames.Xxx) 访问
 
 ---
 
@@ -159,7 +166,7 @@ Assets
 - 单一移动源：避免脚本位移与 Root Motion 同时驱动
 - 攻击控制：Attack 期间仅停止导航；不再强制位置回拉；退出由动画事件控制
 - 导航门禁：Attack/Dead 状态拒收路径；Return→Chase 立即下发追击并有进入攻击冷却
-- UI：主页面独占；弹窗经 UIDialogService；路由统一 UIRouteNames/UIMainPages
+- UI：主页面独占；弹窗经 UIDialogService；路由统一 UIRouteNames/UIMainPages；UI 名称统一来自 UINames
 
 ---
 

@@ -6,4 +6,5 @@ public static class ObjectNames
     public const string BattleRuntime = "[BattleRuntime]";
     public const string PoolManager = "[PoolManager]";
     public const string PoolRoot = "[PoolRoot]";
+    public const string ModelRoot = "ModelRoot";
 }

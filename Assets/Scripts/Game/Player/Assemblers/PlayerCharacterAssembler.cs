@@ -21,10 +21,11 @@ public static class PlayerCharacterAssembler
         Transform cameraRoot = playerInstance.transform.Find(ObjectNames.PlayerCameraRoot);
         if (cameraRoot == null) return false;
 
-        Transform modelRoot = playerInstance.transform.Find("ModelRoot");
+        Transform modelRoot = playerInstance.transform.Find(ObjectNames.ModelRoot);
         if (modelRoot == null) return false;
 
-        string visualPath = RoleVisualPaths.GetPath(playerData.baseData.classId);
+        RoleVisualSetting visualSetting = PlayerVisualConfig.GetRoleVisualSetting(playerData.baseData.classId);
+        string visualPath = visualSetting.path;
         if (string.IsNullOrEmpty(visualPath)) return false;
 
         GameObject visualPrefab = ResourceManager.Instance.Load<GameObject>(visualPath);
@@ -37,9 +38,9 @@ public static class PlayerCharacterAssembler
 
         GameObject visualInstance = Object.Instantiate(visualPrefab, modelRoot);
         visualInstance.name = visualPrefab.name;
-        visualInstance.transform.localPosition = Vector3.zero;
-        visualInstance.transform.localRotation = Quaternion.identity;
-        visualInstance.transform.localScale = Vector3.one;
+        visualInstance.transform.localPosition = visualSetting.localPosition;
+        visualInstance.transform.localRotation = Quaternion.Euler(visualSetting.localRotation);
+        visualInstance.transform.localScale = visualSetting.localScale;
 
         controller.InitCameraReference();
         return true;
