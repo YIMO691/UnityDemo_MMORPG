@@ -4,38 +4,38 @@ using System;
 public class MonsterEntity : MonoBehaviour
 {
     public int ConfigId { get; private set; }
+    public MonsterConfig Config { get; private set; }
     public int CurrentHp { get; private set; }
     public MonsterStateType CurrentState { get; private set; } = MonsterStateType.Idle;
     public Transform CurrentTarget { get; private set; }
     public bool IsDead { get; private set; }
-    public event Action<MonsterEntity> OnDead;
-
-    private MonsterConfig config;
-    private MonsterNavigator navigator;
-    private float attackTimer;
-    private float pathTimer;
-    private float pathInterval = 0.3f;
-    private MonsterAnimatorDriver anim;
-    private Vector3 spawnPosition;
-    private float chaseCooldown = 1f;
-    private float chaseCooldownTimer;
-    private float attackEntryCooldown = 0.3f;
-    private float attackEntryCooldownTimer;
-    private bool attackFrozen;
-    private float attackFailSafeTimeout = 2f;
-    private float attackFailSafeTimer;
     public string RuntimeId { get; private set; }
     public string SpawnPointId { get; private set; }
+    public Vector3 SpawnPosition { get; private set; }
+
+    public event Action<MonsterEntity> OnDead;
+
+    private MonsterNavigator navigator;
+    private MonsterAnimatorDriver anim;
 
     public void Init(MonsterConfig cfg, Vector3 spawnPos)
     {
-        config = cfg;
+        Config = cfg;
         ConfigId = cfg.id;
         CurrentHp = cfg.maxHp;
-        spawnPosition = spawnPos;
+        SpawnPosition = spawnPos;
+        IsDead = false;
+        CurrentState = MonsterStateType.Idle;
+
         navigator = GetComponent<MonsterNavigator>();
         anim = GetComponent<MonsterAnimatorDriver>();
         if (anim == null) anim = gameObject.AddComponent<MonsterAnimatorDriver>();
+    }
+
+    public void SetIdentity(string runtimeId, string spawnPointId = null)
+    {
+        RuntimeId = runtimeId;
+        SpawnPointId = spawnPointId;
     }
 
     public void SetTarget(Transform target)
@@ -48,6 +48,28 @@ public class MonsterEntity : MonoBehaviour
         CurrentTarget = null;
     }
 
+    public void SetState(MonsterStateType state)
+    {
+        CurrentState = state;
+    }
+
+    public float GetMoveSpeed()
+    {
+        return Config != null ? Config.moveSpeed : 3f;
+    }
+
+    public MonsterNavigator GetNavigator()
+    {
+        if (navigator == null) navigator = GetComponent<MonsterNavigator>();
+        return navigator;
+    }
+
+    public MonsterAnimatorDriver GetAnimatorDriver()
+    {
+        if (anim == null) anim = GetComponent<MonsterAnimatorDriver>();
+        return anim;
+    }
+
     public void TakeDamage(int damage)
     {
         if (IsDead) return;
@@ -55,176 +77,33 @@ public class MonsterEntity : MonoBehaviour
         if (CurrentHp <= 0) Die();
     }
 
+    public void SetSpawnPosition(Vector3 pos)
+    {
+        SpawnPosition = pos;
+    }
+
     public void Die()
     {
         if (IsDead) return;
+
         IsDead = true;
-        OnDead?.Invoke(this);
-        if (navigator != null) navigator.StopNavigation();
-        NavigationRegistry.Instance.Unregister(navigator);
-        MonsterRuntimeRegistry.Instance.Unregister(this);
-        anim?.SetDead();
-        Destroy(gameObject);
-    }
+        CurrentState = MonsterStateType.Idle;
 
-    private void Update()
-    {
-        if (IsDead) return;
-        if (config == null) return;
         if (navigator == null) navigator = GetComponent<MonsterNavigator>();
-        if (navigator == null) return;
-        if (chaseCooldownTimer > 0f) chaseCooldownTimer -= Time.deltaTime;
-        if (attackEntryCooldownTimer > 0f) attackEntryCooldownTimer -= Time.deltaTime;
-
-        if (CurrentTarget == null)
+        if (navigator != null)
         {
-            var player = PlayerLocator.Instance != null ? PlayerLocator.Instance.GetPlayerTransform() : null;
-            if (player != null)
-                SetTarget(player);
-        }
-
-        switch (CurrentState)
-        {
-            case MonsterStateType.Idle:
-                TickIdle();
-                break;
-            case MonsterStateType.Chase:
-                TickChase();
-                break;
-            case MonsterStateType.Attack:
-                TickAttack();
-                break;
-            case MonsterStateType.Return:
-                TickReturn();
-                break;
-        }
-    }
-
-    private void TickIdle()
-    {
-        if (CurrentTarget == null) return;
-        float dist = Vector3.Distance(transform.position, CurrentTarget.position);
-        anim?.SetIdle();
-        if (dist <= config.detectRange)
-        {
-            CurrentState = MonsterStateType.Chase;
-            attackEntryCooldownTimer = attackEntryCooldown;
-            pathTimer = pathInterval;
-        }
-    }
-
-    private void TickChase()
-    {
-        if (CurrentTarget == null)
-        {
-            CurrentState = MonsterStateType.Idle;
-            return;
-        }
-        float dist = Vector3.Distance(transform.position, CurrentTarget.position);
-        if (dist > config.detectRange)
-        {
-            CurrentState = MonsterStateType.Return;
-            chaseCooldownTimer = chaseCooldown;
             navigator.StopNavigation();
-            return;
+            NavigationRegistry.Instance.Unregister(navigator);
         }
-        if (dist <= config.attackRange && attackEntryCooldownTimer <= 0f)
-        {
-            CurrentState = MonsterStateType.Attack;
-            navigator.StopNavigation();
-            attackFrozen = true;
-            attackFailSafeTimer = 0f;
-            return;
-        }
-        float chaseSpeed = navigator != null ? navigator.CurrentSpeed : 0f;
-        anim?.SetChase(chaseSpeed);
-        pathTimer += Time.deltaTime;
-        if (pathTimer >= pathInterval && !string.IsNullOrEmpty(navigator.AgentId))
-        {
-            pathTimer = 0f;
-            var req = new NavigationMoveRequest(navigator.AgentId, CurrentTarget.position, 0.2f);
-            EventBus.Publish(new NavigationMoveRequestEvent(req));
-        }
-    }
 
-    private void TickAttack()
-    {
-        if (CurrentTarget == null)
-        {
-            CurrentState = MonsterStateType.Idle;
-            return;
-        }
-        // Freeze locomotion while attacking
-        anim?.SetIdle();
-        float dist = Vector3.Distance(transform.position, CurrentTarget.position);
-        attackTimer += Time.deltaTime;
-        attackFailSafeTimer += Time.deltaTime;
-        if (attackFailSafeTimer >= attackFailSafeTimeout) attackFrozen = false;
-        if (attackTimer >= config.attackInterval)
-        {
-            attackTimer = 0f;
-            anim?.TriggerAttack();
-        }
-        if (!attackFrozen && dist > config.attackRange * 1.2f)
-        {
-            CurrentState = MonsterStateType.Chase;
-        }
-    }
+        MonsterRuntimeRegistry.Instance.Unregister(this);
 
-    private void TickReturn()
-    {
-        if (CurrentTarget != null)
-        {
-            float distTarget = Vector3.Distance(transform.position, CurrentTarget.position);
-            if (chaseCooldownTimer <= 0f && distTarget <= config.detectRange)
-            {
-                CurrentState = MonsterStateType.Chase;
-                pathTimer = pathInterval;
-                attackEntryCooldownTimer = attackEntryCooldown;
-                if (!string.IsNullOrEmpty(navigator.AgentId))
-                {
-                    var req = new NavigationMoveRequest(navigator.AgentId, CurrentTarget.position, 0.2f);
-                    EventBus.Publish(new NavigationMoveRequestEvent(req));
-                }
-                return;
-            }
-        }
-        float distHome = Vector3.Distance(transform.position, spawnPosition);
-        if (distHome <= 0.5f)
-        {
-            CurrentState = MonsterStateType.Idle;
-            ClearTarget();
-            return;
-        }
-        pathTimer += Time.deltaTime;
-        if (pathTimer >= pathInterval && !string.IsNullOrEmpty(navigator.AgentId))
-        {
-            pathTimer = 0f;
-            var req = new NavigationMoveRequest(navigator.AgentId, spawnPosition, 0.1f);
-            EventBus.Publish(new NavigationMoveRequestEvent(req));
-        }
-    }
+        anim = GetComponent<MonsterAnimatorDriver>();
+        anim?.SetDead();
 
-    public float GetMoveSpeed()
-    {
-        return config != null ? config.moveSpeed : 3f;
-    }
+        OnDead?.Invoke(this);
 
-    // Animation event receivers
-    public void OnBornOver() { }
-    public void OnAttackEvent()
-    {
-    }
-    public void OnAttackOver()
-    {
-        attackFrozen = false;
-        attackFailSafeTimer = 0f;
-    }
-
-    public void SetIdentity(string runtimeId, string spawnPointId = null)
-    {
-        RuntimeId = runtimeId;
-        SpawnPointId = spawnPointId;
+        Destroy(gameObject);
     }
 
     public MonsterSaveData BuildSaveData()
@@ -249,11 +128,11 @@ public class MonsterEntity : MonoBehaviour
         transform.position = new Vector3(data.posX, data.posY, data.posZ);
         transform.rotation = Quaternion.Euler(0f, data.rotY, 0f);
         CurrentHp = data.currentHp;
+        CurrentState = MonsterStateType.Idle;
+
         if (data.isDead)
         {
             Die();
-            return;
         }
-        CurrentState = MonsterStateType.Idle;
     }
 }

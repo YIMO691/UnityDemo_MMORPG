@@ -3,10 +3,9 @@ using System.Collections.Generic;
 
 public static class MonsterSpawner
 {
-    private static int spawnIndex = 0;
     public static GameObject SpawnMonster(int configId, Vector3 position)
     {
-        return MonsterFactory.CreateNew(configId, position);
+        return MonsterRuntimeService.CreateFromSpawnPoint(configId, position, null);
     }
 
     public static GameObject SpawnFirst(Vector3 position)

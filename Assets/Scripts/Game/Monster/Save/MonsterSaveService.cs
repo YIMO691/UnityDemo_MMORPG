@@ -8,6 +8,7 @@ public class MonsterSaveService
         var monsters = MonsterRuntimeRegistry.Instance.GetAll();
         for (int i = 0; i < monsters.Count; i++)
         {
+            if (monsters[i] == null) continue;
             list.Add(monsters[i].BuildSaveData());
         }
         return list;
@@ -18,7 +19,9 @@ public class MonsterSaveService
         if (dataList == null) return;
         for (int i = 0; i < dataList.Count; i++)
         {
-            MonsterFactory.RestoreFromSave(dataList[i]);
+            var data = dataList[i];
+            if (data == null) continue;
+            MonsterRuntimeService.RestoreFromSave(data);
         }
     }
 }
