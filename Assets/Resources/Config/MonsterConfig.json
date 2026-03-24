@@ -9,6 +9,46 @@
       "attackRange": 2.0,
       "attackInterval": 1.2,
       "prefabPath": "Zombie"
+    },
+    {
+      "id": 2,
+      "name": "Zombie_Z1",
+      "maxHp": 80,
+      "moveSpeed": 2.8,
+      "detectRange": 16.0,
+      "attackRange": 2.0,
+      "attackInterval": 1.3,
+      "prefabPath": "Z1"
+    },
+    {
+      "id": 3,
+      "name": "Zombie_Z2",
+      "maxHp": 100,
+      "moveSpeed": 2.6,
+      "detectRange": 17.0,
+      "attackRange": 2.2,
+      "attackInterval": 1.4,
+      "prefabPath": "Z2"
+    },
+    {
+      "id": 4,
+      "name": "Zombie_Z3",
+      "maxHp": 120,
+      "moveSpeed": 2.4,
+      "detectRange": 18.0,
+      "attackRange": 2.2,
+      "attackInterval": 1.5,
+      "prefabPath": "Z3"
+    },
+    {
+      "id": 5,
+      "name": "Zombie_Z4",
+      "maxHp": 150,
+      "moveSpeed": 2.2,
+      "detectRange": 20.0,
+      "attackRange": 2.4,
+      "attackInterval": 1.6,
+      "prefabPath": "Z4"
     }
   ]
 }
