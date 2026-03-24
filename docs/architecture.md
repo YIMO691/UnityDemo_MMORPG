@@ -42,7 +42,7 @@
   - 依赖原则：精简引用；禁止引用 MMORPG.Game
 - Game（业务域，MMORPG.Game）
   - 职责：业务逻辑、流程控制、实体模型、UI 页面、场景装配、角色控制与输入
-  - 组成：CharacterControl、GameScene（Entry/Assemblers）、Entity（含 Player/RoleClass 等）、Flow、UI（Controllers/Panels）、Save（Mapper/Service）
+  - 组成：CharacterControl、GameScene（Entry/Assemblers）、Player（Config/Data/Factory/Assemblers/Runtime/Navigation/Save）、Monster（Config/Factory/Runtime/Navigation/Save/Spawner/Assembler/Debug）、Navigation（Contracts/Events/Runtime{Service/Registry/Components}）、Map（Manager/Runtime/UI）、Flow、UI（Controllers/Panels）
   - 依赖：Cinemachine / Unity.InputSystem / Unity.TextMeshPro
 - Editor（编辑器扩展，MMORPG.Editor）
   - 职责：工具与工作流（配置编辑器、场景菜单等），仅在 Editor 编译
@@ -78,9 +78,9 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - UIMainPages / UIRouteNames：主页面注册与路由常量
 - 数据与设置
   - DataManager（Framework）：设置数据持久化、槽位编号与文件名、基础 IO；不再持有 PlayerData 业务对象
-  - GamePlayerDataService（Game/Save）：当前玩家内存态、存档读写、摘要列表（复用 DataManager 槽位/文件名与 JsonMgr）
-  - RoleDataManager（Game）：职业配置加载（Resources/Config/RoleClassConfig.json）
-  - PlayerSaveMetaMapper（Game/Save/Mapper）：PlayerData → PlayerSaveMetaData
+  - GamePlayerDataService（Game/Player/Save）：当前玩家内存态、存档读写、摘要列表（复用 DataManager 槽位/文件名与 JsonMgr）
+  - RoleDataManager（Game/Player/Config）：职业配置读取
+  - PlayerSaveMetaMapper（Game/Player/Save/Mapper）：PlayerData → PlayerSaveMetaData
 - 角色控制（Game/CharacterControl）
   - Input：StarterAssets.inputactions（唯一 GUID）、StarterAssetsInputs
   - ThirdPerson：ThirdPersonController、BasicRigidBodyPush
@@ -96,13 +96,13 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - MapDataManager：从 Resources/Config/MapConfig.json 加载
   - MapService：获取当前场景、玩家位置、当前地图配置（runtime.Scene 为空时回退 activeScene）
   - MapPanel：显示地图名称、图片、玩家标点；标点依据 MapConfig 世界边界与 MapImage RectTransform 左下角原点映射
-  - PlayerLocator：注册/获取玩家 Transform，优先实时位置
+  - PlayerLocator（Game/Player/Runtime）：注册/获取玩家 Transform/PlayerEntity，优先实时位置
 
 - 自动寻路（Game/Navigation）
   - Contracts：INavigationAgent、NavigationMoveRequest
   - Events：NavigationMoveRequestEvent、NavigationStopRequestEvent
-  - Runtime：NavigationPathSolver（NavMesh.SamplePosition/CalculatePath）、NavigationRegistry（代理注册表）、NavigationService（事件订阅→路径求解→分发）
-  - Components：BaseNavigator（通用路径驱动）、PlayerNavigator（将路径转为 StarterAssetsInputs 移动；支持取消保护时间与手动输入接管）
+  - Runtime：NavigationPathSolver（NavMesh.SamplePosition/CalculatePath）、NavigationRegistry（代理注册表）、NavigationService（事件订阅→路径求解→分发）、Components/BaseNavigator（通用路径驱动）
+  - Player 导航：Game/Player/Navigation/PlayerNavigator（将路径转为 StarterAssetsInputs 移动；支持取消保护时间与手动输入接管）
   - UI：MapClickReceiver（点击地图 → 世界坐标转换 → 发布 NavigationMoveRequest）
 
 ---
@@ -177,12 +177,34 @@ Assets/Scripts
 ├─ Game/                      # 业务域
 │  ├─ Boot/{AppRuntimeInitializer,GameBootstrapper,StartGame}
 │  ├─ CharacterControl/{Input,ThirdPerson}
-│  ├─ GameScene/{Entry,Assemblers}
-│  ├─ Entity/
-│  │  ├─ Player/Data/{Base,Progress,Runtime}
-│  │  └─ RoleClass/{Data,Manager}
-│  ├─ Save/{Mapper,GamePlayerDataService,PlayerSaveService}
-│  ├─ Flow/{CreateRoleFlowController}
+│  ├─ GameScene/{Entry,Assemblers,RuntimeSceneCommitter}
+│  ├─ Runtime/{GameRuntime}
+│  ├─ Navigation/
+│  │  ├─ Contracts/{INavigationAgent,NavigationMoveRequest,NavigationVisualState}
+│  │  ├─ Events/{NavigationMoveRequestEvent,NavigationStopRequestEvent}
+│  │  └─ Runtime/{NavigationService,NavigationRegistry,Components/{BaseNavigator}}
+│  ├─ Player/
+│  │  ├─ Config/{RoleClassConfig,RoleClassConfigList,PlayerVisualConfig}
+│  │  ├─ Data/{Base/{PlayerData,PlayerBaseData},Progress/{PlayerProgressData},Attribute/{PlayerAttributeData},Runtime/{PlayerRuntimeData}}
+│  │  ├─ Factory/{PlayerFactory}
+│  │  ├─ Assemblers/{PlayerCharacterAssembler,PlayerVisualAssembler}
+│  │  ├─ Runtime/{PlayerEntity,PlayerLocator}
+│  │  ├─ Navigation/{PlayerNavigator}
+│  │  └─ Save/{GamePlayerDataService,PlayerSaveService,Mapper/{PlayerSaveMetaMapper}}
+│  ├─ Monster/
+│  │  ├─ Config/{MonsterConfig,MonsterConfigList,MonsterConfigManager}
+│  │  ├─ Factory/{MonsterFactory}
+│  │  ├─ Runtime/{MonsterEntity,MonsterAnimatorDriver,MonsterAnimationEvents,MonsterStateType,MonsterRuntimeRegistry}
+│  │  ├─ Navigation/{MonsterNavigator,MonsterAgentId}
+│  │  ├─ Save/{MonsterSaveData,MonsterSaveService}
+│  │  ├─ Spawner/{MonsterSpawnPoint,MonsterSpawner}
+│  │  ├─ Assembler/{MonsterAssembler}
+│  │  └─ Debug/{MonsterDamageDebugInput1}
+│  ├─ Map/
+│  │  ├─ Manager/{MapDataManager}
+│  │  ├─ Runtime/{MiniMapService,MiniMapAssembler,MiniMapCameraController,MapService}
+│  │  └─ UI/{MapPathSegmentItem}
+│  ├─ Flow/{CreateRoleFlowController,RoleAnimationEventReceiver}
 │  └─ UI/{Controllers,Panels/{Pages,Popups,Items}}
 └─ Editor/{Config,Scene}
 ```

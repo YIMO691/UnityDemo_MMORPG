@@ -10,7 +10,7 @@ public class PoolManager : MonoBehaviour
         {
             if (_instance == null)
             {
-                var go = new GameObject("[PoolManager]");
+                var go = new GameObject(ObjectNames.PoolManager);
                 _instance = go.AddComponent<PoolManager>();
                 DontDestroyOnLoad(go);
             }
@@ -31,7 +31,7 @@ public class PoolManager : MonoBehaviour
         _instance = this;
         DontDestroyOnLoad(gameObject);
 
-        poolRoot = new GameObject("[PoolRoot]").transform;
+        poolRoot = new GameObject(ObjectNames.PoolRoot).transform;
         DontDestroyOnLoad(poolRoot.gameObject);
     }
 

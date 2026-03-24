@@ -21,7 +21,7 @@
 
 ---
 
-## 目录结构
+## 目录结构（已标准化）
 ```
 Assets
 ├─ Scenes
@@ -41,11 +41,22 @@ Assets
    └─ Game
       ├─ Boot（GameManager、StartGame）
       ├─ CharacterControl（ThirdPersonController、StarterAssetsInputs、输入资产）
-      ├─ GameScene（Entry + Assemblers + MiniMap + RuntimeCommit）
-      ├─ Navigation（Service/Registry/Events/Agents）
-      ├─ Map（Panel、Config、Assembler）
-      ├─ Monster（Config/Assembler/Navigation/Runtime/Spawner/Debug）
-      ├─ Save（GamePlayerDataService、PlayerSaveService、Mapper）
+      ├─ GameScene（Entry/Assemblers/MiniMap/RuntimeSceneCommitter）
+      ├─ Runtime（GameRuntime）
+      ├─ Navigation
+      │  ├─ Contracts（INavigationAgent、NavigationMoveRequest、NavigationVisualState）
+      │  ├─ Events（NavigationMoveRequestEvent、NavigationStopRequestEvent）
+      │  └─ Runtime（NavigationService、NavigationRegistry、Components/BaseNavigator）
+      ├─ Player
+      │  ├─ Config（RoleClassConfig、RoleClassConfigList、PlayerVisualConfig）
+      │  ├─ Data（Base/Progress/Attribute/Runtime）
+      │  ├─ Factory（PlayerFactory）
+      │  ├─ Assemblers（PlayerCharacterAssembler、PlayerVisualAssembler）
+      │  ├─ Runtime（PlayerEntity、PlayerLocator）
+      │  ├─ Navigation（PlayerNavigator）
+      │  └─ Save（GamePlayerDataService、PlayerSaveService、Mapper/PlayerSaveMetaMapper）
+      ├─ Monster（Config/Assembler/Navigation/Runtime/Factory/Save/Spawner/Debug）
+      ├─ Map（Manager/Runtime/UI）
       ├─ Flow（CreateRoleFlowController 等）
       └─ UI（Panels/Pages/Popups 等）
 ```
@@ -79,10 +90,10 @@ Assets
 ---
 
 ## 存档与数据
-- 当前玩家与槽位： [GamePlayerDataService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/GamePlayerDataService.cs)
-- 存档执行： [PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/PlayerSaveService.cs)
+- 当前玩家与槽位： [GamePlayerDataService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Player/Save/GamePlayerDataService.cs)
+- 存档执行： [PlayerSaveService.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Player/Save/PlayerSaveService.cs)
 - 槽位策略： [DataManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Framework/Managers/DataManager.cs) 采用“尾部追加”（MaxUsedSlotId+1）
-- 摘要映射： [PlayerSaveMetaMapper.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Save/Mapper/PlayerSaveMetaMapper.cs)
+- 摘要映射： [PlayerSaveMetaMapper.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Player/Save/Mapper/PlayerSaveMetaMapper.cs)
 
 ---
 
@@ -92,7 +103,7 @@ Assets
   - NavigationRegistry：登记/注销 INavigationAgent
   - 事件：NavigationMoveRequestEvent / NavigationStopRequestEvent
 - 代理实现
-  - PlayerNavigator（玩家）
+  - PlayerNavigator（玩家）：[Game/Player/Navigation/PlayerNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Player/Navigation/PlayerNavigator.cs)
   - MonsterNavigator（怪物）：平面转向、速度驱动动画、角点推进处理
 - 路径下发约束
   - Attack/Dead/Stun 门禁拒收
@@ -132,7 +143,7 @@ Assets
   - 资源：AssetPaths.DebugCanvas / AssetPaths.PoolMonitorPanel
   - 使用：GameSceneEntry.EnsureDebugCanvas()
 - 怪物伤害调试（K 键）
-  - [MonsterDamageDebugInput.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput.cs)
+  - [MonsterDamageDebugInput1.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Debug/MonsterDamageDebugInput1.cs)
   - 挂到玩家或任意空物体；按 K 对附近最近怪调用 TakeDamage()
 
 ---
