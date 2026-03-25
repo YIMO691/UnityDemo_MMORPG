@@ -1,48 +1,35 @@
-# 架构总规（Architecture Specification, Detailed）
+# Architecture Guide
 
-本文定义 UnityDemo_MMORPG 的整体架构、边界与接入规范，确保“最小运行链路稳定 + 模块化扩展一致”。配套文档：
-- 最小链路清单：[docs/minimal-runtime-checklist.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/minimal-runtime-checklist.md)
-- 新模块接入模板：[docs/module-integration-template.md](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/docs/module-integration-template.md)
+本文是 UnityDemo_MMORPG 的工程化架构指南，聚焦“稳定的最小运行链路 + 清晰的职责边界 + 可持续扩展”。配套：
+- 最小链路清单：docs/minimal-runtime-checklist.md
+- 新模块接入模板：docs/module-integration-template.md
 
 ## 目录
-- 1. 分层模型与程序集
-- 2. 黄金链路
-- 3. 模块职责矩阵
-- 4. 依赖与命名规范
-- 5. 资源与输入规范
-- 6. 存档与版本策略
-- 7. 相机降级方案
-- 8. UI 分层与遮罩
-- 9. 工程目录（摘要）
-- 10. 新模块接入流程
-- 11. 验收与回归
-- 12. 后续演进
-- 13. 怪物系统架构
-- 14. 导航策略与门禁
-- 15. Debug 与可观测性
-- 16. 常量与资源命名规范
-- 17. 动画集成规范
-- 18. 代码风格与行为约束
-- 19. 性能与测试
-- 20. 提交与发布规范
-- 21. 术语表与职责边界
-- 22. 错误处理与健壮性策略
-- 23. Animator 配置检查清单
-- 24. 配置与版本管理规范
-- 25. 性能预算与节流建议
-- 26. 测试策略细化
+- 层次与原则
+- 关键运行链路
+- 模块职责矩阵
+- 目录结构（摘要）
+- Actor 行为模型
+- 导航策略
+- 存档与恢复
+- 常量与资源规范
+- UI 系统规范
+- 调试与工具
+- 测试与验收
+- 提交与工程规范
+- 术语与边界
 
 ---
 
-## 1. 分层模型与程序集
+## 层次与原则
 
 - Framework（基础设施，MMORPG.Framework）
   - 职责：通用能力与可复用基础设施，不含业务规则
-  - 组成：UI 框架（BasePanel/UIManager/UIMainPages/UIRouteNames）、事件总线（EventBus）、资源加载（ResourceManager）、设置与基础存储（DataManager/JsonMgr）、常量（AssetPaths/UIPaths）
+  - 组成：UI 框架（BasePanel/UIManager/UIMainPages/UIRouteNames）、事件总线（EventBus）、资源加载（ResourceManager）、数据与 JSON（DataManager/JsonMgr）、常量（AssetPaths/UINames/UIStrings/ObjectNames/NavigationConsts）
   - 依赖原则：精简引用；禁止引用 MMORPG.Game
 - Game（业务域，MMORPG.Game）
   - 职责：业务逻辑、流程控制、实体模型、UI 页面、场景装配、角色控制与输入
-  - 组成：CharacterControl、GameScene（Entry/Assemblers）、Player（Config/Data/Factory/Assemblers/Runtime/Navigation/Save）、Monster（Config/Factory/Runtime/Navigation/Save/Spawner/Assembler/Debug）、Navigation（Contracts/Events/Runtime{Service/Registry/Components}）、Map（Manager/Runtime/UI）、Flow、UI（Controllers/Panels）
+  - 组成：CharacterControl、GameScene（Entry/Assemblers）、Player（Config/Data/Factory/Assemblers/Runtime/Navigation/Save）、Monster（Config/Factory/Runtime/Navigation/Save/Spawner/Assembler/Debug）、Navigation（Contracts/Events/Runtime{PathSolver/Registry/Components}）、Map（Manager/Runtime/UI）、Flow、UI（Controllers/Panels）
   - 依赖：Cinemachine / Unity.InputSystem / Unity.TextMeshPro
 - Editor（编辑器扩展，MMORPG.Editor）
   - 职责：工具与工作流（配置编辑器、场景菜单等），仅在 Editor 编译
@@ -51,7 +38,7 @@
 
 ---
 
-## 2. 黄金链路（Minimal Gold Path）
+## 关键运行链路
 
 BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
@@ -61,7 +48,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - CreateRolePanel 发布 CreateRoleRequestEvent
   - CreateRoleFlowController：PlayerFactory 生成 PlayerData → GamePlayerDataService.SavePlayerDataToSlot → 注入当前玩家与槽位 → SceneNavigator 进入 GameScene
 - 场景装配
-  - GameSceneEntry → PlayerCharacterAssembler（实例化骨架、挂载职业外观、设置相机目标）→ CameraRigAssembler（创建/绑定相机；失败降级为主相机跟随）→ 打开 MainPanel
+  - GameSceneEntry → PlayerRuntimeService.CreateRuntimePlayer（装配→Init→ApplySnapshot→SetAgentId→Register）→ CameraRigAssembler 绑定 → 打开 MainPanel
 - 角色详情
   - MainPanel 点击头像 → 发布 OpenRoleInfoPanelEvent → RoleUIController 显示 RoleInfoPanel 并填充
 
@@ -69,7 +56,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
 ---
 
-## 3. 模块职责矩阵
+## 模块职责矩阵
 
 - UI 框架（Framework/UI）
   - BasePanel：OnCreate/OnShow/OnHide/OnDestroyPanel 生命周期
@@ -91,10 +78,10 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
   - CreateRoleFlowController：订阅创角事件，写存档、注入内存，切换场景
   - RoleUIController：订阅 OpenRoleInfoPanelEvent，显示并填充 RoleInfoPanel
 - 怪物（Game/Monster）
-  - RuntimeRegistry：运行时怪物注册/反注册/查询（Get/HasAlive/CountAliveBySpawnPoint）
-  - RuntimeService：统一创建/恢复/注册入口（CreateFromSpawnPoint/RestoreFromSave）
-  - Module：场景级门面（先 Restore 再 InitSpawnPoints）
-  - SpawnPoint：点位配置与补怪入口（不再维护 alive 列表，不再监听单体死亡）
+  - RuntimeRegistry：Register/Unregister/Get/HasAlive/CountAliveBySpawnPoint
+  - RuntimeService：CreateFromSpawnPoint/RestoreFromSave（恢复后 SpawnPosition=SpawnPoint）
+  - Module：场景门面（Restore→InitSpawnPoints）
+  - SpawnPoint：点位配置与补怪入口（按 Registry 统计活怪）
 
 - 地图系统（Game/Map）
   - MapConfig：每张地图世界边界与图片资源标识（worldMin/Max X/Z, mapImage）
@@ -106,17 +93,17 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 - 自动寻路（Game/Navigation）
   - Contracts：INavigationAgent、NavigationMoveRequest
   - Events：NavigationMoveRequestEvent、NavigationStopRequestEvent
-  - Runtime：NavigationPathSolver（NavMesh.SamplePosition/CalculatePath）、NavigationRegistry（代理注册表）、NavigationService（事件订阅→路径求解→分发）、Components/BaseNavigator（通用路径驱动）
+  - Runtime：NavigationPathSolver（NavMesh.SamplePosition/CalculatePath）、NavigationRegistry（代理注册表）、Components/BaseNavigator（通用路径驱动）
   - Player 导航：Game/Player/Navigation/PlayerNavigator（将路径转为 StarterAssetsInputs 移动；支持取消保护时间与手动输入接管）
   - UI：MapClickReceiver（点击地图 → 世界坐标转换 → 发布 NavigationMoveRequest）
 
 ---
 
-## 4. 依赖与命名规范
+## 依赖与命名规范
 
 - 路由与资源
   - 所有 UI 打开使用 UIRouteNames；窗口预制位于 Resources/UI/Windows/<PanelName>.prefab，脚本同名
-  - 公用资源路径集中到 AssetPaths/UIPaths，便于重构与资产替换
+  - 公用资源路径集中到 AssetPaths（统一来源），便于重构与资产替换
 - 事件与跨层
   - 通用事件（UI 路由等）放在 Framework/EventDefine；业务事件放在 Game/Events
   - 通过 EventBus 解耦模块，禁止直接跨层持对象引用
@@ -130,7 +117,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
 ---
 
-## 5. 资源与输入规范
+## 资源与输入规范
 
 - 角色与相机（Resources/Role/PlayerAmature）
   - PlayerArmature：需含 CharacterController、ThirdPersonController、StarterAssetsInputs、PlayerInput、PlayerCameraRoot、CinemachineCameraTarget
@@ -142,7 +129,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
 ---
 
-## 6. 存档与版本策略
+## 存档与恢复
 
 - 文件命名：DataManager.GetPlayerSlotFileName(slotId) → "player_<id>"
 - 写入流程：GamePlayerDataService.SavePlayerDataToSlot → JsonMgr.SaveData
@@ -150,10 +137,12 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 - 摘要：PlayerSaveMetaMapper 将 PlayerData 转为 PlayerSaveMetaData，用于 Continue 列表
 - 版本：若数据结构变更，PlayerData 增加 version 字段，新增升级器（Upgrade Pipeline）在读档时迁移
  - 运行时更新：进入场景后写入 runtime.Scene 与当前坐标，避免首次“未知地图”
+- Player：PlayerEntity.CaptureRuntimeSnapshot/ApplyRuntimeSnapshot（唯一快照入口）
+- Monster：RuntimeService.RestoreFromSave（isDead/去重；SpawnPosition=SpawnPoint，当前位置=存档位置）
 
 ---
 
-## 7. 相机降级方案
+## 相机降级方案
 
 - TryCreate：优先从 Resources 加载 MainCamera/PlayerFollowCamera；若缺失则动态创建主相机（Camera+AudioListener+可选 CinemachineBrain）
 - TryBind：有虚拟相机则 Follow/LookAt 绑定 CinemachineCameraTarget
@@ -161,7 +150,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
 ---
 
-## 8. UI 分层与遮罩
+## UI 系统规范
 
 - UILayer：Bottom/Normal/Popup/Top
 - 弹窗栈：Popup 入栈，UIMask 跟随栈顶显示；CloseByMask 控制遮罩点击关闭
@@ -169,7 +158,7 @@ BeginScene → 创角/读档 → GameScene → PlayerArmature / Camera / UI
 
 ---
 
-## 9. 工程目录（摘要）
+## 目录结构（摘要）
 
 ```
 Assets/Scripts
@@ -178,28 +167,27 @@ Assets/Scripts
 │  ├─ Event/{EventBus,EventDefine}
 │  ├─ Managers/{UIManager,ResourceManager,AudioManager,DataManager}
 │  ├─ Json/{JsonMgr}
-│  └─ Consts/{AssetPaths,UIPaths}
+│  └─ Consts/{AssetPaths,UINames,UIStrings,ObjectNames,NavigationConsts}
 ├─ Game/                      # 业务域
 │  ├─ Boot/{AppRuntimeInitializer,GameBootstrapper,StartGame}
 │  ├─ CharacterControl/{Input,ThirdPerson}
 │  ├─ GameScene/{Entry,Assemblers,RuntimeSceneCommitter}
 │  ├─ Runtime/{GameRuntime}
 │  ├─ Navigation/
-│  │  ├─ Contracts/{INavigationAgent,NavigationMoveRequest,NavigationVisualState}
-│  │  ├─ Events/{NavigationMoveRequestEvent,NavigationStopRequestEvent}
-│  │  └─ Runtime/{NavigationService,NavigationRegistry,Components/{BaseNavigator}}
+│  │  ├─ Contracts/{INavigationAgent,NavigationMoveRequest}
+│  │  └─ Runtime/{NavigationPathSolver,NavigationRegistry,Components/{BaseNavigator}}
 │  ├─ Player/
 │  │  ├─ Config/{RoleClassConfig,RoleClassConfigList,PlayerVisualConfig}
 │  │  ├─ Data/{Base/{PlayerData,PlayerBaseData},Progress/{PlayerProgressData},Attribute/{PlayerAttributeData},Runtime/{PlayerRuntimeData}}
 │  │  ├─ Factory/{PlayerFactory}
-│  │  ├─ Assemblers/{PlayerCharacterAssembler,PlayerVisualAssembler}
-│  │  ├─ Runtime/{PlayerEntity,PlayerLocator}
+│  │  ├─ Assemblers/{PlayerCharacterAssembler}
+│  │  ├─ Runtime/{PlayerEntity,PlayerLocator,PlayerInputProxy,PlayerLocomotionBrain,PlayerRuntimeService}
 │  │  ├─ Navigation/{PlayerNavigator}
 │  │  └─ Save/{GamePlayerDataService,PlayerSaveService,Mapper/{PlayerSaveMetaMapper}}
 │  ├─ Monster/
 │  │  ├─ Config/{MonsterConfig,MonsterConfigList,MonsterConfigManager}
 │  │  ├─ Factory/{MonsterFactory}
-│  │  ├─ Runtime/{MonsterEntity,MonsterBrain,MonsterAnimatorDriver,MonsterAnimationEvents,MonsterStateType,MonsterRuntimeRegistry,MonsterRuntimeService,MonsterModule}
+│  │  ├─ Runtime/{MonsterEntity,MonsterBrain,MonsterLocomotionExecutor,MonsterAnimatorDriver,MonsterAnimationEvents,MonsterStateType,MonsterRuntimeRegistry,MonsterRuntimeService,MonsterModule}
 │  │  ├─ Navigation/{MonsterNavigator,MonsterAgentId}
 │  │  ├─ Save/{MonsterSaveData,MonsterSaveService}
 │  │  ├─ Spawner/{MonsterSpawnPoint,MonsterSpawner}
@@ -216,7 +204,7 @@ Assets/Scripts
 
 ---
 
-## 10. 新模块接入流程
+## 新模块接入流程
 
 新增系统前，复制并填写“新增模块接入模板”。关键检查点：
 - 分层定位（Framework / Game）与理由
@@ -232,7 +220,7 @@ Assets/Scripts
 
 ---
 
-## 11. 验收与回归
+## 测试与验收
 
 - BeginScene → 创角/读档 → GameScene 全链路运行通过
 - 主页面/弹窗按路由正常打开/关闭，遮罩行为正确
@@ -242,57 +230,31 @@ Assets/Scripts
 
 ---
 
-## 12. 后续演进
+## 提交与工程规范
 
-- 将 PlayerSaveMetaData 迁至 Game/Save（当依赖关系更明确时）
-- Addressables/Bundle 化资源加载，ResourceManager 抽象加载后端
-- 引入 Play Mode + Edit Mode 测试覆盖关键流程
-
----
-
-## 13. 怪物系统架构（Monster Module）
-
-- 配置与加载
-  - MonsterConfig.json：id/name/maxHp/moveSpeed/detectRange/attackRange/attackInterval/prefabPath
-  - MonsterConfigManager：初始化时从 Resources/Config 读取，提供 GetConfig/GetAllConfigs
-- 运行实体（MonsterEntity）
-  - 仅持有数据/身份/血量/死亡/存档：ConfigId/RuntimeId/SpawnPointId/SpawnPosition/CurrentHp/IsDead
-  - 提供 SetState/SetTarget/ClearTarget/GetMoveSpeed 等最小接口
-  - Die()：停止导航、注销 NavigationRegistry 与 MonsterRuntimeRegistry、驱动动画、销毁
-- AI 脑（MonsterBrain）
-  - 管状态切换与决策（Idle/Chase/Attack/Return）
-  - 追击/返回/攻击节流与门禁（pathInterval/chaseCooldown/attackEntryCooldown/attackFailSafeTimeout）
-  - 使用 MonsterNavigator.MoveTo(...) 驱动移动，不直接碰事件总线
-  - OnAttackOver 解锁失败保护；OnAttackEvent 为后续伤害结算扩展位
-- 导航代理（MonsterNavigator）
-  - 只负责“怎么走”：内部使用 NavigationPathSolver 求路；不再读取 MonsterEntity.CurrentState 做门禁
-  - 平面转向：将方向投影到 XZ 平面，Quaternion.Slerp 平滑旋转
-  - 角点推进：平面方向为零（仅高度差）时推进到下一角点，避免卡住
-  - 速度采样：CurrentSpeed 用于动画驱动（真实速度）
-- 装配与生成
-  - MonsterAssembler：加载 Prefab、补齐 MonsterNavigator/MonsterBrain/MonsterAnimatorDriver/MonsterAnimationEvents、注册 NavigationRegistry、设置唯一 AgentId
-  - MonsterRuntimeService：CreateFromSpawnPoint/RestoreFromSave（统一创建/恢复/注册；Restore 时以 SpawnPoint 为 home）
-  - MonsterSpawner/MonsterSpawnPoint：按配置生成/补怪；SpawnPoint 只做点位逻辑与入口
-- 动画与事件
-  - MonsterAnimatorDriver：参数 Speed/IsChasing/Dead/Attack
-  - MonsterAnimationEvents：BornOver/AtkEvent/AttackOver（末帧触发以解锁攻击，事件转发至 MonsterBrain）
-- 关键约束
-  - 攻击期间只靠 StopNavigation 控制位移，不强制回位
-  - 退出攻击必须由动画事件或失败保护触发，避免时间锁错位
-  - 恢复后“归家点”指向 SpawnPoint 位置，当前位置为存档位置（Return 归家至 SpawnPoint）
+- 分批提交：逻辑/资源/场景/AnimatorController/Prefab 分离
+- 信息格式：模块名 + 简述 + 关键影响
+- 发布前检查：无未提交更改；README/architecture/模板同步
 
 ---
 
-## 14. 导航策略与门禁
+## Actor 行为模型
+
+- 命令语义：ActorControlCommand（moveDirection/lookDirection/jump/sprint/attack/stop）
+- Player：PlayerLocomotionBrain（命令）→ ThirdPersonController（执行）；PlayerControlCommand 提供与 Actor 命令的互转
+- Monster：MonsterBrain（命令）→ MonsterLocomotionExecutor（执行：Navigator.MoveTo/Stop、Animator.SetIdle/SetChase/TriggerAttack）
+- 优先级：Attack > Stop > Move；动画写入单一来源（Executor）
+- 首帧速度空窗：执行器按帧刷新 + 意图保持，避免“移动首帧仍为 Idle”
+
+---
+
+## 导航策略
 
 - 事件流
-  - 请求：NavigationMoveRequestEvent(agentId, target, stopDistance)
   - 求解：NavigationPathSolver → corners（NavMeshPath）
-  - 分发：NavigationService → agent.SetPath(corners, stopDistance)
+  - 执行：Navigator.SetPath(corners, stopDistance)
 - 门禁规则
-  - Attack/Dead/Stun 状态拒收路径（SetPath 早退）
-  - Return→Chase 切换时强制触发一次追击下发（或拉满 pathTimer 下一帧必发）
-  - 攻击进入冷却：从 Idle/Return 切回 Chase 后，延迟一个窗口再允许进入 Attack
+  - Navigator 不读取业务状态（除 IsDead）
 - 距离与停止策略
   - stopDistance 建议小值（如 0.2），避免“未移动即判到达”
   - 路线角点仅高度差时推进到下一角点，避免原地抖动
@@ -302,7 +264,7 @@ Assets/Scripts
 
 ---
 
-## 15. Debug 与可观测性
+## 调试与工具
 
 - DebugCanvas
   - 资源路径：AssetPaths.DebugCanvas
@@ -314,10 +276,11 @@ Assets/Scripts
 - 怪物调试
   - K 键最近怪伤害：MonsterDamageDebugInput（测试 Die/OnDead/重生链路）
   - 状态机切换日志：Idle/Chase/Attack/Return/Dead
+- 路径硬编码扫描：Editor/Tools/PathUsageScanner（Tools/Path Scanner 菜单）
 
 ---
 
-## 16. 常量与资源命名规范
+## 常量与资源规范
 
 - 资源路径常量：AssetPaths
   - 示例：UI/Root/DebugCanvas、UI/Windows/PoolMonitorPanel、Map/Main/、Monster/
@@ -331,7 +294,7 @@ Assets/Scripts
 
 ---
 
-## 17. 动画集成规范
+## 动画集成规范
 
 - 参数约定
   - Speed：0–正值；由真实速度驱动
@@ -347,7 +310,7 @@ Assets/Scripts
 
 ---
 
-## 18. 代码风格与行为约束
+## 代码风格与行为约束
 
 - 单一位移源：避免脚本位移与 Root Motion 双驱动
 - 攻击控制：Attack 期间仅停止导航；不使用“固定时间 + 强制回位”
@@ -357,7 +320,7 @@ Assets/Scripts
 
 ---
 
-## 19. 性能与测试
+## 性能与测试
 
 - 对象池：Framework/Pool（IPoolable、ObjectPool、PoolManager）
 - 导航频率：路径下发节流（pathInterval），避免高频求解
@@ -367,26 +330,12 @@ Assets/Scripts
 
 ---
 
-## 20. 提交与发布规范
-
-- 提交拆分
-  - 逻辑改动与资源改动分批提交
-  - 场景、AnimatorController、Prefab 的大改独立提交
-- 信息格式
-  - 模块名：简述内容；关键影响点（例如“攻击行为规范化：删除时间锁与强制回位；引入 AttackOver 事件”）
-- 发布前检查
-  - 场景与脚本无未提交更改
-  - README/architecture/模板已同步更新
-  - README/architecture/模板已同步更新
-
----
-
-## 21. 术语表与职责边界
+## 术语与边界
 - App：应用级生命周期（GameManager、场景切换）
 - Scene Entry：场景装配入口（GameSceneEntry），两阶段（组装→提交）
 - Assembler：装配器（相机/角色/小地图等），只负责构建与绑定，不做业务决策
-- Service：跨模块能力（NavigationService、UIDialogService、PlayerSaveService）
-- Registry：运行态注册表（NavigationRegistry、PlayerLocator）
+- Service：跨模块能力（RuntimeService/UIDialogService/PlayerSaveService）
+- Registry：运行态注册表（NavigationRegistry/MonsterRuntimeRegistry/PlayerLocator）
 - Agent：导航代理（PlayerNavigator/MonsterNavigator），只接受路径与停止指令
 - Event：领域事件（NavigationMoveRequestEvent 等），用于解耦发布/订阅
 

@@ -44,15 +44,14 @@ Assets
       ├─ GameScene（Entry/Assemblers/MiniMap/RuntimeSceneCommitter）
       ├─ Runtime（GameRuntime）
       ├─ Navigation
-      │  ├─ Contracts（INavigationAgent、NavigationMoveRequest、NavigationVisualState）
-      │  ├─ Events（NavigationMoveRequestEvent、NavigationStopRequestEvent）
-      │  └─ Runtime（NavigationService、NavigationRegistry、Components/BaseNavigator）
+      │  ├─ Contracts（INavigationAgent、NavigationMoveRequest）
+      │  └─ Runtime（NavigationPathSolver、NavigationRegistry、Components/BaseNavigator）
       ├─ Player
       │  ├─ Config（RoleClassConfig、RoleClassConfigList、PlayerVisualConfig）
       │  ├─ Data（Base/Progress/Attribute/Runtime）
       │  ├─ Factory（PlayerFactory）
-      │  ├─ Assemblers（PlayerCharacterAssembler、PlayerVisualAssembler）
-      │  ├─ Runtime（PlayerEntity、PlayerLocator）
+      │  ├─ Assemblers（PlayerCharacterAssembler）
+      │  ├─ Runtime（PlayerEntity、PlayerLocator、PlayerInputProxy、PlayerLocomotionBrain、PlayerRuntimeService）
       │  ├─ Navigation（PlayerNavigator）
       │  └─ Save（GamePlayerDataService、PlayerSaveService、Mapper/PlayerSaveMetaMapper）
       ├─ Monster（Config/Assembler/Navigation/Runtime/Factory/Save/Spawner/Debug）
@@ -70,7 +69,8 @@ Assets
   - ReturnToBeginFlow：清理小地图等→跳转 BeginScene
 - Game 场景入口：[GameSceneEntry.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/Entry/GameSceneEntry.cs)
   - 两阶段：TryAssembleScene(...) → CommitScene(...)
-  - Commit 内容：打开主页面、定位玩家、写入场景上下文、小地图绑定、导航代理接线、DebugCanvas
+  - Assemble：PlayerRuntimeService.CreateRuntimePlayer（组装→Init→ApplySnapshot→SetAgentId→Register）
+  - Commit：打开主页面、写入场景上下文、小地图绑定、MonsterModule.InitForScene（先恢复再初始化刷怪点）、EnsureBattleRuntime、DebugCanvas
 - 小地图装配：[MiniMapAssembler.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Map/Runtime/MiniMapAssembler.cs)
 - 场景运行时提交：[RuntimeSceneCommitter.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/GameScene/RuntimeSceneCommitter.cs)
 - 常量
@@ -100,13 +100,12 @@ Assets
 ---
 
 ## 导航与地图
-- 服务/注册/事件
-  - NavigationService：订阅移动/停走事件，计算路径并下发
+- 求路/注册
+  - NavigationPathSolver：基于 NavMesh 求路
   - NavigationRegistry：登记/注销 INavigationAgent
-  - 事件：NavigationMoveRequestEvent / NavigationStopRequestEvent
 - 代理实现
   - PlayerNavigator（玩家）：[Game/Player/Navigation/PlayerNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Player/Navigation/PlayerNavigator.cs)
-  - MonsterNavigator（怪物）：平面转向、速度驱动动画、角点推进处理
+  - MonsterNavigator（怪物）：内部求路、平面转向、角点推进、速度采样
 - 路径下发约束
   - Attack/Dead/Stun 门禁拒收
   - stopDistance 建议小值（如 0.2）避免“未移动即判到达”
@@ -122,7 +121,8 @@ Assets
   - 管理器：[MonsterConfigManager.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Config/MonsterConfigManager.cs)
 - 运行与职责分层
   - 实体：[MonsterEntity.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterEntity.cs)：仅持数据/身份/血量/死亡/存档
-  - AI 脑：[MonsterBrain.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterBrain.cs)：状态切换与决策（Idle/Chase/Attack/Return），调用导航 MoveTo
+  - AI 脑：[MonsterBrain.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterBrain.cs)：只做状态判断与产生命令
+  - 执行器：[MonsterLocomotionExecutor.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterLocomotionExecutor.cs)：统一执行命令（Navigator.MoveTo/Stop、Animator.SetIdle/SetChase/TriggerAttack），每帧按速度刷新动画并带意图保持
   - 导航代理：[MonsterNavigator.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs)：内部求路（NavigationPathSolver），平面转向与速度采样
   - 动画驱动与事件：
     - 驱动器：[MonsterAnimatorDriver.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Game/Monster/Runtime/MonsterAnimatorDriver.cs)
@@ -147,10 +147,7 @@ Assets
 - 路径硬编码扫描（Editor）
   - [PathUsageScanner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Editor/Tools/PathUsageScanner.cs)
   - 菜单：Tools/Path Scanner/Scan Hardcoded Paths
-- 路径硬编码扫描（Editor）
-  - [PathUsageScanner.cs](file:///c:/Users/Administrator/Desktop/UnityDemo_MMORPG/Assets/Scripts/Editor/Tools/PathUsageScanner.cs)
-  - 菜单：Tools/Path Scanner/Scan Hardcoded Paths
-  - 功能：扫描 Scripts 下的 .cs，报告疑似硬编码路径与 Resources/ResourceManager 的字面量路径使用，排除 AssetPaths.cs
+  - 功能：扫描 Scripts 下的 .cs，报告疑似硬编码路径与 Resources/ResourceManager 的字面量路径使用（排除 AssetPaths.cs）
 
 ---
 
@@ -164,8 +161,9 @@ Assets
 
 ## 代码约定
 - 单一移动源：避免脚本位移与 Root Motion 同时驱动
-- 攻击控制：Attack 期间仅停止导航；不再强制位置回拉；退出由动画事件控制
-- 导航门禁：Attack/Dead 状态拒收路径；Return→Chase 立即下发追击并有进入攻击冷却
+- 攻击控制：Attack 期间仅停止导航；退出由动画事件控制（AttackOver）
+- 动画写入单一来源：由执行器统一写入；Stop 仅影响导航不强制改动画
+- 导航门禁：Navigator 不读取业务状态（除 IsDead）；stopDistance 建议 0.2
 - UI：主页面独占；弹窗经 UIDialogService；路由统一 UIRouteNames/UIMainPages；UI 名称统一来自 UINames
 
 ---
