@@ -209,7 +209,17 @@ public class MonsterBrain : MonoBehaviour
 
     public void OnAttackEvent()
     {
-        // 后续第四阶段之后的战斗链接这里
+        if (entity == null || entity.IsDead) return;
+        if (entity.CurrentTarget == null) return;
+
+        ICombatSource attacker = GetComponent<ICombatSource>();
+        IDamageReceiver target = CombatTargetResolver.ResolveDamageReceiver(entity.CurrentTarget);
+        if (!CombatTargetResolver.IsValidHostileTarget(attacker, target)) return;
+
+        int rawDamage = 0;
+        Vector3 hitPos = entity.CurrentTarget.position;
+        var request = CombatRequestFactory.CreateBasicDamage(attacker, target, rawDamage, hitPos, DamageSourceType.NormalAttack);
+        BattleDamageService.Instance.ApplyDamage(request);
     }
 
     public void OnAttackOver()

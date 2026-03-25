@@ -56,14 +56,7 @@ public class MonsterDamageDebugInput : MonoBehaviour
         }
 
         Debug.Log($"[DebugAttack] Hit monster id={nearest.ConfigId}, dist={minDist:F2}");
-        var req = new DamageRequest
-        {
-            attacker = gameObject,
-            target = nearest,
-            rawDamage = damage,
-            sourceType = DamageSourceType.Debug,
-            hitWorldPosition = nearest.transform.position + Vector3.up * 2f
-        };
-        BattleDamageService.Instance.ApplyDamage(req);
+        var attackerEntity = PlayerLocator.Instance != null ? PlayerLocator.Instance.GetPlayerEntity() : null;
+        PlayerAttackService.Attack(attackerEntity, nearest, damage, nearest.transform.position + Vector3.up * 2f);
     }
 }
