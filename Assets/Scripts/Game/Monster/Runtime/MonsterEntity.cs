@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-public class MonsterEntity : MonoBehaviour
+public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource
 {
     public int ConfigId { get; private set; }
     public MonsterConfig Config { get; private set; }
@@ -17,6 +17,20 @@ public class MonsterEntity : MonoBehaviour
 
     private MonsterNavigator navigator;
     private MonsterAnimatorDriver anim;
+
+    public Transform ActorTransform => transform;
+    public string DisplayName => Config != null ? Config.name : "Monster";
+    public int FactionId => 2;
+    public int MaxHp => Config != null ? Config.maxHp : 0;
+    public float MoveSpeed => Config != null ? Config.moveSpeed : 0f;
+
+    public int Attack => Config != null ? Config.attack : 0;
+    public int Defense => Config != null ? Config.defense : 0;
+
+    public float CritRate => Config != null ? Config.critRate : 0f;
+    public float CritDamage => Config != null ? Config.critDamage : 1.5f;
+    public float HitRate => Config != null ? Config.hitRate : 1f;
+    public float DodgeRate => Config != null ? Config.dodgeRate : 0f;
 
     public void Init(MonsterConfig cfg, Vector3 spawnPos)
     {
@@ -77,6 +91,11 @@ public class MonsterEntity : MonoBehaviour
         if (CurrentHp <= 0) Die();
     }
 
+    public void ReceiveDamage(int damage)
+    {
+        TakeDamage(damage);
+    }
+
     public void SetSpawnPosition(Vector3 pos)
     {
         SpawnPosition = pos;
@@ -88,22 +107,7 @@ public class MonsterEntity : MonoBehaviour
 
         IsDead = true;
         CurrentState = MonsterStateType.Idle;
-
-        if (navigator == null) navigator = GetComponent<MonsterNavigator>();
-        if (navigator != null)
-        {
-            navigator.StopNavigation();
-            NavigationRegistry.Instance.Unregister(navigator);
-        }
-
-        MonsterRuntimeRegistry.Instance.Unregister(this);
-
-        anim = GetComponent<MonsterAnimatorDriver>();
-        anim?.SetDead();
-
         OnDead?.Invoke(this);
-
-        Destroy(gameObject);
     }
 
     public MonsterSaveData BuildSaveData()
