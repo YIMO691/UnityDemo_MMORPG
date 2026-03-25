@@ -37,7 +37,7 @@ public class MonsterAnimatorDriver : MonoBehaviour
     public void SetDead()
     {
         if (animator == null) return;
-        animator.SetBool(paramDead, true);
+        animator.SetTrigger(paramDead);
         animator.SetFloat(paramSpeed, 0f);
     }
 }

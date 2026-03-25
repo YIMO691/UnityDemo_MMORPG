@@ -12,5 +12,6 @@ public static class AppRuntimeInitializer
         CreateRoleFlowController.Instance.Init();
         RoleUIController.Instance.Init();
         NavigationService.Instance.Init();
+        DeathRuntimeService.Init();
     }
 }
