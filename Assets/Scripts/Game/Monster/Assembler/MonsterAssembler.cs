@@ -11,10 +11,14 @@ public static class MonsterAssembler
         if (prefab == null) return false;
         monster = Object.Instantiate(prefab, position, Quaternion.identity);
         var nav = monster.GetComponent<MonsterNavigator>() ?? monster.AddComponent<MonsterNavigator>();
+
         entity = monster.GetComponent<MonsterEntity>();
         if (entity == null) entity = monster.AddComponent<MonsterEntity>();
-        var brain = monster.GetComponent<MonsterBrain>() ?? monster.AddComponent<MonsterBrain>();
+
         var anim = monster.GetComponent<MonsterAnimatorDriver>() ?? monster.AddComponent<MonsterAnimatorDriver>();
+        var exec = monster.GetComponent<MonsterLocomotionExecutor>() ?? monster.AddComponent<MonsterLocomotionExecutor>();
+        var brain = monster.GetComponent<MonsterBrain>() ?? monster.AddComponent<MonsterBrain>();
+
         entity.Init(config, position);
         var id = MonsterAgentId.Create(config.id, spawnIndex);
         nav.SetAgentId(id);

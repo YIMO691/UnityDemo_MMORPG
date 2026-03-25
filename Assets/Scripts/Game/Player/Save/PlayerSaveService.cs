@@ -4,9 +4,14 @@ public class PlayerSaveService
 {
     private readonly RuntimeSaveService runtimeSaveService = new RuntimeSaveService();
 
-    public void SaveCurrentPlayer(Transform playerTransform)
+    public void SaveCurrentPlayer(PlayerEntity playerEntity)
     {
-        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
+        if (playerEntity == null)
+        {
+            Debug.LogWarning("[PlayerSaveService] Save failed, playerEntity is null.");
+            return;
+        }
+        PlayerData playerData = playerEntity.Data;
 
         if (playerData == null)
         {
@@ -14,7 +19,7 @@ public class PlayerSaveService
             return;
         }
 
-        runtimeSaveService.SavePlayerTransform(playerTransform, playerData);
+        runtimeSaveService.SavePlayerRuntime(playerEntity);
         runtimeSaveService.SaveMonsters(playerData);
 
         int slotId = GamePlayerDataService.Instance.GetCurrentSlotId();

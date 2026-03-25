@@ -73,7 +73,14 @@ public class GameSceneEntry : MonoBehaviour
     {
         controller = null;
         bool okCreate = CameraRigAssembler.TryCreate(out mainCameraInstance, out followCameraInstance);
-        bool okAssemble = PlayerCharacterAssembler.TryAssemble(GamePlayerDataService.Instance.GetCurrentPlayerData(), GetSpawnPosition(), GetSpawnRotation(), out playerInstance, out controller);
+        PlayerEntity playerEntity;
+        bool okAssemble = PlayerRuntimeService.CreateRuntimePlayer(
+            GamePlayerDataService.Instance.GetCurrentPlayerData(),
+            GetSpawnPosition(),
+            GetSpawnRotation(),
+            out playerInstance,
+            out controller,
+            out playerEntity);
         bool okBind = okAssemble && followCameraInstance != null && CameraRigAssembler.TryBind(controller, followCameraInstance);
         if (!okBind && okCreate && okAssemble)
         {
@@ -92,14 +99,8 @@ public class GameSceneEntry : MonoBehaviour
     {
         OpenMainPanel();
         MiniMapAssembler.BindTarget(miniMapCamera, miniMapController, playerInstance.transform);
-        var entityCommit = playerInstance.GetComponent<PlayerEntity>();
-        if (entityCommit != null)
-            PlayerLocator.Instance.Register(entityCommit);
-        else
-            PlayerLocator.Instance.Register(playerInstance.transform);
         var data = GamePlayerDataService.Instance.GetCurrentPlayerData();
         RuntimeSceneCommitter.WriteSceneContext(data, playerInstance.transform);
-        NavigationAgentAssembler.EnsurePlayerNavigator(playerInstance, NavigationConsts.PlayerAgentId);
         EnsureDebugCanvas();
         MonsterModule.InitForScene();
         EnsureBattleRuntime();
@@ -219,7 +220,13 @@ public class GameSceneEntry : MonoBehaviour
             return;
         }
 
-        playerSaveService.SaveCurrentPlayer(playerInstance.transform);
+        var entity = playerInstance.GetComponent<PlayerEntity>();
+        if (entity == null)
+        {
+            Debug.LogWarning("[GameSceneEntry] SaveCurrentPlayerTransform failed, PlayerEntity missing.");
+            return;
+        }
+        playerSaveService.SaveCurrentPlayer(entity);
     }
 
     private void OpenMainPanel()
