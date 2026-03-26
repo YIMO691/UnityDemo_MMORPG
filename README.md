@@ -20,6 +20,7 @@
 - [常量与资源规范](#常量与资源规范)
 - [代码约定](#代码约定)
 - [故障排查](#故障排查)
+- [战斗与掉落/背包](#战斗与掉落背包)
 - [工程化改进计划](#工程化改进计划)
 - [参考文档](#参考文档)
 
@@ -218,6 +219,40 @@ NavigationConsts.PlayerAgentId
 | 收到路径但不动 | stopDistance 过大 | 建议设为 0.2 |
 | 攻击后一直不动 | Animator 未触发 AttackOver | 检查 Has Exit Time/条件 |
 | 转向"趴下/闪烁" | 使用了俯仰旋转 | 使用平面转向（y=0） |
+
+---
+
+## 战斗与掉落/背包
+
+**统一入口**
+- 攻击请求：CombatTargetResolver/FactionHelper/CombatRequestFactory/PlayerAttackService
+- 结算：BattleDamageService（raw+Atk-Def 基础公式，叠加暴击/闪避）
+- 死亡：DeathEvent 广播；DeathRuntimeService 统一清理（去重、延迟销毁）
+
+**掉落链**
+- 配置：Resources/Config/DropTableConfig.json（AssetPaths.DropTableConfig）
+- 管理器：DropTableConfigManager（JsonUtility 读取）
+- 解析：LootResolver（按权重抽一条，产出 itemId/count）
+- 服务：LootRuntimeService（订阅 DeathEvent → 解析 → 入包/日志）
+- 怪物配置：MonsterConfig.dropTableId（0 表示无掉落）
+
+**背包链**
+- 数据：PlayerData.inventoryData = InventoryData(slotCount + slots)
+- 兼容：GamePlayerDataService.EnsurePlayerDataSchema（旧档补齐，默认 20/50 格）
+- 物品：ItemConfig/ItemConfigManager（AssetPaths.ItemConfig）
+- 入包：InventoryService.TryAddItem（先叠堆后新格，受 slotCount 限制）
+
+**最小验证**
+1) 在 MonsterConfig.json 为测试怪配置 `"dropTableId": 1001`
+2) 配置 DropTableConfig.json（示例已提供 id=1001）
+3) 击杀怪物 → Console 日志显示 `drop resolved ... addToInventory=true`
+4) 保存并读档后，inventoryData.slots 保留
+
+**UI（事件接线）**
+- 路由：UIRouteNames.InventoryPanel
+- 事件：OpenInventoryPanelEvent
+- 控制器：InventoryUIController（订阅事件→ShowPanel<InventoryPanel>().Refresh()）
+- 面板与格子：待接入（V1 仅展示文字）
 
 ---
 
