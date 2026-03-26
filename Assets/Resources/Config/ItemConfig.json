@@ -1,0 +1,6 @@
+{
+  "list": [
+    { "id": 1, "name": "Small Potion", "iconPath": "", "maxStack": 20 },
+    { "id": 2, "name": "Zombie Bone", "iconPath": "", "maxStack": 99 }
+  ]
+}
