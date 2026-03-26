@@ -268,3 +268,130 @@ NavigationConsts.PlayerAgentId
 - **分批提交**：逻辑/资源/场景/AnimatorController/Prefab 分离
 - **信息格式**：模块名 + 简述 + 关键影响
 - **发布前检查**：无未提交更改；README/architecture 同步
+
+---
+
+## 工程化改进计划（增强版）
+
+> 目标：将“可运行原型”升级为“可持续演进工程”，重点提升**稳定性、可回归、可观测、可发布**四个维度。
+
+### 1) P0 / P1 / P2 优先级治理清单
+
+#### P0（必须优先完成）
+- **运行时入口去占位化**
+  - 清理 GameScene 入口路径中的遗留 stub（固定 `return false/null` 的私有方法）。
+  - 原则：运行时程序集不得存在“长期占位实现”。
+- **自动化测试恢复**
+  - 恢复并启用 EditMode 测试（DataManager / CreateRoleFlowController / UIManager）。
+  - 新增 1 条 Gold Path PlayMode 冒烟测试（BeginScene→创角/读档→GameScene→MainPanel）。
+- **生命周期统一契约**
+  - 引入统一服务接口（建议 `Init / ResetSession / Shutdown`）。
+  - 由 App 级 orchestrator 统一编排，禁止模块“各自管理自己生命周期”。
+- **存档读取语义修复**
+  - 避免 `LoadData<T>` 在缺文件时 `new T()` 的歧义。
+  - 新增 `TryLoadData<T>(out T data)` 样式接口，显式区分：缺文件 / 解析失败 / 成功。
+
+#### P1（建议下一阶段完成）
+- 槽位索引文件（metadata registry）与可配置分配策略（append-only / first-gap）。
+- 导航可观测性升级（成功率、角点数、失败原因分桶）。
+- 场景提交里程碑事件化（PlayerReady / UIReady / MonstersInitialized）。
+- 明确 PlayerRuntimeService 与 GameSceneEntry 的职责归属，避免双处注册。
+
+#### P2（工程卫生与长期治理）
+- namespace 与 asmdef 规范统一。
+- 静态检查规则（无用私有方法、硬编码路径、序列化字段空引用防护）。
+- ADR（Architecture Decision Record）文档化关键决策。
+
+### 2) 推荐 CI/CD 基线（Unity 项目）
+
+- **PR 阶段（快速反馈）**
+  1. C# 编译校验（Unity batchmode）
+  2. EditMode Tests（必跑）
+  3. 关键规则扫描（硬编码路径、禁用 stub、禁用 TODO/FIXME 泄漏）
+- **主干合并前（质量门禁）**
+  1. PlayMode Smoke（Gold Path）
+  2. 资源完整性检查（关键 prefab/config/inputactions）
+  3. Docs 一致性检查（README / architecture / checklist 同步）
+- **发版阶段（可靠性保障）**
+  1. Save/Load 兼容性回归
+  2. Scene 切换与返回 Begin 流程回归
+  3. 性能快照（CPU/GC/导航请求频率）
+
+### 3) 生命周期治理建议（Service Lifecycle）
+
+统一状态机建议：`NotInitialized -> Initialized -> SessionActive -> SessionReset -> Shutdown`
+
+- **Init**：进程级只执行一次（注册事件、装配不可变依赖）
+- **ResetSession**：切号/返回 Begin/重开局时执行（清空运行态缓存、注册表）
+- **Shutdown**：应用退出时执行（反订阅、释放资源）
+
+建议建立 `RuntimeLifecycleOrchestrator`，集中调度以下服务：
+- UIManager
+- NavigationService
+- Flow Controllers（CreateRoleFlowController / RoleUIController）
+- Runtime registries（PlayerLocator / NavigationRegistry / MonsterRuntimeRegistry）
+
+### 4) 存档工程化建议（可靠性 + 可演进）
+
+- **文件层**
+  - player 数据与 meta 数据分离（正文 + 索引）
+  - 保存时先写临时文件再原子替换，避免异常中断导致损坏
+- **模型层**
+  - PlayerData 增加 `version`
+  - 引入 `UpgradePipeline`：读取旧版本时分步迁移
+- **接口层**
+  - `TryLoad` 返回结构化结果（状态码 + 数据 + 错误信息）
+  - 失败日志必须包含：slotId / fileName / exception type
+
+### 5) 观测与调试（Observability）
+
+- **日志分级**：Error / Warn / Info / Debug / Trace（按构建开关裁剪）
+- **关键指标**
+  - 导航：请求总数、求解失败率、平均角点数
+  - 战斗：伤害事件吞吐、死亡事件数
+  - 存档：写入成功率、读取失败分桶
+- **调试面板建议**
+  - 在 DebugCanvas 扩展“运行指标页”和“最近错误页”
+  - 支持一键导出最近 N 条运行事件
+
+### 6) 质量门禁（Definition of Done）
+
+一个功能 PR 达到可合并，至少满足：
+- 代码：无新增硬编码资源路径；关键常量已补齐
+- 测试：新增/修改逻辑有对应 EditMode 或 PlayMode 用例
+- 文档：涉及架构或流程变化时同步 README / architecture / checklist
+- 运行：Gold Path 不回归，Console 无新增 Error
+
+### 7) 七天实施节奏（含系统落地 + AB 包 + 手机打包）
+
+- **Day 1（闭环设计）**
+  - 锁定首周目标：战斗→掉落→背包的最小可玩闭环。
+  - 完成模块接入模板（分层、事件、存档、UI、测试）并拆分工单。
+- **Day 2（战斗与掉落接线）**
+  - 对接 DeathEvent 到掉落服务，补齐掉落表与基础概率逻辑。
+  - 约束：掉落逻辑仅通过事件和接口，不破坏现有战斗结算链路。
+- **Day 3（背包 MVP）**
+  - 完成 InventoryData/InventoryService/InventoryPanel 最小实现。
+  - 打通“击杀掉落 -> 入包 -> UI 显示 -> 存档恢复”。
+- **Day 4（AB 包流程）**
+  - 建立资源分组与命名规范（UI/Monster/Map/Config），输出 AB 构建脚本。
+  - 先打开发包（Development AB）验证资源加载与版本号管理。
+- **Day 5（手机打包链路）**
+  - 生成 Android 包（建议先 APK，后续再 AAB），验证启动、场景切换、输入、存档权限。
+  - 执行真机 smoke：Begin→创角/读档→GameScene→打怪→掉落入包。
+- **Day 6（回归与性能）**
+  - 跑 EditMode + PlayMode 冒烟；记录导航、战斗、存档关键日志。
+  - 修复阻断问题（崩溃、卡死、黑屏、存档失败）。
+- **Day 7（发布与复盘）**
+  - 输出周发布说明（版本号、AB 版本、已知问题）。
+  - 复盘并生成下一周生产计划（技能系统 / 成长系统 / 装备系统）。
+
+### 8) 后续流程化生产模型（周迭代循环）
+
+- **计划（Plan）**：每周一冻结范围，只允许 P0 缺陷插入。
+- **开发（Build）**：小 PR、日合并，严格执行质量门禁。
+- **验证（Verify）**：每日快速 smoke + 周五完整回归。
+- **发布（Release）**：统一打 AB、统一打包、统一变更日志。
+- **复盘（Review）**：指标复盘（崩溃率、回归失败率、存档失败率）驱动下周优先级。
+
+---
