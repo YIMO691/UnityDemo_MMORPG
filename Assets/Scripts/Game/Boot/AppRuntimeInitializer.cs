@@ -12,6 +12,9 @@ public static class AppRuntimeInitializer
         CreateRoleFlowController.Instance.Init();
         RoleUIController.Instance.Init();
         NavigationService.Instance.Init();
+        ItemConfigManager.Instance.Init();
+        DropTableConfigManager.Instance.Init();
+        LootRuntimeService.Init();
         DeathRuntimeService.Init();
     }
 }

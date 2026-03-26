@@ -10,5 +10,7 @@ public class PlayerData
     public PlayerRuntimeData runtimeData;
     public List<MonsterSaveData> monsterData;
 
+    public InventoryData inventoryData;
+
     public string saveTime;
 }

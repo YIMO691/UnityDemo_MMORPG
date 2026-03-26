@@ -17,6 +17,7 @@ public class GamePlayerDataService
 
     public void SetCurrentPlayerData(PlayerData playerData)
     {
+        EnsurePlayerDataSchema(playerData);
         currentPlayerData = playerData;
     }
 
@@ -49,6 +50,7 @@ public class GamePlayerDataService
             return;
         }
 
+        EnsurePlayerDataSchema(playerData);
         playerData.saveTime = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
         string fileName = DataManager.Instance.GetPlayerSlotFileName(slotId);
@@ -109,6 +111,7 @@ public class GamePlayerDataService
             return false;
         }
 
+        EnsurePlayerDataSchema(playerData);
         currentPlayerData = playerData;
         DataManager.Instance.SetCurrentSlotId(slotId);
 
@@ -122,7 +125,9 @@ public class GamePlayerDataService
         if (!DataManager.Instance.HasPlayerSaveInSlot(slotId)) return null;
 
         string fileName = DataManager.Instance.GetPlayerSlotFileName(slotId);
-        return JsonMgr.Instance.LoadData<PlayerData>(fileName);
+        PlayerData data = JsonMgr.Instance.LoadData<PlayerData>(fileName);
+        EnsurePlayerDataSchema(data);
+        return data;
     }
 
     public bool HasAnyPlayerSave(int maxSlotCount = 20)
@@ -150,5 +155,27 @@ public class GamePlayerDataService
             }
         }
         return list;
+    }
+
+    private void EnsurePlayerDataSchema(PlayerData playerData)
+    {
+        if (playerData == null) return;
+        if (playerData.inventoryData == null)
+        {
+            playerData.inventoryData = CreateDefaultInventoryData();
+        }
+        if (playerData.inventoryData.slots == null)
+        {
+            playerData.inventoryData.slots = new System.Collections.Generic.List<InventorySlotData>();
+        }
+    }
+
+    private InventoryData CreateDefaultInventoryData()
+    {
+        return new InventoryData
+        {
+            slotCount = 0,
+            slots = new System.Collections.Generic.List<InventorySlotData>()
+        };
     }
 }

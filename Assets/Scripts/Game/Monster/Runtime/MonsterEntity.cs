@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource
+public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILootProvider
 {
     public int ConfigId { get; private set; }
     public MonsterConfig Config { get; private set; }
@@ -108,6 +108,11 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource
         IsDead = true;
         CurrentState = MonsterStateType.Idle;
         OnDead?.Invoke(this);
+    }
+
+    public void DropLoot(ICombatSource killer)
+    {
+        LootRuntimeService.HandleMonsterLoot(this, killer);
     }
 
     public MonsterSaveData BuildSaveData()
