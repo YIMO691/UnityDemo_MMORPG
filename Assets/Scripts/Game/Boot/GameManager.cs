@@ -47,6 +47,9 @@ public class GameManager : MonoBehaviour
 
         RoleUIController.Instance.Init();
         Debug.Log("[GameManager] Init RoleUIController success");
+
+        InventoryUIController.Instance.Init();
+        Debug.Log("[GameManager] Init InventoryUIController success");
     }
 
     private void EnterBeginFlow()

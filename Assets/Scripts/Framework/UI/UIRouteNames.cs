@@ -10,5 +10,6 @@ public static class UIRouteNames
     public const string MessageTipPanel = "MessageTipPanel";
     public const string AboutPanel = "AboutPanel";
     public const string MapPanel = "MapPanel";
+    public const string InventoryPanel = "InventoryPanel";
 }
 
