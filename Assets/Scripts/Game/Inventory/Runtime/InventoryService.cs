@@ -3,6 +3,8 @@ using UnityEngine;
 
 public static class InventoryService
 {
+    private const int DefaultSlotCount = 20;
+
     public static bool TryAddItem(PlayerData playerData, int itemId, int count)
     {
         if (playerData == null)
@@ -10,17 +12,26 @@ public static class InventoryService
             Debug.LogWarning("[InventoryService] playerData is null.");
             return false;
         }
+        if (count <= 0)
+        {
+            Debug.LogWarning($"[InventoryService] invalid count. itemId={itemId}, count={count}");
+            return false;
+        }
         if (playerData.inventoryData == null)
         {
             playerData.inventoryData = new InventoryData
             {
-                slotCount = 0,
+                slotCount = DefaultSlotCount,
                 slots = new List<InventorySlotData>()
             };
         }
         if (playerData.inventoryData.slots == null)
         {
             playerData.inventoryData.slots = new List<InventorySlotData>();
+        }
+        if (playerData.inventoryData.slotCount <= 0)
+        {
+            playerData.inventoryData.slotCount = DefaultSlotCount;
         }
 
         var itemCfg = ItemConfigManager.Instance.GetConfig(itemId);
@@ -49,6 +60,11 @@ public static class InventoryService
 
         while (remain > 0)
         {
+            if (playerData.inventoryData.slots.Count >= playerData.inventoryData.slotCount)
+            {
+                Debug.LogWarning($"[InventoryService] inventory is full. itemId={itemId}, requestCount={count}, remain={remain}, usedSlots={playerData.inventoryData.slots.Count}, slotCount={playerData.inventoryData.slotCount}");
+                return false;
+            }
             int add = Mathf.Min(itemCfg.maxStack, remain);
             var slot = new InventorySlotData
             {

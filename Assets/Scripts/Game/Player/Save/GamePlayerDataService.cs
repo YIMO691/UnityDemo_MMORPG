@@ -6,6 +6,8 @@ public class GamePlayerDataService
     private static readonly GamePlayerDataService instance = new GamePlayerDataService();
     public static GamePlayerDataService Instance => instance;
 
+    private const int DefaultInventorySlotCount = 50;
+
     private PlayerData currentPlayerData;
 
     private GamePlayerDataService() { }
@@ -130,7 +132,7 @@ public class GamePlayerDataService
         return data;
     }
 
-    public bool HasAnyPlayerSave(int maxSlotCount = 20)
+    public bool HasAnyPlayerSave(int maxSlotCount = 50)
     {
         for (int i = 1; i <= maxSlotCount; i++)
         {
@@ -142,7 +144,7 @@ public class GamePlayerDataService
         return false;
     }
 
-    public List<PlayerSaveMetaData> GetAllPlayerSaveMetaData(int maxSlotCount = 20)
+    public List<PlayerSaveMetaData> GetAllPlayerSaveMetaData(int maxSlotCount = 50)
     {
         List<PlayerSaveMetaData> list = new List<PlayerSaveMetaData>();
         for (int i = 1; i <= maxSlotCount; i++)
@@ -168,13 +170,17 @@ public class GamePlayerDataService
         {
             playerData.inventoryData.slots = new System.Collections.Generic.List<InventorySlotData>();
         }
+        if (playerData.inventoryData.slotCount < DefaultInventorySlotCount)
+        {
+            playerData.inventoryData.slotCount = DefaultInventorySlotCount;
+        }
     }
 
     private InventoryData CreateDefaultInventoryData()
     {
         return new InventoryData
         {
-            slotCount = 0,
+            slotCount = DefaultInventorySlotCount,
             slots = new System.Collections.Generic.List<InventorySlotData>()
         };
     }
