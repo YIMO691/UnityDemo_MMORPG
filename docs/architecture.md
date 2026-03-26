@@ -518,6 +518,19 @@ PlayerAssembled → CameraBound → UIReady → RuntimeContextWritten → Monste
 
 ---
 
+## 测试策略细化
+
+### Play Mode
+- 黄金链路：Begin→创角→GameScene→MainPanel 打开
+- 怪物行为：Idle→Chase→Attack→Return→Idle 循环；AttackOver 正常触发；失败保护生效
+- 导航门禁：Attack/Dead 拒收路径；stopDistance 正确导致抵达
+
+### Edit Mode
+- 配置加载：Role/Map/Monster JSON 正确解析；AssetPaths 引用存在
+- 常量化检查：随机扫描代码避免魔法字符串；CI 提示异常引用
+
+---
+
 ## 提交与工程规范
 
 ### 分批提交
@@ -536,3 +549,186 @@ PlayerAssembled → CameraBound → UIReady → RuntimeContextWritten → Monste
 - [ ] README/architecture 同步
 - [ ] 最小链路回归通过
 - [ ] Console 无跨层引用/脚本错误
+
+---
+
+## 工程化治理蓝图（Architecture Governance Blueprint）
+
+本节用于把"架构原则"转化为"可执行工程制度"，避免文档只停留在理念层。
+
+### 架构约束到规则（Rule-as-Code）
+
+建议将以下约束纳入自动检查：
+
+1. **层次约束**
+   - Framework 不得引用 Game。
+   - Editor 代码不得进入 Runtime 程序集。
+2. **资源路径约束**
+   - 禁止在业务代码中直接写 `Resources/...` 字符串。
+   - 必须通过 `AssetPaths` 常量访问。
+3. **事件约束**
+   - EventBus 订阅必须可追踪到反订阅点。
+   - 禁止"只订阅不释放"的静态监听器。
+4. **占位实现约束**
+   - Runtime 程序集中禁止长期存在"固定返回值 stub"。
+
+> 落地方式：Editor 菜单扫描 + CI 规则脚本双保险。
+
+### 生命周期架构（Lifecycle Architecture）
+
+建议统一生命周期接口：
+
+```text
+interface IRuntimeServiceLifecycle {
+  void Init();          // 进程级初始化（一次）
+  void ResetSession();  // 会话级重置（切号/回 Begin）
+  void Shutdown();      // 进程退出清理
+}
+```
+
+并引入 `RuntimeLifecycleOrchestrator` 统一编排：
+
+- Init 阶段：Data/UI/Flow/Navigation/Map 等依赖顺序初始化
+- SessionReset 阶段：清理 Runtime Registry、清空当前玩家上下文、关闭残留 UI
+- Shutdown 阶段：统一反订阅与资源释放，防止退出期异常
+
+### 存档架构（Save Architecture）
+
+#### 文件与索引分层
+- player 正文：`player_<slotId>.json`
+- 槽位索引：`player_index.json`（记录 active/deleted/createTime/updateTime/version）
+
+#### 接口语义分层
+- `TryLoadPlayer(slotId)` 返回三态：NotFound / Invalid / Success
+- 读取失败必须携带错误上下文：文件名、异常类型、版本号
+
+#### 迁移管线
+- `PlayerData.version`
+- `UpgradePipeline`: v1->v2->v3 逐级迁移，禁止跨级硬跳
+
+#### 一致性写入
+- 临时文件写入成功后再原子替换目标文件
+- 防止崩溃/断电导致半写入状态
+
+### 场景提交模型（Scene Commit Model）
+
+建议把 `GameSceneEntry` 的提交阶段拆成显式里程碑事件：
+
+1. `PlayerAssembled`
+2. `CameraBound`
+3. `UIReady`
+4. `RuntimeContextWritten`
+5. `MonstersInitialized`
+6. `BattleRuntimeReady`
+
+好处：
+- 明确故障位置（哪个里程碑失败）
+- 便于埋点统计与回归对比
+- 便于增量模块“挂接里程碑”而不是侵入主流程
+
+### E. 测试架构（Test Architecture）
+
+#### E1. 测试分层
+- **Unit/EditMode**：纯逻辑（DataManager、Mapper、Flow、Event）
+- **Integration/EditMode**：资源路径与装配前置条件
+- **PlayMode Smoke**：Gold Path 主链路
+- **PlayMode Scenario**：导航门禁、怪物状态、存档恢复
+
+#### E2. 必测回归集合（Minimum Regression Pack）
+1. BeginScene 创角进入 GameScene
+2. ContinuePanel 读档并进入 GameScene
+3. MainPanel / RoleInfoPanel 路由正确
+4. 地图点击触发导航并可停止
+5. 怪物死亡与重生逻辑正确
+6. Save->Load 后位置/场景/怪物状态恢复
+
+#### E3. PR 门禁建议
+- 每个 PR 至少执行：
+  - 编译检查
+  - EditMode tests
+  - 规则扫描
+- 合并前额外执行：
+  - Gold Path PlayMode smoke
+
+### F. 可观测性架构（Observability Architecture）
+
+#### F1. 事件日志标准
+统一字段：
+- `timestamp`
+- `module`
+- `event`
+- `entityId/agentId`
+- `result`
+- `reason`
+
+#### F2. 指标建议
+- Navigation
+  - RequestCount
+  - PathSolveFailRate
+  - AverageCornerCount
+- Save/Load
+  - SaveSuccessRate
+  - LoadFailCountByReason
+- Combat
+  - DamageEventCount
+  - DeathEventCount
+
+#### F3. 调试 UI
+在 DebugCanvas 下增加：
+- 指标实时面板
+- 最近错误事件列表
+- 一键导出日志快照
+
+### G. 发布治理（Release Governance）
+
+每次里程碑发布前建议执行以下 Gate：
+
+1. **Functional Gate**
+   - Gold Path 全链路通过
+   - UI 路由与遮罩行为通过
+2. **Data Gate**
+   - Save/Load 兼容性通过
+   - 版本迁移回归通过
+3. **Stability Gate**
+   - Console 无新增 Error
+   - 关键场景切换无异常残留对象
+4. **Docs Gate**
+   - README / architecture / checklist 同步
+
+### H. ADR 制度（Architecture Decision Record）
+
+建议在 `docs/adr/` 维护决策记录，模板建议字段：
+- Context（背景）
+- Decision（决策）
+- Status（Proposed/Accepted/Superseded）
+- Consequences（影响）
+- Alternatives（备选方案）
+
+优先补齐 ADR 主题：
+1. 单例服务生命周期统一方案
+2. 存档槽位策略（append-only vs first-gap）
+3. 导航门禁策略与 stopDistance 基准
+4. 场景提交里程碑事件化方案
+
+### I. 七天落地目标（可量化，含 AB 与手机打包）
+
+- Day1 完成系统拆分与工单（战斗/掉落/背包/AB/移动端）。
+- Day3 前完成“击杀 -> 掉落 -> 入包 -> 存档恢复”闭环。
+- Day4 完成 AB 构建脚本与资源分组规范，产出可加载 AB 包。
+- Day5 完成 Android 真机打包与黄金链路验证。
+- Day6 完成一次完整回归（EditMode + PlayMode smoke）。
+- Day7 发布周版本并输出复盘与下周迭代计划。
+
+### J. 后续流程化生产模型（持续迭代）
+
+- **Iteration Cadence**：1 周一个迭代，固定“计划-开发-验证-发布-复盘”节奏。
+- **System Order**：掉落/背包 -> 技能 -> 成长 -> 装备 -> 经济与任务。
+- **Build Pipeline**：代码构建 -> 测试 -> AB 构建 -> Android 打包 -> Smoke -> 发布。
+- **Quality Gates**：PR Gate（编译+EditMode+规则扫描）；Release Gate（PlayMode+真机+存档兼容）。
+- **Metrics Driven**：按崩溃率、回归失败率、存档失败率、加载耗时驱动优先级。
+
+---
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
