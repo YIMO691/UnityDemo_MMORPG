@@ -252,7 +252,7 @@ public class MainPanel : BasePanel
 
     private void OnClickBag()
     {
-        ShowMessage("背包功能开发中");
+        EventBus.Publish(new OpenInventoryPanelEvent());
     }
 
     private void OnClickMap()
