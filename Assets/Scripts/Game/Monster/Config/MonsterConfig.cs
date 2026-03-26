@@ -12,7 +12,6 @@ public class MonsterConfig
     public float attackInterval;
     public string prefabPath;
 
-    // 战斗属性（第五阶段第四步骤补充）
     public int attack;
     public int defense;
 
@@ -20,4 +19,6 @@ public class MonsterConfig
     public float critDamage;
     public float hitRate;
     public float dodgeRate;
+
+    public int dropTableId;
 }
