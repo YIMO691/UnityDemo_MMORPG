@@ -154,6 +154,7 @@ public class RoleClassConfigEditorWindow : EditorWindow
 
         EditorGUILayout.LabelField("基础属性", EditorStyles.boldLabel);
         config.maxHp = EditorGUILayout.IntField("Max HP", config.maxHp);
+        config.maxStamina = EditorGUILayout.IntField("Max Stamina", config.maxStamina);
         config.maxMp = EditorGUILayout.IntField("Max MP", config.maxMp);
         config.attack = EditorGUILayout.IntField("Attack", config.attack);
         config.defense = EditorGUILayout.IntField("Defense", config.defense);
@@ -245,6 +246,7 @@ public class RoleClassConfigEditorWindow : EditorWindow
             expGrowthRate = 1.2f,
 
             maxHp = 100,
+            maxStamina = 100,
             maxMp = 50,
             attack = 10,
             defense = 10,
