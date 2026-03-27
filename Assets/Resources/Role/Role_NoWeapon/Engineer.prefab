@@ -439,7 +439,7 @@ Animator:
   m_GameObject: {fileID: 1927208586595289898}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 317bd1d2b778cf0448b311d615661b6e, type: 3}
-  m_Controller: {fileID: 9100000, guid: 40db3173a05ae3242b1c182a09b0a183, type: 2}
+  m_Controller: {fileID: 9100000, guid: 296581da55522944d90da618abb874a1, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -462,7 +462,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d853666be4c7bc4ea2ba7f86cc62be9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  landingAudioClip: {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
+  landingAudioClip: {fileID: 8300000, guid: e79c546cd257dc247b91be2453a6ce97, type: 3}
   footstepAudioClips: []
   footstepAudioVolume: 0.5
 --- !u!1 &1930513537629359702
