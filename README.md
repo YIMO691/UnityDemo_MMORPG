@@ -254,6 +254,11 @@ NavigationConsts.PlayerAgentId
 - 控制器：InventoryUIController（订阅事件→ShowPanel<InventoryPanel>().Refresh()）
 - 面板与格子：待接入（V1 仅展示文字）
 
+**玩家状态（HUD 事件化）**
+- 事件：PlayerHpChangedEvent / PlayerStaminaChangedEvent
+- 订阅方：MainPanel OnShow 订阅、OnHide 反订阅；收到事件实时更新 hpFill/staminaFill
+- 体力规则：只禁跑不禁走；体力不足自动降为走路，恢复到阈值后可再次跑
+
 ---
 
 ## 工程化改进计划

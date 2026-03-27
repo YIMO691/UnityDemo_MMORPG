@@ -281,6 +281,11 @@ Navigator.SetPath(corners, stopDistance)
 - Navigator 不读取业务状态（除 IsDead）
 - Attack/Dead 状态拒收路径
 
+### Sprint 与体力
+
+- PlayerNavigator 的 autoSprint 需叠加 `PlayerStaminaSystem.CanSprint()`，体力不足时自动降为走路
+- 体力恢复到阈值后自动允许再次跑步，保证自动导航不“卡死”
+
 ### 距离与停止策略
 
 - `stopDistance` 建议小值（如 0.2），避免"未移动即判到达"
@@ -314,6 +319,13 @@ Navigator.SetPath(corners, stopDistance)
 
 - ShowMainPage 保证同一时间只有一个主页面显示
 - 可配置是否隐藏旧主页面
+
+### HUD 事件化（玩家血量/体力）
+
+- **数据源**：PlayerEntity/PlayerStaminaSystem 修改运行态数据后发布事件
+- **事件**：PlayerHpChangedEvent、PlayerStaminaChangedEvent
+- **订阅方**：MainPanel 在 OnShow 订阅，在 OnHide 反订阅；收到事件更新 hpFill/staminaFill
+- **规则边界**：体力系统只控制 sprint（禁跑不禁走），移动输入与导航不被“体力为 0”阻断
 
 ---
 
@@ -728,7 +740,3 @@ interface IRuntimeServiceLifecycle {
 - **Metrics Driven**：按崩溃率、回归失败率、存档失败率、加载耗时驱动优先级。
 
 ---
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
