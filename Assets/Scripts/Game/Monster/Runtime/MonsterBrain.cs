@@ -220,6 +220,8 @@ public class MonsterBrain : MonoBehaviour
         Vector3 hitPos = entity.CurrentTarget.position;
         var request = CombatRequestFactory.CreateBasicDamage(attacker, target, rawDamage, hitPos, DamageSourceType.NormalAttack);
         BattleDamageService.Instance.ApplyDamage(request);
+        Debug.Log($"[MonsterBrain] target = {target}, attacker = {attacker}, rawDamage = {rawDamage},hitpos={hitPos}");
+
     }
 
     public void OnAttackOver()
