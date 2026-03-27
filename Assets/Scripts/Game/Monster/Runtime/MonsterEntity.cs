@@ -21,9 +21,11 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
     public Transform ActorTransform => transform;
     public string DisplayName => Config != null ? Config.name : "Monster";
     public int FactionId => 2;
+
     public int MaxHp => Config != null ? Config.maxHp : 0;
     public float MoveSpeed => Config != null ? Config.moveSpeed : 0f;
 
+    // 战斗属性直接走 MonsterConfig
     public int Attack => Config != null ? Config.attack : 0;
     public int Defense => Config != null ? Config.defense : 0;
 
@@ -34,16 +36,27 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
 
     public void Init(MonsterConfig cfg, Vector3 spawnPos)
     {
+        if (cfg == null)
+        {
+            Debug.LogError("[MonsterEntity] Init failed: cfg is null");
+            return;
+        }
+
         Config = cfg;
         ConfigId = cfg.id;
-        CurrentHp = cfg.maxHp;
         SpawnPosition = spawnPos;
+
+        CurrentHp = Mathf.Max(1, cfg.maxHp);
         IsDead = false;
         CurrentState = MonsterStateType.Idle;
+        CurrentTarget = null;
 
         navigator = GetComponent<MonsterNavigator>();
         anim = GetComponent<MonsterAnimatorDriver>();
-        if (anim == null) anim = gameObject.AddComponent<MonsterAnimatorDriver>();
+        if (anim == null)
+            anim = gameObject.AddComponent<MonsterAnimatorDriver>();
+
+        Debug.Log($"[MonsterEntity] Init success, name={DisplayName}, hp={CurrentHp}/{MaxHp}, atk={Attack}, def={Defense}");
     }
 
     public void SetIdentity(string runtimeId, string spawnPointId = null)
@@ -54,6 +67,7 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
 
     public void SetTarget(Transform target)
     {
+        if (IsDead) return;
         CurrentTarget = target;
     }
 
@@ -64,6 +78,12 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
 
     public void SetState(MonsterStateType state)
     {
+        if (IsDead)
+        {
+            CurrentState = MonsterStateType.Idle;
+            return;
+        }
+
         CurrentState = state;
     }
 
@@ -74,21 +94,34 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
 
     public MonsterNavigator GetNavigator()
     {
-        if (navigator == null) navigator = GetComponent<MonsterNavigator>();
+        if (navigator == null)
+            navigator = GetComponent<MonsterNavigator>();
         return navigator;
     }
 
     public MonsterAnimatorDriver GetAnimatorDriver()
     {
-        if (anim == null) anim = GetComponent<MonsterAnimatorDriver>();
+        if (anim == null)
+            anim = GetComponent<MonsterAnimatorDriver>();
         return anim;
     }
 
     public void TakeDamage(int damage)
     {
         if (IsDead) return;
-        CurrentHp = Mathf.Max(0, CurrentHp - damage);
-        if (CurrentHp <= 0) Die();
+
+        int finalDamage = Mathf.Max(0, damage);
+        if (finalDamage <= 0) return;
+
+        int oldHp = CurrentHp;
+        CurrentHp = Mathf.Max(0, CurrentHp - finalDamage);
+
+        Debug.Log($"[MonsterEntity] TakeDamage name={DisplayName}, damage={finalDamage}, hp={oldHp}->{CurrentHp}");
+
+        if (CurrentHp <= 0)
+        {
+            Die();
+        }
     }
 
     public void ReceiveDamage(int damage)
@@ -106,7 +139,12 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
         if (IsDead) return;
 
         IsDead = true;
+        CurrentHp = 0;
         CurrentState = MonsterStateType.Idle;
+        CurrentTarget = null;
+
+        Debug.Log($"[MonsterEntity] Dead, name={DisplayName}, runtimeId={RuntimeId}");
+
         OnDead?.Invoke(this);
     }
 
@@ -134,14 +172,27 @@ public class MonsterEntity : MonoBehaviour, IDamageReceiver, ICombatSource, ILoo
 
     public void ApplySaveData(MonsterSaveData data)
     {
+        if (data == null)
+        {
+            Debug.LogWarning("[MonsterEntity] ApplySaveData skipped: data is null");
+            return;
+        }
+
         transform.position = new Vector3(data.posX, data.posY, data.posZ);
         transform.rotation = Quaternion.Euler(0f, data.rotY, 0f);
-        CurrentHp = data.currentHp;
-        CurrentState = MonsterStateType.Idle;
 
-        if (data.isDead)
+        CurrentState = MonsterStateType.Idle;
+        CurrentTarget = null;
+
+        int maxHp = MaxHp > 0 ? MaxHp : (Config != null ? Config.maxHp : 1);
+        CurrentHp = Mathf.Clamp(data.currentHp, 0, maxHp);
+        IsDead = data.isDead || CurrentHp <= 0;
+
+        if (IsDead)
         {
-            Die();
+            CurrentHp = 0;
         }
+
+        Debug.Log($"[MonsterEntity] ApplySaveData name={DisplayName}, hp={CurrentHp}/{maxHp}, isDead={IsDead}");
     }
 }

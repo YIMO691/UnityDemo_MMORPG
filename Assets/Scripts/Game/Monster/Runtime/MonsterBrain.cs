@@ -9,6 +9,10 @@ public class MonsterBrain : MonoBehaviour
     [SerializeField] private float attackEntryCooldown = 0.3f;
     [SerializeField] private float attackFailSafeTimeout = 2f;
 
+    // 这里作为附加伤害。当前推荐先设为 0，
+    // 让 BattleDamageService 主要通过 Attack - Defense 去结算。
+    [SerializeField] private int bonusRawDamage = 0;
+
     private MonsterEntity entity;
     private MonsterLocomotionExecutor executor;
 
@@ -30,8 +34,11 @@ public class MonsterBrain : MonoBehaviour
         if (entity == null || entity.IsDead) return;
         if (entity.Config == null) return;
 
-        if (chaseCooldownTimer > 0f) chaseCooldownTimer -= Time.deltaTime;
-        if (attackEntryCooldownTimer > 0f) attackEntryCooldownTimer -= Time.deltaTime;
+        if (chaseCooldownTimer > 0f)
+            chaseCooldownTimer -= Time.deltaTime;
+
+        if (attackEntryCooldownTimer > 0f)
+            attackEntryCooldownTimer -= Time.deltaTime;
 
         EnsureTarget();
 
@@ -40,12 +47,15 @@ public class MonsterBrain : MonoBehaviour
             case MonsterStateType.Idle:
                 TickIdle();
                 break;
+
             case MonsterStateType.Chase:
                 TickChase();
                 break;
+
             case MonsterStateType.Attack:
                 TickAttack();
                 break;
+
             case MonsterStateType.Return:
                 TickReturn();
                 break;
@@ -56,7 +66,10 @@ public class MonsterBrain : MonoBehaviour
     {
         if (entity.CurrentTarget != null) return;
 
-        var player = PlayerLocator.Instance != null ? PlayerLocator.Instance.GetPlayerTransform() : null;
+        var player = PlayerLocator.Instance != null
+            ? PlayerLocator.Instance.GetPlayerTransform()
+            : null;
+
         if (player != null)
         {
             entity.SetTarget(player);
@@ -65,7 +78,6 @@ public class MonsterBrain : MonoBehaviour
 
     private void TickIdle()
     {
-
         if (entity.CurrentTarget == null) return;
 
         float dist = Vector3.Distance(transform.position, entity.CurrentTarget.position);
@@ -111,11 +123,13 @@ public class MonsterBrain : MonoBehaviour
         {
             pathTimer = 0f;
 
+            Vector3 dir = (entity.CurrentTarget.position - transform.position).normalized;
+
             executor.Execute(
                 new ActorControlCommand
                 {
-                    moveDirection = (entity.CurrentTarget.position - transform.position).normalized,
-                    lookDirection = (entity.CurrentTarget.position - transform.position).normalized,
+                    moveDirection = dir,
+                    lookDirection = dir,
                     sprint = false,
                     attack = false,
                     stop = false
@@ -130,6 +144,7 @@ public class MonsterBrain : MonoBehaviour
         if (entity.CurrentTarget == null)
         {
             entity.SetState(MonsterStateType.Idle);
+            executor.StopAll();
             return;
         }
 
@@ -145,15 +160,16 @@ public class MonsterBrain : MonoBehaviour
         {
             attackTimer = 0f;
 
+            Vector3 dir = (entity.CurrentTarget.position - transform.position).normalized;
+
             executor.Execute(new ActorControlCommand
             {
+                moveDirection = Vector3.zero,
+                lookDirection = dir,
+                sprint = false,
                 attack = true,
                 stop = true
             });
-        }
-        else
-        {
-            //executor.StopAll();
         }
 
         if (!attackFrozen && dist > entity.Config.attackRange * 1.2f)
@@ -191,11 +207,13 @@ public class MonsterBrain : MonoBehaviour
         {
             pathTimer = 0f;
 
+            Vector3 dir = (entity.SpawnPosition - transform.position).normalized;
+
             executor.Execute(
                 new ActorControlCommand
                 {
-                    moveDirection = (entity.SpawnPosition - transform.position).normalized,
-                    lookDirection = (entity.SpawnPosition - transform.position).normalized,
+                    moveDirection = dir,
+                    lookDirection = dir,
                     sprint = false,
                     attack = false,
                     stop = false
@@ -205,23 +223,71 @@ public class MonsterBrain : MonoBehaviour
         }
     }
 
-    public void OnBornOver() { }
+    public void OnBornOver()
+    {
+    }
 
     public void OnAttackEvent()
     {
-        if (entity == null || entity.IsDead) return;
-        if (entity.CurrentTarget == null) return;
+        Debug.Log("[MonsterBrain] OnAttackEvent enter");
+
+        if (entity == null)
+        {
+            Debug.LogWarning("[MonsterBrain] entity is null");
+            return;
+        }
+
+        if (entity.IsDead)
+        {
+            Debug.Log("[MonsterBrain] entity is dead");
+            return;
+        }
+
+        if (entity.CurrentTarget == null)
+        {
+            Debug.Log("[MonsterBrain] currentTarget is null");
+            return;
+        }
 
         ICombatSource attacker = GetComponent<ICombatSource>();
         IDamageReceiver target = CombatTargetResolver.ResolveDamageReceiver(entity.CurrentTarget);
-        if (!CombatTargetResolver.IsValidHostileTarget(attacker, target)) return;
 
-        int rawDamage = 0;
+        Debug.Log($"[MonsterBrain] currentTarget={entity.CurrentTarget.name}");
+        Debug.Log($"[MonsterBrain] attacker null = {attacker == null}");
+        Debug.Log($"[MonsterBrain] target null = {target == null}");
+        Debug.Log($"[MonsterBrain] target.IsDead = {target?.IsDead}");
+        Debug.Log($"[MonsterBrain] target type = {target?.GetType().Name}");
+        Debug.Log($"[MonsterBrain] attackerFaction = {(attacker as IFactionProvider)?.FactionId}, targetFaction = {(target as IFactionProvider)?.FactionId}");
+
+        if (!CombatTargetResolver.IsValidHostileTarget(attacker, target))
+        {
+            Debug.Log("[MonsterBrain] target is not a valid hostile target");
+            return;
+        }
+
+        float dist = Vector3.Distance(transform.position, entity.CurrentTarget.position);
+        if (dist > entity.Config.attackRange * 1.3f)
+        {
+            Debug.Log($"[MonsterBrain] target out of attack range, dist={dist}");
+            return;
+        }
+
         Vector3 hitPos = entity.CurrentTarget.position;
-        var request = CombatRequestFactory.CreateBasicDamage(attacker, target, rawDamage, hitPos, DamageSourceType.NormalAttack);
-        BattleDamageService.Instance.ApplyDamage(request);
-        Debug.Log($"[MonsterBrain] target = {target}, attacker = {attacker}, rawDamage = {rawDamage},hitpos={hitPos}");
 
+        // 当前推荐：附加伤害先保持 0 或很小值，
+        // 主体伤害由 BattleDamageService 内部的 Attack / Defense 结算。
+        int rawDamage = Mathf.Max(0, bonusRawDamage);
+
+        var request = CombatRequestFactory.CreateBasicDamage(
+            attacker,
+            target,
+            rawDamage,
+            hitPos,
+            DamageSourceType.NormalAttack);
+
+        BattleDamageService.Instance.ApplyDamage(request);
+
+        Debug.Log($"[MonsterBrain] damage applied: raw={rawDamage}, monsterAttack={entity.Attack}");
     }
 
     public void OnAttackOver()
