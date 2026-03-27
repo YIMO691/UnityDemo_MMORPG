@@ -125,31 +125,33 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
         Data = data;
         RuntimeId = runtimeId;
 
-        // 1️⃣ 确保 runtimeData 存在
         if (Data.runtimeData == null)
             Data.runtimeData = new PlayerRuntimeData();
 
         if (Data.attributeData != null)
         {
-            // 2️⃣ ⭐ 关键：初始化（只在为0时赋值）
             if (Data.runtimeData.currentHp <= 0)
                 Data.runtimeData.currentHp = Data.attributeData.maxHp;
 
             if (Data.runtimeData.currentStamina <= 0)
                 Data.runtimeData.currentStamina = Data.attributeData.maxStamina;
 
-            // 3️⃣ Clamp（防止越界）
             Data.runtimeData.currentHp =
                 Mathf.Clamp(Data.runtimeData.currentHp, 0, Data.attributeData.maxHp);
 
             Data.runtimeData.currentStamina =
                 Mathf.Clamp(Data.runtimeData.currentStamina, 0, Data.attributeData.maxStamina);
+
+            // 关键：根据 HP 同步死亡状态
+            Data.runtimeData.isDead = Data.runtimeData.currentHp <= 0;
         }
 
         Debug.Log($"[PlayerEntity] Init success, name={data.baseData.roleName}");
         Debug.Log($"[PlayerEntity] HP={Data.runtimeData.currentHp}/{Data.attributeData.maxHp}");
+        Debug.Log($"[PlayerEntity] isDead={Data.runtimeData.isDead}");
         Debug.Log($"[PlayerEntity] Stamina={Data.runtimeData.currentStamina}/{Data.attributeData.maxStamina}");
     }
+
 
 
 

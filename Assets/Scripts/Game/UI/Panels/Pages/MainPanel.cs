@@ -87,15 +87,6 @@ public class MainPanel : BasePanel
     {
         currentPlayerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
-    Debug.Log($"[MainPanel] currentPlayerData null = {currentPlayerData == null}");
-    Debug.Log($"[MainPanel] attributeData null = {currentPlayerData?.attributeData == null}");
-    Debug.Log($"[MainPanel] runtimeData null = {currentPlayerData?.runtimeData == null}");
-
-    if (currentPlayerData != null && currentPlayerData.attributeData != null && currentPlayerData.runtimeData != null)
-    {
-        Debug.Log($"[MainPanel] hp={currentPlayerData.runtimeData.currentHp}/{currentPlayerData.attributeData.maxHp}");
-    }
-
         RefreshPlayerInfo();
         RefreshBars();
         RefreshPortrait();
@@ -203,7 +194,7 @@ public class MainPanel : BasePanel
 
     private void OnStaminaChanged(PlayerStaminaChangedEvent e)
     {
-         Debug.Log($"[MainPanel] Stamina changed: {e.currentStamina}/{e.maxStamina}");
+        //Debug.Log($"[MainPanel] Stamina changed: {e.currentStamina}/{e.maxStamina}");
         if (staminaFill == null) return;
         if (e == null || e.maxStamina <= 0)
         {
