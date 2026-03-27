@@ -162,17 +162,96 @@ public class GamePlayerDataService
     private void EnsurePlayerDataSchema(PlayerData playerData)
     {
         if (playerData == null) return;
+
+        // ===== 背包修复 =====
         if (playerData.inventoryData == null)
         {
             playerData.inventoryData = CreateDefaultInventoryData();
         }
+
         if (playerData.inventoryData.slots == null)
         {
-            playerData.inventoryData.slots = new System.Collections.Generic.List<InventorySlotData>();
+            playerData.inventoryData.slots = new List<InventorySlotData>();
         }
+
         if (playerData.inventoryData.slotCount < DefaultInventorySlotCount)
         {
             playerData.inventoryData.slotCount = DefaultInventorySlotCount;
+        }
+
+        // ===== runtimeData 修复 =====
+        if (playerData.runtimeData == null)
+        {
+            playerData.runtimeData = new PlayerRuntimeData();
+        }
+
+        // ===== attributeData 修复 =====
+        if (playerData.baseData != null)
+        {
+            var classConfig = RoleDataManager.Instance.GetClassConfig(playerData.baseData.classId);
+
+            if (classConfig == null)
+            {
+                Debug.LogWarning($"[GamePlayerDataService] 职业配置不存在 classId={playerData.baseData.classId}");
+                return;
+            }
+
+            if (playerData.attributeData == null)
+            {
+                playerData.attributeData = new PlayerAttributeData();
+            }
+
+            // ===== 关键：补 stamina =====
+            if (playerData.attributeData.maxStamina <= 0)
+            {
+                playerData.attributeData.maxStamina = classConfig.maxStamina;
+                Debug.Log("[SchemaFix] 修复 maxStamina");
+            }
+
+            if (playerData.attributeData.maxHp <= 0)
+            {
+                playerData.attributeData.maxHp = classConfig.maxHp;
+            }
+
+            if (playerData.attributeData.attack <= 0)
+            {
+                playerData.attributeData.attack = classConfig.attack;
+            }
+
+            if (playerData.attributeData.defense <= 0)
+            {
+                playerData.attributeData.defense = classConfig.defense;
+            }
+
+            if (playerData.attributeData.speed <= 0)
+            {
+                playerData.attributeData.speed = classConfig.speed;
+            }
+
+            // ===== runtime 修复 =====
+            if (playerData.runtimeData.currentHp <= 0 && !playerData.runtimeData.isDead)
+            {
+                playerData.runtimeData.currentHp = playerData.attributeData.maxHp;
+            }
+
+            if (playerData.runtimeData.currentStamina <= 0)
+            {
+                playerData.runtimeData.currentStamina = playerData.attributeData.maxStamina;
+                Debug.Log("[SchemaFix] 修复 currentStamina");
+            }
+
+            // Clamp
+            playerData.runtimeData.currentHp = Mathf.Clamp(
+                playerData.runtimeData.currentHp,
+                0,
+                playerData.attributeData.maxHp
+            );
+
+            playerData.runtimeData.currentStamina = Mathf.Clamp(
+                playerData.runtimeData.currentStamina,
+                0,
+                playerData.attributeData.maxStamina
+            );
         }
     }
 

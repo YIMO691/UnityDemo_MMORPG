@@ -29,6 +29,7 @@ public static class PlayerRuntimeService
             out entity,
             out var navigator);
 
+
         if (!ok || playerInstance == null || controller == null || entity == null)
         {
             Debug.LogError("[PlayerRuntimeService] TryAssemble failed.");

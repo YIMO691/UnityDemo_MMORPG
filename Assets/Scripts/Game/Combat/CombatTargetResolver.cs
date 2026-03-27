@@ -5,7 +5,7 @@ public static class CombatTargetResolver
     public static IDamageReceiver ResolveDamageReceiver(Component target)
     {
         if (target == null) return null;
-        return target.GetComponent<IDamageReceiver>();
+        return target.GetComponentInParent<IDamageReceiver>();
     }
 
     public static ICombatSource ResolveCombatSource(Component source)

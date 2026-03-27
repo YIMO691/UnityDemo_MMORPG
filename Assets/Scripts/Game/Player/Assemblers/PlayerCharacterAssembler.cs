@@ -94,6 +94,9 @@ public static class PlayerCharacterAssembler
         var locomotionBrain = playerInstance.GetComponent<PlayerLocomotionBrain>();
         if (locomotionBrain == null) locomotionBrain = playerInstance.AddComponent<PlayerLocomotionBrain>();
 
+        var staminaSystem = playerInstance.GetComponent<PlayerStaminaSystem>();
+        if (staminaSystem == null) staminaSystem = playerInstance.AddComponent<PlayerStaminaSystem>();
+
         navigator = playerInstance.GetComponent<PlayerNavigator>();
         if (navigator == null) navigator = playerInstance.AddComponent<PlayerNavigator>();
 

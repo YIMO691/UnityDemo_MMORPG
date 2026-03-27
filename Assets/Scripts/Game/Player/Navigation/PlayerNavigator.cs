@@ -11,12 +11,15 @@ public class PlayerNavigator : BaseNavigator
     private PlayerInputProxy inputProxy;
     private Camera mainCamera;
     private float lastSetPathTime;
+    private PlayerStaminaSystem staminaSystem;
 
     protected override void Awake()
     {
         base.Awake();
         inputProxy = GetComponent<PlayerInputProxy>();
+        staminaSystem = GetComponent<PlayerStaminaSystem>();
     }
+
 
     private void Start()
     {
@@ -57,6 +60,7 @@ public class PlayerNavigator : BaseNavigator
         base.Update();
     }
 
+
     protected override void TickNavigation()
     {
         Vector3 target = pathPoints[currentIndex];
@@ -75,10 +79,12 @@ public class PlayerNavigator : BaseNavigator
         Vector3 worldDir = toTarget.normalized;
         Vector2 moveInput = ConvertWorldDirectionToCameraInput(worldDir);
 
+        bool canSprint = staminaSystem == null || staminaSystem.CanSprint();
+
         var cmd = new PlayerControlCommand
         {
             move = moveInput,
-            sprint = autoSprint,
+            sprint = autoSprint && canSprint,
             jump = false,
             look = Vector2.zero
         };

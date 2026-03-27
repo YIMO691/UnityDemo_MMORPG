@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
 {
+    
     public string RuntimeId { get; private set; }
     public PlayerData Data { get; private set; }
 
@@ -123,7 +124,34 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
     {
         Data = data;
         RuntimeId = runtimeId;
+
+        // 1️⃣ 确保 runtimeData 存在
+        if (Data.runtimeData == null)
+            Data.runtimeData = new PlayerRuntimeData();
+
+        if (Data.attributeData != null)
+        {
+            // 2️⃣ ⭐ 关键：初始化（只在为0时赋值）
+            if (Data.runtimeData.currentHp <= 0)
+                Data.runtimeData.currentHp = Data.attributeData.maxHp;
+
+            if (Data.runtimeData.currentStamina <= 0)
+                Data.runtimeData.currentStamina = Data.attributeData.maxStamina;
+
+            // 3️⃣ Clamp（防止越界）
+            Data.runtimeData.currentHp =
+                Mathf.Clamp(Data.runtimeData.currentHp, 0, Data.attributeData.maxHp);
+
+            Data.runtimeData.currentStamina =
+                Mathf.Clamp(Data.runtimeData.currentStamina, 0, Data.attributeData.maxStamina);
+        }
+
+        Debug.Log($"[PlayerEntity] Init success, name={data.baseData.roleName}");
+        Debug.Log($"[PlayerEntity] HP={Data.runtimeData.currentHp}/{Data.attributeData.maxHp}");
+        Debug.Log($"[PlayerEntity] Stamina={Data.runtimeData.currentStamina}/{Data.attributeData.maxStamina}");
     }
+
+
 
     // 最小快照能力：与现有保存链对齐（不改链路，只提供便捷入口）
     public void CaptureRuntimeSnapshot()
@@ -154,6 +182,10 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
         if (Data.runtimeData == null) Data.runtimeData = new PlayerRuntimeData();
         if (IsDead) return;
         Data.runtimeData.currentHp = Mathf.Max(0, Data.runtimeData.currentHp - damage);
+
+        int maxHp = Data.attributeData != null ? Data.attributeData.maxHp : 0;
+        EventBus.Publish(new PlayerHpChangedEvent(Data.runtimeData.currentHp, maxHp));
+
         if (Data.runtimeData.currentHp <= 0)
         {
             Data.runtimeData.isDead = true;

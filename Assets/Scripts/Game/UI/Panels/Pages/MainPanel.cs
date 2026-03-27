@@ -1,5 +1,4 @@
 using TMPro;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -43,10 +42,14 @@ public class MainPanel : BasePanel
     {
         base.OnShow();
         RefreshView();
+        EventBus.Subscribe<PlayerHpChangedEvent>(OnHpChanged);
+        EventBus.Subscribe<PlayerStaminaChangedEvent>(OnStaminaChanged);
     }
 
     protected override void OnHide()
     {
+        EventBus.Unsubscribe<PlayerHpChangedEvent>(OnHpChanged);
+        EventBus.Unsubscribe<PlayerStaminaChangedEvent>(OnStaminaChanged);
         base.OnHide();
     }
 
@@ -84,12 +87,14 @@ public class MainPanel : BasePanel
     {
         currentPlayerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
 
-        if (currentPlayerData == null)
-        {
-            Debug.LogWarning("[MainPanel] 当前没有玩家数据，显示默认内容。");
-            RefreshEmptyView();
-            return;
-        }
+    Debug.Log($"[MainPanel] currentPlayerData null = {currentPlayerData == null}");
+    Debug.Log($"[MainPanel] attributeData null = {currentPlayerData?.attributeData == null}");
+    Debug.Log($"[MainPanel] runtimeData null = {currentPlayerData?.runtimeData == null}");
+
+    if (currentPlayerData != null && currentPlayerData.attributeData != null && currentPlayerData.runtimeData != null)
+    {
+        Debug.Log($"[MainPanel] hp={currentPlayerData.runtimeData.currentHp}/{currentPlayerData.attributeData.maxHp}");
+    }
 
         RefreshPlayerInfo();
         RefreshBars();
@@ -180,6 +185,32 @@ public class MainPanel : BasePanel
         }
 
         float percent = (float)currentStamina / maxStamina;
+        staminaFill.fillAmount = Mathf.Clamp01(percent);
+    }
+
+    private void OnHpChanged(PlayerHpChangedEvent e)
+    {
+        Debug.Log($"[MainPanel] HP changed: {e.currentHp}/{e.maxHp}");
+        if (hpFill == null) return;
+        if (e == null || e.maxHp <= 0)
+        {
+            hpFill.fillAmount = 0f;
+            return;
+        }
+        float percent = (float)e.currentHp / e.maxHp;
+        hpFill.fillAmount = Mathf.Clamp01(percent);
+    }
+
+    private void OnStaminaChanged(PlayerStaminaChangedEvent e)
+    {
+         Debug.Log($"[MainPanel] Stamina changed: {e.currentStamina}/{e.maxStamina}");
+        if (staminaFill == null) return;
+        if (e == null || e.maxStamina <= 0)
+        {
+            staminaFill.fillAmount = 0f;
+            return;
+        }
+        float percent = (float)e.currentStamina / e.maxStamina;
         staminaFill.fillAmount = Mathf.Clamp01(percent);
     }
 
