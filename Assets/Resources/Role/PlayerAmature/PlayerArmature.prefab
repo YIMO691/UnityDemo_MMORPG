@@ -1032,10 +1032,14 @@ GameObject:
   - component: {fileID: 3893294197879345259}
   - component: {fileID: -4053648116993341110}
   - component: {fileID: 4416926081852918491}
+  - component: {fileID: -491300057374316357}
   - component: {fileID: 4416926081852918493}
   - component: {fileID: -7307080586820468594}
   - component: {fileID: -1809821111394294265}
   - component: {fileID: -2534291250245677251}
+  - component: {fileID: 7374710024974510601}
+  - component: {fileID: 5641424176339651642}
+  - component: {fileID: 4069507659766234375}
   m_Layer: 8
   m_Name: PlayerArmature
   m_TagString: Player
@@ -1101,6 +1105,22 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.93, z: 0}
+--- !u!114 &-491300057374316357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d91f582dcc38444b8bed8a075f6ea8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sprintConsumePerSecond: 20
+  walkRecoverPerSecond: 8
+  idleRecoverPerSecond: 15
+  resumeSprintThreshold: 0.3
 --- !u!114 &4416926081852918493
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1269,6 +1289,48 @@ MonoBehaviour:
     m_Bits: 0
   canPush: 0
   strength: 1.1
+--- !u!114 &7374710024974510601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 601d3b293886ae84089b30ac77aadd6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5641424176339651642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fec7675c17f84e46b45419c2a947ce2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementEnabled: 1
+  jumpEnabled: 1
+  lookEnabled: 1
+  sprintEnabled: 1
+  attackEnabled: 1
+  stopEnabled: 1
+--- !u!114 &4069507659766234375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f30583852d80b54e9f7276747a364cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0
