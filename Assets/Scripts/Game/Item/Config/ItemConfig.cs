@@ -8,6 +8,11 @@ public class ItemConfig
     public string name;
     public string iconPath;
     public int maxStack;
+
+    public string itemType;
+    public bool canUse;
+    public bool canDrop;
+    public string desc;
 }
 
 [Serializable]

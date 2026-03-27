@@ -50,6 +50,9 @@ public class GameManager : MonoBehaviour
 
         InventoryUIController.Instance.Init();
         Debug.Log("[GameManager] Init InventoryUIController success");
+
+        ItemDetailUIController.Instance.Init();
+        Debug.Log("[GameManager] Init ItemDetailUIController success");
     }
 
     private void EnterBeginFlow()

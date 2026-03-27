@@ -11,5 +11,6 @@ public static class UIRouteNames
     public const string AboutPanel = "AboutPanel";
     public const string MapPanel = "MapPanel";
     public const string InventoryPanel = "InventoryPanel";
+    public const string ItemDetailPopup = "ItemDetailPopup";
 }
 

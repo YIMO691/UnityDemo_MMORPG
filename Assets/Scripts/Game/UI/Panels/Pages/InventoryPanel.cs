@@ -10,7 +10,7 @@ public class InventoryPanel : BasePanel
     public override bool CloseByMask => true;
 
     [Header("Header")]
-    [SerializeField] private Text txtTitle;
+    [SerializeField] private TMP_Text txtTitle;
     [SerializeField] private TMP_Text txtCapacity;
     [SerializeField] private Button btnClose;
 
@@ -23,6 +23,8 @@ public class InventoryPanel : BasePanel
     [SerializeField] private int defaultSlotCount = 50;
 
     private readonly List<InventorySlotItem> slotItems = new List<InventorySlotItem>();
+    private GridLayoutGroup gridLayoutGroup;
+    private InventorySlotItem selectedSlotItem;
 
     protected override void OnCreate()
     {
@@ -31,6 +33,11 @@ public class InventoryPanel : BasePanel
 
         if (txtTitle != null)
             txtTitle.text = "背包";
+
+        if (contentRoot != null)
+            gridLayoutGroup = contentRoot.GetComponent<GridLayoutGroup>();
+
+        EventBus.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
     }
 
     protected override void OnShow()
@@ -38,10 +45,7 @@ public class InventoryPanel : BasePanel
         RefreshInventoryView();
 
         if (scrollRect != null)
-        {
             scrollRect.verticalNormalizedPosition = 1f;
-        }
-        
     }
 
     protected override void OnRefresh()
@@ -53,6 +57,13 @@ public class InventoryPanel : BasePanel
     {
         if (btnClose != null)
             btnClose.onClick.RemoveListener(OnClickClose);
+
+        EventBus.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
+    }
+
+    private void OnInventoryChanged(InventoryChangedEvent e)
+    {
+        Refresh();
     }
 
     private void OnClickClose()
@@ -93,6 +104,7 @@ public class InventoryPanel : BasePanel
             if (active)
             {
                 slotItems[i].SetEmpty(i);
+                slotItems[i].onClick = OnClickSlotItem;
             }
         }
 
@@ -107,14 +119,16 @@ public class InventoryPanel : BasePanel
                 if (slotIndex < 0 || slotIndex >= slotCount)
                 {
                     Debug.LogWarning(
-                        $"[InventoryPanel] slotIndex out of range. " +
-                        $"slotIndex={slotIndex}, slotCount={slotCount}, itemId={slotData.itemId}");
+                        $"[InventoryPanel] slotIndex out of range. slotIndex={slotIndex}, slotCount={slotCount}, itemId={slotData.itemId}");
                     continue;
                 }
 
                 slotItems[slotIndex].Bind(slotData);
+                slotItems[slotIndex].onClick = OnClickSlotItem;
             }
         }
+
+        UpdateContentHeight(slotCount);
 
         if (txtCapacity != null)
         {
@@ -122,6 +136,11 @@ public class InventoryPanel : BasePanel
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+
+        if (scrollRect != null)
+            scrollRect.verticalNormalizedPosition = 1f;
+
+        ClearSelection();
     }
 
     private void EnsureSlotItemCount(int count)
@@ -141,7 +160,64 @@ public class InventoryPanel : BasePanel
         while (slotItems.Count < count)
         {
             InventorySlotItem item = Instantiate(slotItemPrefab, contentRoot);
+            item.onClick = OnClickSlotItem;
             slotItems.Add(item);
+        }
+    }
+
+    private void UpdateContentHeight(int slotCount)
+    {
+        if (contentRoot == null || gridLayoutGroup == null)
+            return;
+
+        int columnCount = Mathf.Max(1, gridLayoutGroup.constraintCount);
+        int rowCount = Mathf.CeilToInt(slotCount / (float)columnCount);
+
+        float cellHeight = gridLayoutGroup.cellSize.y;
+        float spacingY = gridLayoutGroup.spacing.y;
+        float paddingTop = gridLayoutGroup.padding.top;
+        float paddingBottom = gridLayoutGroup.padding.bottom;
+
+        float height = paddingTop + paddingBottom;
+        if (rowCount > 0)
+        {
+            height += rowCount * cellHeight;
+            height += (rowCount - 1) * spacingY;
+        }
+
+        Vector2 sizeDelta = contentRoot.sizeDelta;
+        sizeDelta.y = height;
+        contentRoot.sizeDelta = sizeDelta;
+    }
+
+    private void OnClickSlotItem(InventorySlotItem slotItem)
+    {
+        SelectSlot(slotItem);
+    }
+
+    private void SelectSlot(InventorySlotItem slotItem)
+    {
+        if (slotItem == null)
+        {
+            ClearSelection();
+            return;
+        }
+
+        if (selectedSlotItem != null)
+        {
+            selectedSlotItem.SetSelected(false);
+        }
+
+        selectedSlotItem = slotItem;
+        selectedSlotItem.SetSelected(true);
+    }
+
+    private void ClearSelection()
+    {
+        if (selectedSlotItem != null)
+        {
+            selectedSlotItem.SetSelected(false);
+            selectedSlotItem = null;
         }
     }
 }
