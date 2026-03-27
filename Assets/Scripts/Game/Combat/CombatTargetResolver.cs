@@ -11,7 +11,7 @@ public static class CombatTargetResolver
     public static ICombatSource ResolveCombatSource(Component source)
     {
         if (source == null) return null;
-        return source.GetComponent<ICombatSource>();
+        return source.GetComponentInParent<ICombatSource>();
     }
 
     public static bool IsValidHostileTarget(ICombatSource attacker, IDamageReceiver target)

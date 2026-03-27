@@ -9,6 +9,8 @@ public class BattleDamageService
 
     public DamageResult ApplyDamage(DamageRequest request)
     {
+        Debug.Log($"[BattleDamageService] ApplyDamage attacker={request.attacker}, target={request.target}, raw={request.rawDamage}");
+
         var result = new DamageResult
         {
             success = false,
@@ -121,6 +123,12 @@ public class BattleDamageService
         {
             EventBus.Publish(new DeathEvent(result.target, result.attacker));
         }
+
+        Debug.Log(
+    $"[BattleDamageService] raw={request.rawDamage}, " +
+    $"attack={attack}, defense={defense}, " +
+    $"base={baseDamage}, final={finalDamage}");
+
         return result;
     }
 }
