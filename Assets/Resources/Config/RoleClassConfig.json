@@ -12,6 +12,7 @@
       "expGrowthRate": 1.25,
 
       "maxHp": 180,
+      "maxStamina": 100,
       "maxMp": 60,
       "attack": 22,
       "defense": 16,
@@ -44,6 +45,7 @@
       "expGrowthRate": 1.22,
 
       "maxHp": 110,
+      "maxStamina": 120,
       "maxMp": 80,
       "attack": 31,
       "defense": 8,
@@ -76,6 +78,7 @@
       "expGrowthRate": 1.20,
 
       "maxHp": 135,
+      "maxStamina": 90,
       "maxMp": 150,
       "attack": 16,
       "defense": 11,
@@ -108,6 +111,7 @@
       "expGrowthRate": 1.23,
 
       "maxHp": 145,
+      "maxStamina": 110,
       "maxMp": 120,
       "attack": 21,
       "defense": 12,

@@ -1,6 +1,144 @@
 {
   "list": [
-    { "id": 1, "name": "Small Potion", "iconPath": "", "maxStack": 20 },
-    { "id": 2, "name": "Zombie Bone", "iconPath": "", "maxStack": 99 }
+    {
+      "id": 1,
+      "name": "Small Potion",
+      "iconPath": "",
+      "maxStack": 20,
+      "itemType": "Consumable",
+      "canUse": true,
+      "canDrop": true,
+      "desc": "恢复少量生命值。"
+    },
+    {
+      "id": 2,
+      "name": "Zombie Bone",
+      "iconPath": "",
+      "maxStack": 99,
+      "itemType": "Material",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "僵尸身上掉落的骨头。"
+    },
+    {
+      "id": 3,
+      "name": "Medium Potion",
+      "iconPath": "",
+      "maxStack": 20,
+      "itemType": "Consumable",
+      "canUse": true,
+      "canDrop": true,
+      "desc": "恢复中等生命值。"
+    },
+    {
+      "id": 4,
+      "name": "Big Potion",
+      "iconPath": "",
+      "maxStack": 20,
+      "itemType": "Consumable",
+      "canUse": true,
+      "canDrop": true,
+      "desc": "恢复大量生命值。"
+    },
+    {
+      "id": 5,
+      "name": "Energy Drink",
+      "iconPath": "",
+      "maxStack": 20,
+      "itemType": "Consumable",
+      "canUse": true,
+      "canDrop": true,
+      "desc": "恢复少量能量值。"
+    },
+    {
+      "id": 6,
+      "name": "Bandage",
+      "iconPath": "",
+      "maxStack": 50,
+      "itemType": "Consumable",
+      "canUse": true,
+      "canDrop": true,
+      "desc": "简易绷带，可用于止血与恢复。"
+    },
+    {
+      "id": 7,
+      "name": "Zombie Tooth",
+      "iconPath": "",
+      "maxStack": 99,
+      "itemType": "Material",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "僵尸牙齿，常用于合成。"
+    },
+    {
+      "id": 8,
+      "name": "Rotten Flesh",
+      "iconPath": "",
+      "maxStack": 99,
+      "itemType": "Material",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "腐烂的血肉，气味难闻但有用途。"
+    },
+    {
+      "id": 9,
+      "name": "Iron Ore",
+      "iconPath": "",
+      "maxStack": 99,
+      "itemType": "Material",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "铁矿石，可用于冶炼与制作。"
+    },
+    {
+      "id": 10,
+      "name": "Wood Log",
+      "iconPath": "",
+      "maxStack": 99,
+      "itemType": "Material",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "木材原料，可用于制作基础道具。"
+    },
+    {
+      "id": 11,
+      "name": "Copper Coin",
+      "iconPath": "",
+      "maxStack": 9999,
+      "itemType": "Currency",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "通用货币，可用于交易。"
+    },
+    {
+      "id": 12,
+      "name": "Bronze Sword",
+      "iconPath": "",
+      "maxStack": 1,
+      "itemType": "Equipment",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "青铜短剑（装备系统未接入）。"
+    },
+    {
+      "id": 13,
+      "name": "Leather Armor",
+      "iconPath": "",
+      "maxStack": 1,
+      "itemType": "Equipment",
+      "canUse": false,
+      "canDrop": true,
+      "desc": "皮甲（装备系统未接入）。"
+    },
+    {
+      "id": 14,
+      "name": "Quest Scroll",
+      "iconPath": "",
+      "maxStack": 1,
+      "itemType": "Quest",
+      "canUse": false,
+      "canDrop": false,
+      "desc": "任务物品（暂不可丢弃）。"
+    }
   ]
 }
