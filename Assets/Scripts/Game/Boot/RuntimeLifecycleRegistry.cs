@@ -155,6 +155,12 @@ public static class RuntimeLifecycleBootstrap
             null);
 
         registry.Register(
+            nameof(PlayerExpRuntimeService),
+            () => PlayerExpRuntimeService.Init(),
+            null,
+            null);
+
+        registry.Register(
             nameof(PlayerDeathUIController),
             () => PlayerDeathUIController.Init(),
             null,
