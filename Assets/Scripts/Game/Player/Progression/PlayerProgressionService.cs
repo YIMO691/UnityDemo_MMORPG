@@ -92,6 +92,8 @@ public sealed class PlayerProgressionService
             EventBus.Publish(new PlayerStaminaChangedEvent(playerData.runtimeData.currentStamina, playerData.attributeData.maxStamina));
         }
 
+        TryUnlockSkills(playerData);
+
         Debug.Log("[Progression] LevelUp -> Lv." + playerData.progressData.level + ", nextExp=" + playerData.progressData.expToNextLevel);
     }
 
@@ -112,5 +114,39 @@ public sealed class PlayerProgressionService
         playerData.attributeData.critDamage += CritDamagePerLevel;
         playerData.attributeData.hitRate += HitRatePerLevel;
         playerData.attributeData.dodgeRate += DodgeRatePerLevel;
+    }
+
+    private void TryUnlockSkills(PlayerData playerData)
+    {
+        if (playerData == null || playerData.progressData == null)
+            return;
+
+        if (playerData.progressData.skillIds == null)
+            playerData.progressData.skillIds = new System.Collections.Generic.List<int>();
+
+        var allSkills = SkillConfigManager.Instance.GetAllConfigs();
+        if (allSkills == null) return;
+
+        for (int i = 0; i < allSkills.Count; i++)
+        {
+            var cfg = allSkills[i];
+            if (cfg == null) continue;
+
+            if (cfg.unlockLevel <= playerData.progressData.level &&
+                !playerData.progressData.skillIds.Contains(cfg.id))
+            {
+                playerData.progressData.skillIds.Add(cfg.id);
+                Debug.Log("[Progression] Unlock skill -> " + cfg.id + " / " + cfg.name);
+            }
+        }
+    }
+
+    public void RefreshUnlockedSkillsForCurrentPlayer()
+    {
+        PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();
+        if (playerData == null) return;
+
+        GamePlayerDataService.Instance.NormalizePlayerData(playerData);
+        TryUnlockSkills(playerData);
     }
 }

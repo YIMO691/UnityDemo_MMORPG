@@ -142,6 +142,20 @@ public static class RuntimeLifecycleBootstrap
             null,
             null);
 
+#if ENABLE_ASSETBUNDLE_RUNTIME
+        registry.Register(
+            nameof(AssetBundleManager),
+            () => AssetBundleManager.Instance.Initialize(),
+            null,
+            () => AssetBundleManager.Instance.UnloadAllBundles(true));
+#endif
+
+        registry.Register(
+            nameof(SkillConfigManager),
+            () => SkillConfigManager.Instance.Init(),
+            null,
+            null);
+
         registry.Register(
             nameof(LootRuntimeService),
             () => LootRuntimeService.Init(),
