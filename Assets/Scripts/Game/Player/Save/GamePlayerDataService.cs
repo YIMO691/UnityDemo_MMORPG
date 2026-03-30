@@ -23,6 +23,11 @@ public class GamePlayerDataService
         currentPlayerData = playerData;
     }
 
+    public void NormalizePlayerData(PlayerData playerData)
+    {
+        EnsurePlayerDataSchema(playerData);
+    }
+
     public void ClearCurrent()
     {
         currentPlayerData = null;
@@ -166,6 +171,32 @@ public class GamePlayerDataService
     private void EnsurePlayerDataSchema(PlayerData playerData)
     {
         if (playerData == null) return;
+
+        if (playerData.progressData == null)
+        {
+            playerData.progressData = new PlayerProgressData();
+        }
+        if (playerData.progressData.level <= 0)
+        {
+            playerData.progressData.level = 1;
+            Debug.Log("[SchemaFix] 修复 level -> 1");
+        }
+        if (playerData.progressData.currentExp < 0)
+        {
+            playerData.progressData.currentExp = 0;
+            Debug.Log("[SchemaFix] 修复 currentExp -> 0");
+        }
+        if (playerData.progressData.expToNextLevel <= 0)
+        {
+            playerData.progressData.expToNextLevel =
+                PlayerProgressionFormula.GetExpToNextLevel(playerData.progressData.level);
+            Debug.Log("[SchemaFix] 修复 expToNextLevel");
+        }
+        if (playerData.progressData.skillIds == null)
+        {
+            playerData.progressData.skillIds = new List<int>();
+            Debug.Log("[SchemaFix] 修复 skillIds");
+        }
 
         // ===== 背包修复 =====
         if (playerData.inventoryData == null)
