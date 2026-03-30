@@ -1,5 +1,4 @@
 using UnityEngine;
-
 public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
 {
     
@@ -146,10 +145,6 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
             Data.runtimeData.isDead = Data.runtimeData.currentHp <= 0;
         }
 
-        Debug.Log($"[PlayerEntity] Init success, name={data.baseData.roleName}");
-        Debug.Log($"[PlayerEntity] HP={Data.runtimeData.currentHp}/{Data.attributeData.maxHp}");
-        Debug.Log($"[PlayerEntity] isDead={Data.runtimeData.isDead}");
-        Debug.Log($"[PlayerEntity] Stamina={Data.runtimeData.currentStamina}/{Data.attributeData.maxStamina}");
     }
 
 
@@ -177,6 +172,32 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
         transform.position = new Vector3(Data.runtimeData.posX, Data.runtimeData.posY, Data.runtimeData.posZ);
         transform.rotation = Quaternion.Euler(0f, Data.runtimeData.rotY, 0f);
     }
+
+    public void ReviveFull()
+    {
+        if (Data == null || Data.runtimeData == null) return;
+        Data.runtimeData.isDead = false;
+        if (Data.attributeData != null)
+        {
+            Data.runtimeData.currentHp = Data.attributeData.maxHp;
+            Data.runtimeData.currentStamina = Data.attributeData.maxStamina;
+            EventBus.Publish(new PlayerHpChangedEvent(Data.runtimeData.currentHp, Data.attributeData.maxHp));
+            EventBus.Publish(new PlayerStaminaChangedEvent(Data.runtimeData.currentStamina, Data.attributeData.maxStamina));
+        }
+    }
+
+    public void TeleportTo(Vector3 pos, float rotY = 0f)
+    {
+        var cc = GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+
+        transform.position = pos;
+        transform.rotation = Quaternion.Euler(0f, rotY, 0f);
+
+        if (cc != null) cc.enabled = true;
+
+    }
+
 
     public void ReceiveDamage(int damage)
     {
