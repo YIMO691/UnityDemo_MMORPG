@@ -16,5 +16,7 @@ public static class AppRuntimeInitializer
         DropTableConfigManager.Instance.Init();
         LootRuntimeService.Init();
         DeathRuntimeService.Init();
+        PlayerRespawnRuntimeService.Init();
+        PlayerDeathUIController.Init();
     }
 }
