@@ -21,6 +21,8 @@
 - [代码约定](#代码约定)
 - [故障排查](#故障排查)
 - [战斗与掉落/背包](#战斗与掉落背包)
+- [技能系统 V1](#技能系统-v1)
+- [资源加载与 AssetBundle](#资源加载与-assetbundle)
 - [工程化改进计划](#工程化改进计划)
 - [参考文档](#参考文档)
 
@@ -37,6 +39,7 @@
 2. Build Settings：添加 `BeginScene.unity` 与 `GameScene.unity`
 3. 输入资产：PlayerInput 的 Actions 指向 `StarterAssets.inputactions`
 4. 运行 BeginScene：开始游戏（创角→自动存档→进入游戏）或继续游戏（选择存档）
+5. 可选：启用运行时 AssetBundle（宏 `ENABLE_ASSETBUNDLE_RUNTIME`），并将打包产物拷贝至 `Assets/StreamingAssets/<Platform>/`
 
 ---
 
@@ -258,6 +261,54 @@ NavigationConsts.PlayerAgentId
 - 事件：PlayerHpChangedEvent / PlayerStaminaChangedEvent
 - 订阅方：MainPanel OnShow 订阅、OnHide 反订阅；收到事件实时更新 hpFill/staminaFill
 - 体力规则：只禁跑不禁走；体力不足自动降为走路，恢复到阈值后可再次跑
+
+---
+
+## 技能系统 V1
+
+**原则**
+- 技能 = 配置 + 原子效果列表（非“每个技能一个脚本”）
+- 释放与结算分离：技能管释放与目标与冷却；伤害结算统一走 BattleDamageService
+- 统一目标源：玩家仅有一个“当前战斗目标”PlayerEntity.CurrentTarget
+
+**数据与配置**
+- 结构：SkillEffectType / SkillTargetType / SkillEffectData / SkillConfig / SkillConfigList
+- 管理器：SkillConfigManager（AssetPaths.SkillConfig → Resources/Config/SkillConfig.json）
+- 示例：PowerShot（id=1001，冷却3s，射程8m，目标 Enemy，效果：Damage 25）
+
+**运行时**
+- PlayerSkillService：校验施法者/解锁/冷却/目标/距离 → 执行效果
+- Damage 效果：PlayerAttackService.Attack(..., DamageSourceType.Skill) → BattleDamageService
+- 结果结构：SkillCastResult/SkillCastFailReason
+- Debug：PlayerSkillDebugController（数字键 1；优先打当前目标，失败打印剩余冷却）
+
+**目标统一**
+- PlayerEntity 新增 CurrentTarget/SetTarget/ClearTarget
+- PlayerAttackService 在命中解析后调用 `attacker.SetTarget(targetComponent)`
+- PlayerSkillTargetResolver：优先 CurrentTarget（活体），否则回退最近怪
+
+---
+
+## 资源加载与 AssetBundle
+
+**目录到 Bundle 命名**
+- 基于 `Assets/Resources` 的目录结构映射到 `ab.*`：
+  - UI/Windows → ab.ui.windows
+  - Map/Main → ab.map.main
+  - Monster → ab.monster
+  - Config → ab.config
+
+**编辑器工具**
+- Tools/AssetBundle/1. 刷新 AssetBundleName（按目录写入）
+- Tools/AssetBundle/3~5. 一键打包（Windows/Android/iOS）
+
+**运行时加载**
+- AssetBundleManager：依赖加载，默认根 `Assets/StreamingAssets/<Platform>/`
+- AssetBundleLoader：优先从 AB 加载，失败回退 Resources（由 `ENABLE_ASSETBUNDLE_RUNTIME` 宏控制）
+- 生命周期：可在 RuntimeLifecycleRegistry 中注册 AssetBundleManager（宏包裹）
+
+**忽略规则**
+- `.gitignore` 已忽略 `/AssetBundleOutput/` 与 `/Assets/StreamingAssets/<Platform>/`，避免提交包体产物
 
 ---
 

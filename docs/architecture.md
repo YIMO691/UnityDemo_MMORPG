@@ -89,6 +89,7 @@ GameSceneEntry
 | **Navigation** | 寻路与导航执行 | NavigationPathSolver, NavigationRegistry |
 | **Combat** | 战斗入口与目标解析 | CombatTargetResolver, PlayerAttackService |
 | **Battle** | 伤害计算与死亡处理 | BattleDamageService, DeathRuntimeService |
+| **Skill** | 技能释放与冷却 | SkillConfigManager, PlayerSkillService |
 | **Map** | 地图配置与显示 | MapDataManager, MapPanel |
 | **UI** | 界面管理 | UIManager, BasePanel |
 
@@ -264,6 +265,57 @@ Actor Capability → DamageRequest → BattleDamageService → DamageResult
 ```
 DeathEvent → DeathRuntimeService → 清理/表现/销毁
 ```
+
+---
+
+## 技能系统
+
+### 原则
+- 技能 = 配置 + 原子效果列表（非脚本化技能）
+- 释放与结算分离：技能管释放、目标与冷却；结算统一走 BattleDamageService
+- 统一目标源：玩家仅有一个当前战斗目标 PlayerEntity.CurrentTarget
+
+### 数据模型
+- SkillEffectType / SkillTargetType / SkillEffectData / SkillConfig / SkillConfigList
+- SkillConfigManager：读取 AssetPaths.SkillConfig（Resources/Config/SkillConfig.json）
+
+### 释放与效果
+```
+PlayerSkillService.CastSkill
+    → 校验（施法者/解锁/冷却/目标/射程）
+    → 遍历 effects 执行
+        - Damage → PlayerAttackService.Attack(..., DamageSourceType.Skill)
+        - Heal/RestoreStamina（预留）
+```
+返回值：SkillCastResult（success/failReason）
+
+### 目标统一
+- PlayerEntity：CurrentTarget / SetTarget / ClearTarget
+- PlayerAttackService：在解析受击者后写入 SetTarget
+- PlayerSkillTargetResolver：优先 CurrentTarget（活体），否则回退最近怪
+
+---
+
+## 资源加载与 AssetBundle
+
+### 命名策略
+- 以 `Assets/Resources` 为根，目录转小写、`/`→`.`，加前缀 `ab.`：
+  - UI/Windows → ab.ui.windows
+  - Map/Main → ab.map.main
+  - Monster → ab.monster
+  - Config → ab.config
+
+### 编辑器工具
+- 目录映射 AssetBundleName：Tools/AssetBundle/1 刷新；2 清空
+- 一键打包：Tools/AssetBundle/3 Windows；4 Android；5 iOS
+
+### 运行时加载
+- AssetBundleManager：依赖加载、默认根 `Assets/StreamingAssets/<Platform>/`
+- AssetBundleLoader：优先从 AB 加载，失败回退 Resources（由 `ENABLE_ASSETBUNDLE_RUNTIME` 宏控制）
+- 生命周期：RuntimeLifecycleRegistry 可选注册（宏包裹）
+
+### 版本控制
+- `.gitignore` 忽略 `/AssetBundleOutput/` 与 `/Assets/StreamingAssets/<Platform>/`
 
 ---
 
