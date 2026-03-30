@@ -48,6 +48,8 @@ public class ContinuePanel : BasePanel
     {
         ClearList();
 
+        DataManager.Instance.CompactPlayerSlots(maxSlotCount);
+
         List<PlayerSaveMetaData> metaList = GamePlayerDataService.Instance.GetAllPlayerSaveMetaData(maxSlotCount);
 
         for (int i = 0; i < metaList.Count; i++)

@@ -105,11 +105,14 @@ public class GamePlayerDataService
         }
 
         string fileName = DataManager.Instance.GetPlayerSlotFileName(slotId);
-        PlayerData playerData = JsonMgr.Instance.LoadData<PlayerData>(fileName);
-
-        if (playerData == null || playerData.baseData == null)
+        if (!JsonMgr.Instance.TryLoadData(fileName, out PlayerData playerData))
         {
             Debug.LogWarning("[GamePlayerDataService] 槽位 " + slotId + " 存档读取失败。");
+            return false;
+        }
+        if (playerData == null || playerData.baseData == null)
+        {
+            Debug.LogWarning("[GamePlayerDataService] 槽位 " + slotId + " 存档数据不完整。");
             return false;
         }
 
@@ -127,7 +130,8 @@ public class GamePlayerDataService
         if (!DataManager.Instance.HasPlayerSaveInSlot(slotId)) return null;
 
         string fileName = DataManager.Instance.GetPlayerSlotFileName(slotId);
-        PlayerData data = JsonMgr.Instance.LoadData<PlayerData>(fileName);
+        if (!JsonMgr.Instance.TryLoadData(fileName, out PlayerData data))
+            return null;
         EnsurePlayerDataSchema(data);
         return data;
     }

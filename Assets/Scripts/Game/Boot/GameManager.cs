@@ -24,30 +24,17 @@ public class GameManager : MonoBehaviour
     {
         if (initialized) return;
         Debug.Log("[GameManager] Initialize start");
-        InitCoreManagers();
+        RuntimeLifecycleBootstrap.RegisterDefaults();
+        RuntimeLifecycleRegistry.Instance.InitAll();
+        InitGameOnlyManagers();
         MonsterConfigManager.Instance.Init();
         EnterBeginFlow();
         initialized = true;
         Debug.Log("[GameManager] Initialize success");
     }
 
-    private void InitCoreManagers()
+    private void InitGameOnlyManagers()
     {
-        DataManager.Instance.Init();
-        Debug.Log("[GameManager] Init DataManager success");
-
-        UIManager.Instance.Init();
-        Debug.Log("[GameManager] Init UIManager success");
-
-        RoleDataManager.Instance.Init();
-        Debug.Log("[GameManager] Init RoleDataManager success");
-
-        CreateRoleFlowController.Instance.Init();
-        Debug.Log("[GameManager] Init CreateRoleFlowController success");
-
-        RoleUIController.Instance.Init();
-        Debug.Log("[GameManager] Init RoleUIController success");
-
         InventoryUIController.Instance.Init();
         Debug.Log("[GameManager] Init InventoryUIController success");
 
@@ -70,22 +57,26 @@ public class GameManager : MonoBehaviour
 
     public void Shutdown()
     {
-        // 预留：按需清理全局服务或运行态（当前不做具体操作）
+        RuntimeLifecycleRegistry.Instance.ShutdownAll();
+    }
+
+    private void OnDestroy()
+    {
+        if (instance != this) return;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        instance = null;
+    }
+
+    private void OnApplicationQuit()
+    {
+        Shutdown();
     }
 
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
     {
         if (scene.name == SceneNames.BeginScene)
         {
-            if (UIManager.Instance.IsInited)
-            {
-                EnterBeginFlow();
-            }
-            else
-            {
-                UIManager.Instance.Init();
-                EnterBeginFlow();
-            }
+            EnterBeginFlow();
             pendingEnterBegin = false;
         }
         else if (pendingEnterBegin)

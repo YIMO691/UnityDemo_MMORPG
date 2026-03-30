@@ -43,36 +43,55 @@ public class JsonMgr
         File.WriteAllText(path, jsonStr);
     }
 
-    //读取指定文件中的 Json数据 反序列化
+    private bool TryResolveReadPath(string fileName, out string path)
+    {
+        path = Application.streamingAssetsPath + "/" + fileName + ".json";
+        if (File.Exists(path))
+            return true;
+        path = Application.persistentDataPath + "/" + fileName + ".json";
+        return File.Exists(path);
+    }
+
+    public bool TryLoadData<T>(string fileName, out T data, JsonType type = JsonType.LitJson) where T : new()
+    {
+        data = default(T);
+        if (!TryResolveReadPath(fileName, out string path))
+        {
+            Debug.LogWarning("[JsonMgr] 文件不存在: " + fileName);
+            return false;
+        }
+        try
+        {
+            string jsonStr = File.ReadAllText(path);
+            switch (type)
+            {
+                case JsonType.JsonUtlity:
+                    data = JsonUtility.FromJson<T>(jsonStr);
+                    break;
+                case JsonType.LitJson:
+                    data = JsonMapper.ToObject<T>(jsonStr);
+                    break;
+            }
+            if (data == null)
+            {
+                Debug.LogWarning("[JsonMgr] 反序列化结果为空: " + path);
+                return false;
+            }
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("[JsonMgr] 读取失败: " + ex);
+            data = default(T);
+            return false;
+        }
+    }
+
     public T LoadData<T>(string fileName, JsonType type = JsonType.LitJson) where T : new()
     {
-        //确定从哪个路径读取
-        //首先先判断 默认数据文件夹中是否有我们想要的数据 如果有 就从中获取
-        string path = Application.streamingAssetsPath + "/" + fileName + ".json";
-        //先判断 是否存在这个文件
-        //如果不存在默认文件 就从 读写文件夹中去寻找
-        if(!File.Exists(path))
-            path = Application.persistentDataPath + "/" + fileName + ".json";
-        //如果读写文件夹中都还没有 那就返回一个默认对象
-        if (!File.Exists(path))
-            return new T();
-
-        //进行反序列化
-        string jsonStr = File.ReadAllText(path);
-        //数据对象
-        T data = default(T);
-        switch (type)
-        {
-            case JsonType.JsonUtlity:
-                data = JsonUtility.FromJson<T>(jsonStr);
-                break;
-            case JsonType.LitJson:
-                data = JsonMapper.ToObject<T>(jsonStr);
-                break;
-        }
-
-        //把对象返回出去
-        return data;
+        if (TryLoadData(fileName, out T data, type))
+            return data;
+        return new T();
     }
     /// <summary>
     /// 删除指定 Json 数据文件

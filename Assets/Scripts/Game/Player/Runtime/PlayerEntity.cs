@@ -204,6 +204,7 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
         if (Data == null) return;
         if (Data.runtimeData == null) Data.runtimeData = new PlayerRuntimeData();
         if (IsDead) return;
+        int hpBefore = Data.runtimeData.currentHp;
         Data.runtimeData.currentHp = Mathf.Max(0, Data.runtimeData.currentHp - damage);
 
         int maxHp = Data.attributeData != null ? Data.attributeData.maxHp : 0;
@@ -211,8 +212,13 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
 
         if (Data.runtimeData.currentHp <= 0)
         {
+            bool wasAlive = !Data.runtimeData.isDead && hpBefore > 0;
             Data.runtimeData.isDead = true;
             Debug.Log("[PlayerEntity] Dead");
+            if (wasAlive)
+            {
+                EventBus.Publish(new DeathEvent(this, null));
+            }
         }
     }
 }
