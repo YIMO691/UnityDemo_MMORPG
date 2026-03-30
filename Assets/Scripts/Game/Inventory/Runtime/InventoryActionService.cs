@@ -42,6 +42,20 @@ public static class InventoryActionService
             return false;
         }
 
+        var player = PlayerLocator.Instance != null ? PlayerLocator.Instance.GetPlayerEntity() : null;
+        if (player == null)
+        {
+            Debug.LogWarning("[InventoryActionService] TryUseItem failed: player entity is null.");
+            return false;
+        }
+
+        bool applied = ItemUseEffectSystem.Apply(cfg, player);
+        if (!applied)
+        {
+            Debug.LogWarning($"[InventoryActionService] TryUseItem failed: effect apply failed. itemId={context.itemId}, type={cfg.itemType}");
+            return false;
+        }
+
         slotData.count -= 1;
         if (slotData.count <= 0)
         {

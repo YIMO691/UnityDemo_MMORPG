@@ -13,6 +13,7 @@ public class ItemConfig
     public bool canUse;
     public bool canDrop;
     public string desc;
+    public int useValue;
 }
 
 [Serializable]
