@@ -119,6 +119,7 @@ public class ThirdPersonController : MonoBehaviour
 
     private void Update()
     {
+        
         if (!_hasAnimator)
         {
             _animator = GetComponentInChildren<Animator>();
