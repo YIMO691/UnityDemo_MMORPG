@@ -109,3 +109,10 @@ Assets/_TerrainAutoUpgrade.meta
 
 Assets/TextMesh Pro
 Assets/TextMesh Pro.meta
+
+# AssetBundles (do not commit build outputs)
+/AssetBundleOutput/
+/[Aa]ssets/StreamingAssets/StandaloneWindows64/
+/[Aa]ssets/StreamingAssets/Android/
+/[Aa]ssets/StreamingAssets/iOS/
+/[Aa]ssets/StreamingAssets/StandaloneOSX/
