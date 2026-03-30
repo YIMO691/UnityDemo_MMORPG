@@ -8,6 +8,11 @@ public class MonsterBrain : MonoBehaviour
     [SerializeField] private float chaseCooldown = 1f;
     [SerializeField] private float attackEntryCooldown = 0.3f;
     [SerializeField] private float attackFailSafeTimeout = 2f;
+    [SerializeField] private float attackHalfAngle = 60f;
+    [SerializeField] private float hitRadius = 0.8f;
+    [SerializeField] private float hitDistance = 1.8f;
+    [SerializeField] private float hitForwardOffset = 0.5f;
+    [SerializeField] private float hitHeight = 1.0f;
 
     // 这里作为附加伤害。当前推荐先设为 0，
     // 让 BattleDamageService 主要通过 Attack - Defense 去结算。
@@ -70,10 +75,12 @@ public class MonsterBrain : MonoBehaviour
             ? PlayerLocator.Instance.GetPlayerTransform()
             : null;
 
-        if (player != null)
-        {
-            entity.SetTarget(player);
-        }
+        if (player == null) return;
+
+        var playerEntity = player.GetComponent<PlayerEntity>();
+        if (playerEntity != null && playerEntity.IsDead) return;
+
+        entity.SetTarget(player);
     }
 
     private void TickIdle()
@@ -223,6 +230,71 @@ public class MonsterBrain : MonoBehaviour
         }
     }
 
+    private IDamageReceiver DetectHitTarget()
+    {
+        if (entity == null || entity.Config == null) return null;
+        if (entity.CurrentTarget == null) return null;
+
+        Vector3 origin = transform.position + Vector3.up * hitHeight + transform.forward * hitForwardOffset;
+        Vector3 forward = transform.forward;
+
+        float radius = hitRadius;
+        float distance = hitDistance;
+
+        RaycastHit[] hits = Physics.SphereCastAll(
+            origin,
+            radius,
+            forward,
+            distance);
+
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (var hit in hits)
+        {
+            var target = CombatTargetResolver.ResolveDamageReceiver(hit.collider);
+
+            if (target == null) continue;
+
+            Vector3 targetPos;
+            if (target is IActorIdentity id)
+                targetPos = id.ActorTransform.position;
+            else
+                targetPos = hit.collider.bounds.center;
+
+            Vector3 toTarget = (targetPos - origin);
+            if (Vector3.Angle(forward, toTarget) > attackHalfAngle) continue;
+
+            ICombatSource attacker = GetComponent<ICombatSource>();
+
+            if (!CombatTargetResolver.IsValidHostileTarget(attacker, target))
+                continue;
+
+            return target;
+        }
+
+        return null;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (entity == null) entity = GetComponent<MonsterEntity>();
+        if (entity == null || entity.Config == null) return;
+
+        Gizmos.color = Color.red;
+
+        Vector3 origin = transform.position + Vector3.up * hitHeight + transform.forward * hitForwardOffset;
+        float radius = hitRadius;
+        float distance = hitDistance;
+
+        Gizmos.DrawWireSphere(origin, radius);
+        Gizmos.DrawWireSphere(origin + transform.forward * distance, radius);
+        Gizmos.DrawLine(origin, origin + transform.forward * distance);
+        Vector3 leftDir = Quaternion.AngleAxis(-attackHalfAngle, Vector3.up) * transform.forward;
+        Vector3 rightDir = Quaternion.AngleAxis(attackHalfAngle, Vector3.up) * transform.forward;
+        Gizmos.DrawLine(origin, origin + leftDir * distance);
+        Gizmos.DrawLine(origin, origin + rightDir * distance);
+    }
+
     public void OnBornOver()
     {
     }
@@ -250,25 +322,11 @@ public class MonsterBrain : MonoBehaviour
         }
 
         ICombatSource attacker = GetComponent<ICombatSource>();
-        IDamageReceiver target = CombatTargetResolver.ResolveDamageReceiver(entity.CurrentTarget);
+        IDamageReceiver target = DetectHitTarget();
 
-        Debug.Log($"[MonsterBrain] currentTarget={entity.CurrentTarget.name}");
-        Debug.Log($"[MonsterBrain] attacker null = {attacker == null}");
-        Debug.Log($"[MonsterBrain] target null = {target == null}");
-        Debug.Log($"[MonsterBrain] target.IsDead = {target?.IsDead}");
-        Debug.Log($"[MonsterBrain] target type = {target?.GetType().Name}");
-        Debug.Log($"[MonsterBrain] attackerFaction = {(attacker as IFactionProvider)?.FactionId}, targetFaction = {(target as IFactionProvider)?.FactionId}");
-
-        if (!CombatTargetResolver.IsValidHostileTarget(attacker, target))
+        if (target == null)
         {
-            Debug.Log("[MonsterBrain] target is not a valid hostile target");
-            return;
-        }
-
-        float dist = Vector3.Distance(transform.position, entity.CurrentTarget.position);
-        if (dist > entity.Config.attackRange * 1.3f)
-        {
-            Debug.Log($"[MonsterBrain] target out of attack range, dist={dist}");
+            Debug.Log("[MonsterBrain] attack missed");
             return;
         }
 
