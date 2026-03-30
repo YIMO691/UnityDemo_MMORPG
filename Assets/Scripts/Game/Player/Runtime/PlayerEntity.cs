@@ -4,6 +4,7 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
     
     public string RuntimeId { get; private set; }
     public PlayerData Data { get; private set; }
+    public Component CurrentTarget { get; private set; }
 
     public Transform ActorTransform => transform;
 
@@ -25,6 +26,20 @@ public class PlayerEntity : MonoBehaviour, IDamageReceiver, ICombatSource
                    Data.runtimeData != null &&
                    Data.runtimeData.isDead;
         }
+    }
+
+    public void SetTarget(Component target)
+    {
+        if (target == CurrentTarget) return;
+        CurrentTarget = target;
+        Debug.Log("[PlayerEntity] SetTarget -> " + (target != null ? target.name : "null"));
+    }
+
+    public void ClearTarget()
+    {
+        if (CurrentTarget == null) return;
+        Debug.Log("[PlayerEntity] ClearTarget");
+        CurrentTarget = null;
     }
 
     public int FactionId => 1;
