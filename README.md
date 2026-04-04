@@ -22,6 +22,7 @@
 - [故障排查](#故障排查)
 - [战斗与掉落/背包](#战斗与掉落背包)
 - [技能系统 V1](#技能系统-v1)
+- [技能系统 Prototype](#技能系统-prototype)
 - [资源加载与 AssetBundle](#资源加载与-assetbundle)
 - [工程化改进计划](#工程化改进计划)
 - [参考文档](#参考文档)
@@ -286,6 +287,38 @@ NavigationConsts.PlayerAgentId
 - PlayerEntity 新增 CurrentTarget/SetTarget/ClearTarget
 - PlayerAttackService 在命中解析后调用 `attacker.SetTarget(targetComponent)`
 - PlayerSkillTargetResolver：优先 CurrentTarget（活体），否则回退最近怪
+
+---
+
+## 技能系统 Prototype
+
+**定位**
+- 这是按类图独立实现的一套“原型技能模块”，用于表达完整的技能对象模型与原子链执行流程。
+- 它与当前线上主链路 `PlayerSkillService` 并存，暂时不接入现有 `PlayerEntity`、战斗总线或 UI。
+
+**目录**
+- `Assets/Scripts/Game/Skill/Prototype`
+
+**核心类型**
+- `SkillMgr`：技能与 `DoSkillComp` 的创建/回收、默认技能组装
+- `DoSkillComp`：驱动技能列表更新、停止、回收
+- `Skill`：技能本体，维护 `SkillAtomList`，负责 `Start/Pause/Stop/Update`
+- `SkillAtom`：原子基类
+- `SkillAtomAnimation / SkillAtomSound / SkillAtomRangefindEnemy / SkillAtomTrun / SkillAtomMove / SkillAtomHurt`
+- `SkillShareData`：原子共享上下文，包含 `SourceAnimal / FindEnemyList / MainTarget / SkillID`
+- `Player`：仅用于原型链路的最小玩家对象，不等同于现有 `PlayerEntity`
+
+**执行链示例**
+- `1001`: Animation -> Sound -> RangefindEnemy -> Trun -> Hurt
+- `1002`: Animation -> RangefindEnemy -> Move -> Hurt
+- `1003`: Animation -> Sound -> RangefindEnemy -> Trun
+
+**用途**
+- 用于先把类图落地成可运行代码
+- 后续可选择：
+  - 继续配置驱动化
+  - 接入现有 `PlayerEntity`
+  - 或仅作为技能设计/验证原型保留
 
 ---
 

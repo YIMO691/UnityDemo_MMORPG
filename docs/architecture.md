@@ -89,7 +89,8 @@ GameSceneEntry
 | **Navigation** | 寻路与导航执行 | NavigationPathSolver, NavigationRegistry |
 | **Combat** | 战斗入口与目标解析 | CombatTargetResolver, PlayerAttackService |
 | **Battle** | 伤害计算与死亡处理 | BattleDamageService, DeathRuntimeService |
-| **Skill** | 技能释放与冷却 | SkillConfigManager, PlayerSkillService |
+| **Skill** | 线上技能释放与冷却 | SkillConfigManager, PlayerSkillService |
+| **Skill.Prototype** | 类图原型技能系统 | SkillMgr, DoSkillComp, Skill, SkillAtom |
 | **Map** | 地图配置与显示 | MapDataManager, MapPanel |
 | **UI** | 界面管理 | UIManager, BasePanel |
 
@@ -293,6 +294,55 @@ PlayerSkillService.CastSkill
 - PlayerEntity：CurrentTarget / SetTarget / ClearTarget
 - PlayerAttackService：在解析受击者后写入 SetTarget
 - PlayerSkillTargetResolver：优先 CurrentTarget（活体），否则回退最近怪
+
+---
+
+## 技能系统 Prototype
+
+### 定位
+- `Game/Skill/Prototype` 是按类图独立实现的一套原型模块。
+- 它不改动现有 `PlayerSkillService` 主链路，也不直接依赖 `PlayerEntity`。
+- 目标是先把“技能对象模型 + 原子链执行器”闭环，再决定是否接入生产链路。
+
+### 结构
+```
+Player
+    └─ DoSkillComp
+        └─ List<Skill>
+            └─ List<SkillAtom>
+```
+
+### 核心职责
+- `SkillMgr`
+  - 创建/回收 `DoSkillComp`
+  - 创建/回收 `Skill`
+  - 按 `skillId` 组装默认原子链
+- `Skill`
+  - 维护 `SkillAtomList`
+  - 控制 `Start / Pause / Stop / Update`
+  - 持有 `SkillShareData`
+- `SkillAtom`
+  - 统一生命周期：`Init → OnEnter → Update → OnExit → UnInit`
+- `SkillShareData`
+  - 原子之间共享施法者、敌人列表、主目标与技能编号
+
+### 已实现原子
+- `SkillAtomAnimation`
+- `SkillAtomSound`
+- `SkillAtomRangefindEnemy`
+- `SkillAtomTrun`
+- `SkillAtomMove`
+- `SkillAtomHurt`
+
+### 与正式技能系统的关系
+- 正式系统：
+  - 数据驱动
+  - 使用 `SkillConfigManager / PlayerSkillService`
+  - 与 `BattleDamageService`、`CurrentTarget`、升级解锁联动
+- Prototype 系统：
+  - 类图驱动
+  - 独立 `Player` 原型对象
+  - 用于验证技能对象模型与原子调度流程
 
 ---
 
