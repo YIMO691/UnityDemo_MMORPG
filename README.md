@@ -1,521 +1,434 @@
 # UnityDemo_MMORPG
 
-基于 Unity 2022.3.62f3 的 MMORPG 客户端原型。
+基于 **Unity 2022.3.62f3c1** 的 MMORPG 客户端原型工程。
 
-**目标**：最小可运行主链路 + 明确职责边界 + 数据/资源常量化 + 可持续扩展
+当前分支：`feat/combat-hit-verify-respawn-overlay`
 
----
-
-## 目录
-
-- [快速开始](#快速开始)
-- [总体流程](#总体流程)
-- [目录结构](#目录结构)
-- [核心系统](#核心系统)
-  - [启动与场景装配](#启动与场景装配)
-  - [UI 系统](#ui-系统)
-  - [导航与地图](#导航与地图)
-  - [怪物系统](#怪物系统)
-  - [存档与数据](#存档与数据)
-- [常量与资源规范](#常量与资源规范)
-- [代码约定](#代码约定)
-- [故障排查](#故障排查)
-- [战斗与掉落/背包](#战斗与掉落背包)
-- [技能系统 V1](#技能系统-v1)
-- [技能系统 Prototype](#技能系统-prototype)
-- [资源加载与 AssetBundle](#资源加载与-assetbundle)
-- [工程化改进计划](#工程化改进计划)
-- [参考文档](#参考文档)
+本项目已经具备从 **BeginScene → 创角/读档 → GameScene → 玩家/怪物运行时 → 战斗/死亡/掉落/背包/成长/复活** 的最小可运行闭环，整体方向明确偏向“**先打通主链路，再逐步工程化收口**”。
 
 ---
 
-## 快速开始
+## 1. 项目定位
 
-### 环境要求
-- Unity 2022.3.62f3
-- 必要包：Input System、Cinemachine、TextMeshPro
+UnityDemo_MMORPG 不是一套完整商用 MMORPG 客户端，而是一个围绕以下目标持续演进的原型工程：
 
-### 运行步骤
-1. 打开 Unity 项目
-2. Build Settings：添加 `BeginScene.unity` 与 `GameScene.unity`
-3. 输入资产：PlayerInput 的 Actions 指向 `StarterAssets.inputactions`
-4. 运行 BeginScene：开始游戏（创角→自动存档→进入游戏）或继续游戏（选择存档）
-5. 可选：启用运行时 AssetBundle（宏 `ENABLE_ASSETBUNDLE_RUNTIME`），并将打包产物拷贝至 `Assets/StreamingAssets/<Platform>/`
+- 打通最小可运行主链路
+- 明确 Framework / Game 分层边界
+- 将资源路径、对象名、路由名等统一常量化
+- 把场景装配、战斗结算、死亡副作用、存档恢复等高频逻辑从“散点脚本”收口为可维护模块
+- 为后续技能 UI、装备系统、任务系统、服务端同步等扩展留出结构空间
 
 ---
 
-## 总体流程
+## 2. 当前完成度概览
 
+### 已完成的功能
+
+#### 基础启动与场景流转
+- `BeginScene` 启动入口可用
+- `GameManager` 常驻并负责应用级初始化
+- `RuntimeLifecycleRegistry` 已用于统一编排核心模块初始化
+- 支持从开始界面进入创角流程
+- 支持多存档继续游戏
+- 支持进入 `GameScene` 后完成玩家、相机、主界面、小地图、怪物模块装配
+- 支持从游戏内返回开始界面
+
+#### UI Framework 与主界面骨架
+- 已实现 `BasePanel + UIManager + UILayer + PopupStack + UIMask`
+- 已区分 MainPage / Popup 的展示语义
+- `BeginPanel / CreateRolePanel / ContinuePanel / MainPanel / MapPanel / InventoryPanel / SettingPanel / AboutPanel / MessageTipPanel / ConfirmPanel / RoleInfoPanel / ItemDetailPopup` 均已接入
+- 主界面已具备名称、等级、HP、体力、小地图、背包、地图、角色详情、设置入口
+
+#### 创角与角色数据
+- 已支持职业切换、角色命名、职业详情查看
+- 已支持按职业配置生成 `PlayerData`
+- 已支持创角后自动分配存档槽位并进入 `GameScene`
+- `RoleClassConfig.json` 已提供职业基础属性、成长字段与初始技能字段
+
+#### 玩家运行时
+- `PlayerRuntimeService` 已作为玩家运行时创建统一入口
+- 已完成玩家实体、输入代理、移动控制、体力系统、导航代理、定位注册的装配
+- 已支持从存档位置恢复玩家位置与朝向
+- 已支持玩家 HP / 体力实时事件广播，主界面同步刷新
+
+#### 导航与地图
+- 已基于 `NavMesh` 实现寻路
+- 已支持玩家点击导航、导航停止、路径可视化状态维护
+- 已支持自动导航期间自由转镜，WASD / 左摇杆输入打断自动导航
+- 已支持小地图相机绑定与地图坐标映射
+- 已支持 `MapConfig.json` 驱动的地图显示
+
+#### 怪物系统
+- 已形成 `MonsterEntity / MonsterBrain / MonsterLocomotionExecutor / MonsterNavigator / MonsterRuntimeService / MonsterRuntimeRegistry / MonsterModule` 分层
+- 已支持刷怪点初始化、按权重刷怪、最大存活数控制、定时重生
+- 已支持怪物状态流转：`Idle → Chase → Attack → Return → Idle`
+- 已支持怪物从存档恢复
+- 已支持攻击动画事件回调与失败保护超时
+- 已支持怪物真实命中判定（`SphereCast + 前向角度门禁 + Gizmos`）
+
+#### 战斗、伤害与死亡
+- 已形成统一攻击路径：`ICombatSource / IDamageReceiver / DamageRequest / BattleDamageService`
+- 已支持统一阵营校验、基础伤害公式、暴击、闪避、命中反馈事件
+- 已支持玩家普攻与怪物攻击统一进入 `BattleDamageService`
+- 已支持飘字对象池与受击反馈
+- 已支持统一死亡事件 `DeathEvent`
+- 已支持怪物死亡后的导航清理、注册表移除、碰撞关闭、延迟销毁
+- 已支持玩家死亡事件转 UI 流程
+
+#### 复活链路
+- 已支持玩家死亡后黑屏 Overlay
+- 已支持倒计时后自动复活，以及按钮立即复活
+- 已支持复活时停止旧导航、恢复满血满体力、传送回出生点、恢复控制、清理死亡去重标记
+- 已支持清空怪物仇恨目标
+
+#### 掉落、背包与物品
+- 已支持 `DropTableConfig.json` 驱动的最小掉落表
+- 已支持怪物死亡后解析掉落并直接入包
+- 已支持背包槽位、堆叠、容量限制、读档保留
+- 已支持背包面板、格子展示、物品详情弹窗
+- 已支持物品使用与物品丢弃
+- 已支持部分可用物品效果：回血
+
+#### 成长与经验
+- 已支持击杀怪物获得经验
+- 已支持统一经验公式 `Base100 + 每级+50`
+- 已支持连续升级
+- 已支持升级后恢复满血满体力
+- 已支持技能解锁列表随等级刷新
+
+#### 技能系统（服务层）
+- 已提供 `SkillConfig.json`、`SkillConfigManager`、`PlayerSkillService`、`PlayerSkillTargetResolver`
+- 已支持技能释放的解锁、目标、距离、冷却校验
+- 已支持伤害型技能统一进入 `BattleDamageService`
+- 已支持当前战斗目标 `CurrentTarget` 与“最近怪物”回退策略
+- 已提供 `PlayerSkillDebugController` 用于数字键调试技能释放
+
+#### 存档、恢复与资源加载
+- 已支持多槽位玩家存档
+- 已支持玩家运行时快照保存
+- 已支持怪物运行态保存与恢复
+- 已支持 Schema 修复与旧档兼容（如 progressData / inventoryData / runtimeData / stamina）
+- 已提供 `Resources` 加载与 `AssetBundle` 运行时加载双通道
+- 已提供 AssetBundle 命名与打包编辑器工具
+
+---
+
+### 待完善的功能
+
+#### 体验层
+- 主界面技能按钮尚未正式接入 `PlayerSkillService`，当前按钮点击仍是“开发中”提示
+- 技能表现目前以服务逻辑和调试入口为主，缺少正式技能栏、冷却遮罩、施法表现和动画联动
+- 装备系统尚未接入，`ItemConfig` 中的 Equipment 物品仍处于数据占位阶段
+- 世界掉落物、拾取交互、拖拽拆分、快捷栏等背包深层功能尚未实现
+- 玩家受击反馈、无敌帧、硬直/禁控等战斗体验机制尚未系统化
+
+#### 工程层
+- 现有 EditMode 测试文件存在，但代码整体处于注释状态，自动化测试尚未真正启用
+- `Build Settings` 中仍包含 `SampleScene`，项目发布前建议清理无关场景入口
+- AssetBundle 运行时链路已具备，但仍以 `Resources` 为默认运行路径，缺少完整发布校验与资源校验工具
+- 日志仍以 `Debug.Log` 为主，缺少统一日志级别、埋点与开关体系
+- 目前尚未形成 asmdef 分层、CI 检查、代码扫描与预提交校验
+
+#### 已确认的当前问题/缺口
+- `MainPanel` 技能按钮尚未接到正式技能释放入口
+- `PlayerSkillService` 中 `Heal / RestoreStamina` 技能效果仍为预留分支
+- `ItemUseEffectSystem` 注册的是 `restore_stamina`，但 `ItemConfig.json` 中有体力恢复物品使用 `stamina_up`，两者未完全对齐，体力恢复类道具存在接线风险
+- About 面板中的说明文案仍停留在较早阶段，和当前分支实际能力不一致
+
+---
+
+## 3. 运行环境
+
+- Unity Editor: `2022.3.62f3c1`
+- 主要包：
+  - `com.unity.ai.navigation`
+  - `com.unity.cinemachine`
+  - `com.unity.inputsystem`
+  - `com.unity.render-pipelines.universal`
+  - `com.unity.textmeshpro`
+  - `com.unity.ugui`
+
+---
+
+## 4. 快速开始
+
+### 4.1 打开工程
+1. 使用 Unity Hub 打开项目目录
+2. 确认编辑器版本为 `2022.3.62f3c1`
+3. 等待 Package 与资源导入完成
+
+### 4.2 场景
+项目 Build Settings 当前包含：
+- `Assets/Scenes/BeginScene.unity`
+- `Assets/Scenes/SampleScene.unity`
+- `Assets/Scenes/GameScene.unity`
+
+实际主流程使用：
+- `BeginScene`
+- `GameScene`
+
+### 4.3 推荐运行方式
+1. 打开 `BeginScene`
+2. 点击 Play
+3. 在开始界面选择：
+   - 开始游戏：进入创角，再进入 GameScene
+   - 继续游戏：选择已有存档槽位
+4. 进入 `GameScene` 后验证：
+   - 主界面显示
+   - 小地图正常绑定
+   - 玩家与怪物正常运行
+   - 战斗、掉落、背包、复活链路可用
+
+### 4.4 可选：AssetBundle 运行时
+如需测试 AB 运行时加载：
+1. 通过编辑器菜单生成 AssetBundleName
+2. 执行目标平台打包
+3. 将产物放入 `Assets/StreamingAssets/<Platform>/`
+4. 打开宏 `ENABLE_ASSETBUNDLE_RUNTIME`
+
+未启用宏时，运行时默认仍走 `Resources`。
+
+---
+
+## 5. 核心运行链路
+
+### 5.1 启动链路
+
+```text
+StartGame
+  → GameManager.Initialize()
+  → RuntimeLifecycleBootstrap.RegisterDefaults()
+  → RuntimeLifecycleRegistry.InitAll()
+  → Init Game-only Controllers
+  → MonsterConfigManager.Init()
+  → EnterBeginFlow()
 ```
-BeginScene → 创角/读档 → GameScene → 角色/相机/UI 装配 → 导航/地图/怪物模块运行
+
+### 5.2 创角链路
+
+```text
+BeginPanel
+  → CreateRolePanel
+  → CreateRoleRequestEvent
+  → CreateRoleFlowController
+  → PlayerFactory.CreatePlayerData()
+  → GamePlayerDataService.SavePlayerDataToSlot()
+  → SceneNavigator.EnterGameScene()
 ```
 
-### 架构分层
+### 5.3 读档链路
 
-| 层级 | 职责 | 组成 |
-|------|------|------|
-| **Framework** | 基础设施，不含业务规则 | UI框架、事件总线、资源加载、数据管理、常量 |
-| **Game** | 业务逻辑与流程控制 | CharacterControl、GameScene、Player、Monster、Navigation、Map、Flow、UI |
-| **Resources** | 运行时资源 | UI、配置、怪物Prefab、动画/AnimatorController |
+```text
+BeginPanel
+  → ContinuePanel
+  → GamePlayerDataService.LoadPlayerDataFromSlot(slotId)
+  → SceneNavigator.EnterGameScene()
+```
+
+### 5.4 场景装配链路
+
+```text
+GameSceneEntry.Start()
+  → TryAssembleScene()
+      → CameraRigAssembler.TryCreate()
+      → PlayerRuntimeService.CreateRuntimePlayer()
+      → MiniMapAssembler.TryInitObjects()
+  → CommitScene()
+      → OpenMainPanel()
+      → WriteSceneContext()
+      → Bind MiniMap
+      → MonsterModule.InitForScene()
+      → EnsureBattleRuntime()
+```
+
+### 5.5 战斗与死亡链路
+
+```text
+PlayerAttackService / MonsterBrain.OnAttackEvent
+  → CombatRequestFactory.CreateBasicDamage()
+  → BattleDamageService.ApplyDamage()
+  → DamageAppliedEvent
+  → DeathEvent (if killed)
+  → DeathRuntimeService
+```
+
+### 5.6 玩家死亡与复活链路
+
+```text
+PlayerEntity.ReceiveDamage()
+  → DeathEvent
+  → DeathRuntimeService
+  → PlayerDeadEvent
+  → PlayerDeathUIController
+  → RespawnOverlayRuntime.Show()
+  → PlayerRespawnRuntimeService.RespawnNow()
+```
+
+### 5.7 掉落与背包链路
+
+```text
+DeathEvent
+  → LootRuntimeService
+  → LootResolver
+  → InventoryService.TryAddItem()
+  → InventoryChangedEvent
+  → InventoryPanel / ItemDetailPopup 刷新
+```
+
+### 5.8 经验成长链路
+
+```text
+DeathEvent
+  → PlayerExpRuntimeService
+  → PlayerProgressionService.AddExpToCurrentPlayer()
+  → LevelUp()
+  → RefreshUnlockedSkillsForCurrentPlayer()
+```
 
 ---
 
-## 目录结构
+## 6. 目录结构
 
-```
+```text
 Assets/
+├─ Editor/                          # 编辑器工具（AssetBundle 命名与打包）
+├─ Resources/                       # 运行时资源
+│  ├─ Config/                       # Role / Monster / Map / Item / Drop / Skill 配置
+│  ├─ Map/
+│  ├─ Monster/
+│  ├─ Portrait/
+│  ├─ Role/
+│  └─ UI/
 ├─ Scenes/
-│  ├─ BeginScene.unity          # 开始场景（主菜单/创角/读档）
-│  └─ GameScene.unity           # 游戏场景
-├─ Resources/
-│  ├─ UI/
-│  │  ├─ Root/                  # DebugCanvas 等
-│  │  └─ Windows/               # 页面/弹窗预制体
-│  ├─ Map/                      # 地图图片资源
-│  ├─ Monster/                  # 怪物 Prefab（Zombie/Z1~Z4）
-│  ├─ AnimatorController/       # 动画控制器
-│  └─ Config/                   # JSON 配置文件
-│     ├─ RoleClassConfig.json
-│     ├─ MapConfig.json
-│     └─ MonsterConfig.json
-└─ Scripts/
-   ├─ Framework/                # 基础设施层
-   │  ├─ UI/                    # UI框架
-   │  ├─ Event/                 # 事件总线
-   │  ├─ Managers/              # 管理器
-   │  ├─ Json/                  # JSON处理
-   │  └─ Consts/                # 常量定义
-   └─ Game/                     # 业务层
-      ├─ Boot/                  # 启动入口
-      ├─ CharacterControl/      # 角色控制与输入
-      ├─ GameScene/             # 场景装配
-      ├─ Navigation/            # 导航系统
-      ├─ Player/                # 玩家系统
-      ├─ Monster/               # 怪物系统
-      ├─ Map/                   # 地图系统
-      ├─ Combat/                # 战斗系统
-      ├─ Battle/                # 战斗运行时
-      ├─ Flow/                  # 流程控制
-      └─ UI/                    # UI面板
+│  ├─ BeginScene.unity
+│  └─ GameScene.unity
+├─ Scripts/
+│  ├─ Framework/                    # 基础设施层
+│  │  ├─ Consts/
+│  │  ├─ Event/
+│  │  ├─ Json/
+│  │  ├─ Managers/
+│  │  ├─ Pool/
+│  │  ├─ Resource/
+│  │  ├─ Scene/
+│  │  └─ UI/
+│  └─ Game/                         # 业务层
+│     ├─ Battle/
+│     ├─ Boot/
+│     ├─ CharacterControl/
+│     ├─ Combat/
+│     ├─ Drop/
+│     ├─ Flow/
+│     ├─ GameScene/
+│     ├─ Inventory/
+│     ├─ Item/
+│     ├─ Map/
+│     ├─ Monster/
+│     ├─ Navigation/
+│     ├─ Player/
+│     ├─ Save/
+│     ├─ Skill/
+│     └─ UI/
+└─ Tests/                           # 当前存在 EditMode 测试骨架，但尚未启用
+
+ProjectSettings/
+Packages/
+docs/
+daily_logs/
 ```
 
 ---
 
-## 核心系统
+## 7. 重点模块说明
 
-### 启动与场景装配
+### Framework
 
-**应用级管理器**：[GameManager.cs](Assets/Scripts/Game/Boot/GameManager.cs)
-- 单例 + DontDestroyOnLoad
-- Initialize：核心管理器 → 怪物配置 → 进入 Begin 流程
-- ReturnToBeginFlow：清理小地图等 → 跳转 BeginScene
+| 模块 | 作用 |
+|---|---|
+| `UIManager` | Panel 加载、分层、Popup 栈、主页面切换 |
+| `EventBus` | 模块间事件通信 |
+| `DataManager` | 设置数据与存档槽位管理 |
+| `ResourceManager` | 统一资源加载入口 |
+| `AssetBundleManager` | AB 依赖加载与资源获取 |
+| `PoolManager` | 飘字、路径段等对象池 |
+| `AssetPaths / ObjectNames / SceneNames / UIStrings` | 统一常量定义 |
 
-**Game 场景入口**：[GameSceneEntry.cs](Assets/Scripts/Game/GameScene/Entry/GameSceneEntry.cs)
-- 两阶段：`TryAssembleScene(...)` → `CommitScene(...)`
-- Assemble：PlayerRuntimeService.CreateRuntimePlayer（组装→Init→ApplySnapshot→SetAgentId→Register）
-- Commit：打开主页面、写入场景上下文、小地图绑定、MonsterModule.InitForScene
+### Game
 
-**常量定义**：
-- 资源路径：[AssetPaths.cs](Assets/Scripts/Framework/Consts/AssetPaths.cs)
-- 对象名：[ObjectNames.cs](Assets/Scripts/Framework/Consts/ObjectNames.cs)
-- 导航常量：[NavigationConsts.cs](Assets/Scripts/Framework/Consts/NavigationConsts.cs)
-- UI名称：[UINames.cs](Assets/Scripts/Framework/UI/UINames.cs)
-- UI文案：[UIStrings.cs](Assets/Scripts/Framework/Consts/UIStrings.cs)
-
----
-
-### UI 系统
-
-| 组件 | 文件 | 职责 |
-|------|------|------|
-| 基类 | [BasePanel.cs](Assets/Scripts/Framework/UI/Base/BasePanel.cs) | 生命周期管理（OnCreate/OnShow/OnHide/OnDestroyPanel） |
-| 管理器 | [UIManager.cs](Assets/Scripts/Framework/Managers/UIManager.cs) | 画布/分层/弹窗栈/主页面管理 |
-| 路由 | [UIRouteNames.cs](Assets/Scripts/Framework/UI/UIRouteNames.cs) | 路由常量 |
-| 主页面 | [UIMainPages.cs](Assets/Scripts/Framework/UI/UIMainPages.cs) | 主页面注册 |
-| 对话服务 | [UIDialogService.cs](Assets/Scripts/Framework/UI/Services/UIDialogService.cs) | 弹窗服务 |
-
-**层级约定**：Bottom / Normal / Popup / Top
+| 模块 | 作用 |
+|---|---|
+| `Boot` | 应用初始化、生命周期编排 |
+| `Flow` | 创角流程与业务事件处理 |
+| `GameScene` | 场景装配与运行态上下文写入 |
+| `Player` | 玩家实体、控制、导航、复活、成长、存档 |
+| `Monster` | 怪物实体、AI、执行器、刷怪、恢复 |
+| `Navigation` | 寻路构建、代理注册、点击移动 |
+| `Combat / Battle` | 统一攻击入口、伤害结算、死亡处理 |
+| `Drop / Inventory / Item` | 掉落、入包、物品使用与丢弃 |
+| `Skill` | 数据驱动技能服务与调试入口 |
+| `Map / UI` | 小地图、地图页、主界面与弹窗系统 |
 
 ---
 
-### 导航与地图
+## 8. 配置文件
 
-**导航系统**：
-- [NavigationPathSolver](Assets/Scripts/Game/Navigation/Runtime/NavigationPathSolver.cs)：基于 NavMesh 求路
-- [NavigationRegistry](Assets/Scripts/Game/Navigation/Runtime/NavigationRegistry.cs)：代理注册表
-- [PlayerNavigator](Assets/Scripts/Game/Player/Navigation/PlayerNavigator.cs)：玩家导航代理
-- [MonsterNavigator](Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs)：怪物导航代理
+位于 `Assets/Resources/Config/`：
 
-**地图系统**：
-- [MapDataManager](Assets/Scripts/Game/Map/Manager/MapDataManager.cs)：地图配置加载
-- [MapPanel](Assets/Scripts/Game/Map/UI/MapPanel.cs)：地图UI显示
-
----
-
-### 怪物系统
-
-**职责分层**：
-
-| 组件 | 职责 |
-|------|------|
-| [MonsterEntity](Assets/Scripts/Game/Monster/Runtime/MonsterEntity.cs) | 数据/身份/血量/死亡/存档 |
-| [MonsterBrain](Assets/Scripts/Game/Monster/Runtime/MonsterBrain.cs) | 状态判断与命令产生 |
-| [MonsterLocomotionExecutor](Assets/Scripts/Game/Monster/Runtime/MonsterLocomotionExecutor.cs) | 命令执行（导航/动画） |
-| [MonsterNavigator](Assets/Scripts/Game/Monster/Navigation/MonsterNavigator.cs) | 路径执行与速度采样 |
-| [MonsterRuntimeRegistry](Assets/Scripts/Game/Monster/Runtime/MonsterRuntimeRegistry.cs) | 注册表 |
-| [MonsterRuntimeService](Assets/Scripts/Game/Monster/Runtime/MonsterRuntimeService.cs) | 创建/恢复服务 |
+- `RoleClassConfig.json`：职业基础属性与成长字段
+- `MonsterConfig.json`：怪物属性、掉落表、经验奖励、Prefab 路径
+- `MapConfig.json`：场景地图配置
+- `ItemConfig.json`：物品配置、堆叠、用途、描述
+- `DropTableConfig.json`：掉落表
+- `SkillConfig.json`：技能配置
 
 ---
 
-### 存档与数据
+## 9. 调试与开发辅助
 
-| 服务 | 文件 | 职责 |
-|------|------|------|
-| 玩家数据服务 | [GamePlayerDataService.cs](Assets/Scripts/Game/Player/Save/GamePlayerDataService.cs) | 当前玩家与槽位管理 |
-| 存档执行 | [PlayerSaveService.cs](Assets/Scripts/Game/Player/Save/PlayerSaveService.cs) | 存档读写 |
-| 槽位策略 | [DataManager.cs](Assets/Scripts/Framework/Managers/DataManager.cs) | 尾部追加策略 |
-| 摘要映射 | [PlayerSaveMetaMapper.cs](Assets/Scripts/Game/Player/Save/Mapper/PlayerSaveMetaMapper.cs) | PlayerData → 摘要 |
+### 已有调试入口
+- `K` 键附近最近怪伤害调试（怪物死亡/掉落/复活链路验证）
+- `1` 键技能调试释放（`PlayerSkillDebugController`）
+- `F6 / F7` 经验调试（成长链路验证）
+- 开发模式下可注入 `DebugCanvas + PoolMonitorPanel`
+- 怪物命中区支持 Gizmos 可视化
 
----
-
-## 常量与资源规范
-
-### 规范要求
-- **禁止魔法字符串**：新增资源/对象名先补常量再引用
-- **统一加载入口**：`ResourceManager.Instance.Load<T>(AssetPaths.Xxx)`
-
-### 常量类
-
-```csharp
-// 资源路径
-AssetPaths.Window(UINames.Xxx)
-
-// 对象名
-ObjectNames.MiniMapCamera
-
-// 导航常量
-NavigationConsts.PlayerAgentId
-```
+### 建议重点验证
+- 创角后自动入场
+- ContinuePanel 读档/删档
+- 玩家导航与镜头不互相打断
+- 玩家死亡 Overlay 与复活恢复
+- 击杀怪物后的经验、掉落、背包变化
+- 物品使用与丢弃
+- 存档后再次读档是否恢复玩家位置与怪物状态
 
 ---
 
-## 代码约定
+## 10. 已知工程约束
 
-### 单一职责
-- **单一移动源**：避免脚本位移与 Root Motion 同时驱动
-- **动画写入单一来源**：由执行器统一写入
-
-### 导航门禁
-- Navigator 不读取业务状态（除 IsDead）
-- stopDistance 建议 0.2
-
-### UI规范
-- 主页面独占呈现
-- 弹窗经 UIDialogService
-- 路由统一 UIRouteNames/UIMainPages
+- `Framework` 只承载基础设施，不应写具体业务规则
+- 场景副作用尽量集中在 `CommitScene()` 阶段执行
+- 动画写入尽量由单一执行者负责，避免 Brain / Navigator / Animator 多头写入
+- 资源路径、对象名、路由名禁止硬编码，统一收口到常量类
+- 玩家与怪物的运行态创建应尽量统一走 RuntimeService / Assembler，不直接在场景脚本里散点生成
 
 ---
 
-## 故障排查
+## 11. 文档
 
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| 收到路径但不动 | stopDistance 过大 | 建议设为 0.2 |
-| 攻击后一直不动 | Animator 未触发 AttackOver | 检查 Has Exit Time/条件 |
-| 转向"趴下/闪烁" | 使用了俯仰旋转 | 使用平面转向（y=0） |
-
----
-
-## 战斗与掉落/背包
-
-**统一入口**
-- 攻击请求：CombatTargetResolver/FactionHelper/CombatRequestFactory/PlayerAttackService
-- 结算：BattleDamageService（raw+Atk-Def 基础公式，叠加暴击/闪避）
-- 死亡：DeathEvent 广播；DeathRuntimeService 统一清理（去重、延迟销毁）
-
-**掉落链**
-- 配置：Resources/Config/DropTableConfig.json（AssetPaths.DropTableConfig）
-- 管理器：DropTableConfigManager（JsonUtility 读取）
-- 解析：LootResolver（按权重抽一条，产出 itemId/count）
-- 服务：LootRuntimeService（订阅 DeathEvent → 解析 → 入包/日志）
-- 怪物配置：MonsterConfig.dropTableId（0 表示无掉落）
-
-**背包链**
-- 数据：PlayerData.inventoryData = InventoryData(slotCount + slots)
-- 兼容：GamePlayerDataService.EnsurePlayerDataSchema（旧档补齐，默认 20/50 格）
-- 物品：ItemConfig/ItemConfigManager（AssetPaths.ItemConfig）
-- 入包：InventoryService.TryAddItem（先叠堆后新格，受 slotCount 限制）
-
-**最小验证**
-1) 在 MonsterConfig.json 为测试怪配置 `"dropTableId": 1001`
-2) 配置 DropTableConfig.json（示例已提供 id=1001）
-3) 击杀怪物 → Console 日志显示 `drop resolved ... addToInventory=true`
-4) 保存并读档后，inventoryData.slots 保留
-
-**UI（事件接线）**
-- 路由：UIRouteNames.InventoryPanel
-- 事件：OpenInventoryPanelEvent
-- 控制器：InventoryUIController（订阅事件→ShowPanel<InventoryPanel>().Refresh()）
-- 面板与格子：待接入（V1 仅展示文字）
-
-**玩家状态（HUD 事件化）**
-- 事件：PlayerHpChangedEvent / PlayerStaminaChangedEvent
-- 订阅方：MainPanel OnShow 订阅、OnHide 反订阅；收到事件实时更新 hpFill/staminaFill
-- 体力规则：只禁跑不禁走；体力不足自动降为走路，恢复到阈值后可再次跑
+- 架构文档：`docs/architecture.md`
+- 开发日志：`daily_logs/`
+- 工程建议：`docs/engineering-recommendations-2026-03-25.md`
+- 运行最小检查清单：`docs/minimal-runtime-checklist.md`
 
 ---
 
-## 技能系统 V1
+## 12. 建议的下一步
 
-**原则**
-- 技能 = 配置 + 原子效果列表（非“每个技能一个脚本”）
-- 释放与结算分离：技能管释放与目标与冷却；伤害结算统一走 BattleDamageService
-- 统一目标源：玩家仅有一个“当前战斗目标”PlayerEntity.CurrentTarget
+本分支最适合优先补齐的，不是“再加更多系统”，而是把现有闭环继续做实：
 
-**数据与配置**
-- 结构：SkillEffectType / SkillTargetType / SkillEffectData / SkillConfig / SkillConfigList
-- 管理器：SkillConfigManager（AssetPaths.SkillConfig → Resources/Config/SkillConfig.json）
-- 示例：PowerShot（id=1001，冷却3s，射程8m，目标 Enemy，效果：Damage 25）
+1. 正式接通技能栏 UI 与 `PlayerSkillService`
+2. 修正体力恢复类道具配置/效果映射
+3. 启用并补齐 EditMode / PlayMode 测试
+4. 清理发布前无关场景与陈旧文案
+5. 为背包、装备、技能和成长建立更稳定的数据与事件边界
 
-**运行时**
-- PlayerSkillService：校验施法者/解锁/冷却/目标/距离 → 执行效果
-- Damage 效果：PlayerAttackService.Attack(..., DamageSourceType.Skill) → BattleDamageService
-- 结果结构：SkillCastResult/SkillCastFailReason
-- Debug：PlayerSkillDebugController（数字键 1；优先打当前目标，失败打印剩余冷却）
-
-**目标统一**
-- PlayerEntity 新增 CurrentTarget/SetTarget/ClearTarget
-- PlayerAttackService 在命中解析后调用 `attacker.SetTarget(targetComponent)`
-- PlayerSkillTargetResolver：优先 CurrentTarget（活体），否则回退最近怪
-
----
-
-## 技能系统 Prototype
-
-**定位**
-- 这是按类图独立实现的一套“原型技能模块”，用于表达完整的技能对象模型与原子链执行流程。
-- 它与当前线上主链路 `PlayerSkillService` 并存，暂时不接入现有 `PlayerEntity`、战斗总线或 UI。
-
-**目录**
-- `Assets/Scripts/Game/Skill/Prototype`
-
-**核心类型**
-- `SkillMgr`：技能与 `DoSkillComp` 的创建/回收、默认技能组装
-- `DoSkillComp`：驱动技能列表更新、停止、回收
-- `Skill`：技能本体，维护 `SkillAtomList`，负责 `Start/Pause/Stop/Update`
-- `SkillAtom`：原子基类
-- `SkillAtomAnimation / SkillAtomSound / SkillAtomRangefindEnemy / SkillAtomTrun / SkillAtomMove / SkillAtomHurt`
-- `SkillShareData`：原子共享上下文，包含 `SourceAnimal / FindEnemyList / MainTarget / SkillID`
-- `Player`：仅用于原型链路的最小玩家对象，不等同于现有 `PlayerEntity`
-
-**执行链示例**
-- `1001`: Animation -> Sound -> RangefindEnemy -> Trun -> Hurt
-- `1002`: Animation -> RangefindEnemy -> Move -> Hurt
-- `1003`: Animation -> Sound -> RangefindEnemy -> Trun
-
-**用途**
-- 用于先把类图落地成可运行代码
-- 后续可选择：
-  - 继续配置驱动化
-  - 接入现有 `PlayerEntity`
-  - 或仅作为技能设计/验证原型保留
-
----
-
-## 资源加载与 AssetBundle
-
-**目录到 Bundle 命名**
-- 基于 `Assets/Resources` 的目录结构映射到 `ab.*`：
-  - UI/Windows → ab.ui.windows
-  - Map/Main → ab.map.main
-  - Monster → ab.monster
-  - Config → ab.config
-
-**编辑器工具**
-- Tools/AssetBundle/1. 刷新 AssetBundleName（按目录写入）
-- Tools/AssetBundle/3~5. 一键打包（Windows/Android/iOS）
-
-**运行时加载**
-- AssetBundleManager：依赖加载，默认根 `Assets/StreamingAssets/<Platform>/`
-- AssetBundleLoader：优先从 AB 加载，失败回退 Resources（由 `ENABLE_ASSETBUNDLE_RUNTIME` 宏控制）
-- 生命周期：可在 RuntimeLifecycleRegistry 中注册 AssetBundleManager（宏包裹）
-
-**忽略规则**
-- `.gitignore` 已忽略 `/AssetBundleOutput/` 与 `/Assets/StreamingAssets/<Platform>/`，避免提交包体产物
-
----
-
-## 工程化改进计划
-
-> 目标：将"可运行原型"升级为"可持续演进工程"
-
-### P0（必须优先完成）
-- [ ] 运行时入口去占位化
-- [ ] 自动化测试恢复
-- [ ] 生命周期统一契约
-- [ ] 存档读取语义修复
-
-### P1（建议下一阶段完成）
-- [ ] 槽位索引文件与可配置分配策略
-- [ ] 导航可观测性升级
-- [ ] 场景提交里程碑事件化
-
-### P2（工程卫生与长期治理）
-- [ ] namespace 与 asmdef 规范统一
-- [ ] 静态检查规则
-- [ ] ADR 文档化关键决策
-
----
-
-## 参考文档
-
-| 文档 | 说明 |
-|------|------|
-| [architecture.md](docs/architecture.md) | 架构指南 |
-| [minimal-runtime-checklist.md](docs/minimal-runtime-checklist.md) | 最小链路自检清单 |
-| [module-integration-template.md](docs/module-integration-template.md) | 新模块接入模板 |
-| [engineering-recommendations-2026-03-25.md](docs/engineering-recommendations-2026-03-25.md) | 工程改进建议 |
-
----
-
-## 构建与运行自检
-
-- [ ] 场景包含 BeginScene/GameScene；EventSystem 存在
-- [ ] PlayerInput 指向唯一输入资产
-- [ ] 资源路径与对象名引用均来自常量
-- [ ] DebugCanvas 可加载；Pool 监控可显示
-
----
-
-## 提交与规范
-
-- **分批提交**：逻辑/资源/场景/AnimatorController/Prefab 分离
-- **信息格式**：模块名 + 简述 + 关键影响
-- **发布前检查**：无未提交更改；README/architecture 同步
-
----
-
-## 工程化改进计划（增强版）
-
-> 目标：将“可运行原型”升级为“可持续演进工程”，重点提升**稳定性、可回归、可观测、可发布**四个维度。
-
-### 1) P0 / P1 / P2 优先级治理清单
-
-#### P0（必须优先完成）
-- **运行时入口去占位化**
-  - 清理 GameScene 入口路径中的遗留 stub（固定 `return false/null` 的私有方法）。
-  - 原则：运行时程序集不得存在“长期占位实现”。
-- **自动化测试恢复**
-  - 恢复并启用 EditMode 测试（DataManager / CreateRoleFlowController / UIManager）。
-  - 新增 1 条 Gold Path PlayMode 冒烟测试（BeginScene→创角/读档→GameScene→MainPanel）。
-- **生命周期统一契约**
-  - 引入统一服务接口（建议 `Init / ResetSession / Shutdown`）。
-  - 由 App 级 orchestrator 统一编排，禁止模块“各自管理自己生命周期”。
-- **存档读取语义修复**
-  - 避免 `LoadData<T>` 在缺文件时 `new T()` 的歧义。
-  - 新增 `TryLoadData<T>(out T data)` 样式接口，显式区分：缺文件 / 解析失败 / 成功。
-
-#### P1（建议下一阶段完成）
-- 槽位索引文件（metadata registry）与可配置分配策略（append-only / first-gap）。
-- 导航可观测性升级（成功率、角点数、失败原因分桶）。
-- 场景提交里程碑事件化（PlayerReady / UIReady / MonstersInitialized）。
-- 明确 PlayerRuntimeService 与 GameSceneEntry 的职责归属，避免双处注册。
-
-#### P2（工程卫生与长期治理）
-- namespace 与 asmdef 规范统一。
-- 静态检查规则（无用私有方法、硬编码路径、序列化字段空引用防护）。
-- ADR（Architecture Decision Record）文档化关键决策。
-
-### 2) 推荐 CI/CD 基线（Unity 项目）
-
-- **PR 阶段（快速反馈）**
-  1. C# 编译校验（Unity batchmode）
-  2. EditMode Tests（必跑）
-  3. 关键规则扫描（硬编码路径、禁用 stub、禁用 TODO/FIXME 泄漏）
-- **主干合并前（质量门禁）**
-  1. PlayMode Smoke（Gold Path）
-  2. 资源完整性检查（关键 prefab/config/inputactions）
-  3. Docs 一致性检查（README / architecture / checklist 同步）
-- **发版阶段（可靠性保障）**
-  1. Save/Load 兼容性回归
-  2. Scene 切换与返回 Begin 流程回归
-  3. 性能快照（CPU/GC/导航请求频率）
-
-### 3) 生命周期治理建议（Service Lifecycle）
-
-统一状态机建议：`NotInitialized -> Initialized -> SessionActive -> SessionReset -> Shutdown`
-
-- **Init**：进程级只执行一次（注册事件、装配不可变依赖）
-- **ResetSession**：切号/返回 Begin/重开局时执行（清空运行态缓存、注册表）
-- **Shutdown**：应用退出时执行（反订阅、释放资源）
-
-建议建立 `RuntimeLifecycleOrchestrator`，集中调度以下服务：
-- UIManager
-- NavigationService
-- Flow Controllers（CreateRoleFlowController / RoleUIController）
-- Runtime registries（PlayerLocator / NavigationRegistry / MonsterRuntimeRegistry）
-
-### 4) 存档工程化建议（可靠性 + 可演进）
-
-- **文件层**
-  - player 数据与 meta 数据分离（正文 + 索引）
-  - 保存时先写临时文件再原子替换，避免异常中断导致损坏
-- **模型层**
-  - PlayerData 增加 `version`
-  - 引入 `UpgradePipeline`：读取旧版本时分步迁移
-- **接口层**
-  - `TryLoad` 返回结构化结果（状态码 + 数据 + 错误信息）
-  - 失败日志必须包含：slotId / fileName / exception type
-
-### 5) 观测与调试（Observability）
-
-- **日志分级**：Error / Warn / Info / Debug / Trace（按构建开关裁剪）
-- **关键指标**
-  - 导航：请求总数、求解失败率、平均角点数
-  - 战斗：伤害事件吞吐、死亡事件数
-  - 存档：写入成功率、读取失败分桶
-- **调试面板建议**
-  - 在 DebugCanvas 扩展“运行指标页”和“最近错误页”
-  - 支持一键导出最近 N 条运行事件
-
-### 6) 质量门禁（Definition of Done）
-
-一个功能 PR 达到可合并，至少满足：
-- 代码：无新增硬编码资源路径；关键常量已补齐
-- 测试：新增/修改逻辑有对应 EditMode 或 PlayMode 用例
-- 文档：涉及架构或流程变化时同步 README / architecture / checklist
-- 运行：Gold Path 不回归，Console 无新增 Error
-
-### 7) 七天实施节奏（含系统落地 + AB 包 + 手机打包）
-
-- **Day 1（闭环设计）**
-  - 锁定首周目标：战斗→掉落→背包的最小可玩闭环。
-  - 完成模块接入模板（分层、事件、存档、UI、测试）并拆分工单。
-- **Day 2（战斗与掉落接线）**
-  - 对接 DeathEvent 到掉落服务，补齐掉落表与基础概率逻辑。
-  - 约束：掉落逻辑仅通过事件和接口，不破坏现有战斗结算链路。
-- **Day 3（背包 MVP）**
-  - 完成 InventoryData/InventoryService/InventoryPanel 最小实现。
-  - 打通“击杀掉落 -> 入包 -> UI 显示 -> 存档恢复”。
-- **Day 4（AB 包流程）**
-  - 建立资源分组与命名规范（UI/Monster/Map/Config），输出 AB 构建脚本。
-  - 先打开发包（Development AB）验证资源加载与版本号管理。
-- **Day 5（手机打包链路）**
-  - 生成 Android 包（建议先 APK，后续再 AAB），验证启动、场景切换、输入、存档权限。
-  - 执行真机 smoke：Begin→创角/读档→GameScene→打怪→掉落入包。
-- **Day 6（回归与性能）**
-  - 跑 EditMode + PlayMode 冒烟；记录导航、战斗、存档关键日志。
-  - 修复阻断问题（崩溃、卡死、黑屏、存档失败）。
-- **Day 7（发布与复盘）**
-  - 输出周发布说明（版本号、AB 版本、已知问题）。
-  - 复盘并生成下一周生产计划（技能系统 / 成长系统 / 装备系统）。
-
-### 8) 后续流程化生产模型（周迭代循环）
-
-- **计划（Plan）**：每周一冻结范围，只允许 P0 缺陷插入。
-- **开发（Build）**：小 PR、日合并，严格执行质量门禁。
-- **验证（Verify）**：每日快速 smoke + 周五完整回归。
-- **发布（Release）**：统一打 AB、统一打包、统一变更日志。
-- **复盘（Review）**：指标复盘（崩溃率、回归失败率、存档失败率）驱动下周优先级。
-
----
