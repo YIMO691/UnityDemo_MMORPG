@@ -190,6 +190,7 @@ public class MainPanel : BasePanel
         }
         float percent = (float)e.currentHp / e.maxHp;
         hpFill.fillAmount = Mathf.Clamp01(percent);
+        RefreshPlayerInfo();
     }
 
     private void OnStaminaChanged(PlayerStaminaChangedEvent e)
@@ -204,7 +205,6 @@ public class MainPanel : BasePanel
         float percent = (float)e.currentStamina / e.maxStamina;
         staminaFill.fillAmount = Mathf.Clamp01(percent);
     }
-
 
     private void SetBarsEmpty()
     {

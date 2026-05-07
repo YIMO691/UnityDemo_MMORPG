@@ -111,15 +111,9 @@ public class PlayerNavigator : BaseNavigator
             if (Keyboard.current.spaceKey.isPressed) { reason = "Space"; return true; }
         }
 
-        if (Mouse.current != null)
-        {
-            if (Mouse.current.rightButton.isPressed) { reason = "MouseRight"; return true; }
-        }
-
         if (Gamepad.current != null)
         {
             if (Gamepad.current.leftStick.ReadValue().sqrMagnitude > 0.01f) { reason = "GamepadLeftStick"; return true; }
-            if (Gamepad.current.rightStick.ReadValue().sqrMagnitude > 0.01f) { reason = "GamepadRightStick"; return true; }
             if (Gamepad.current.buttonSouth.isPressed) { reason = "GamepadSouth"; return true; }
         }
 #endif

@@ -148,10 +148,7 @@ public class GameSceneEntry : MonoBehaviour
 
     // MiniMap 初始化迁移至 MiniMapAssembler
 
-    private bool TryCreatePlayerCharacter() { return false; }
-    private string GetRoleVisualPath(int classId) { return null; }
-    private bool ValidatePlayerComponents(GameObject player) { return false; }
-    private void AttachRoleVisual(Transform modelRoot, int classId) { }
+    
 
    
     private void EnsureBattleRuntime()
@@ -174,8 +171,7 @@ public class GameSceneEntry : MonoBehaviour
         }
     }
     
-    private bool TryCreateCamera() { return false; }
-    private bool TryBindCamera() { return false; }
+    
     private Vector3 GetSpawnPosition()
     {
         PlayerData playerData = GamePlayerDataService.Instance.GetCurrentPlayerData();

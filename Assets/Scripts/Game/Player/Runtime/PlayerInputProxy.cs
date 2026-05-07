@@ -10,7 +10,21 @@ public class PlayerInputProxy : MonoBehaviour
     public bool IsUsingNavigation => useNavigationOverride;
 
 
-    public PlayerControlCommand CurrentCommand => useNavigationOverride ? navigationCommand : ReadRawInput();
+    public PlayerControlCommand CurrentCommand
+    {
+        get
+        {
+            if (!useNavigationOverride)
+                return ReadRawInput();
+
+            var cmd = navigationCommand;
+            if (rawInputs != null)
+            {
+                cmd.look = rawInputs.look;
+            }
+            return cmd;
+        }
+    }
 
     private void Awake()
     {

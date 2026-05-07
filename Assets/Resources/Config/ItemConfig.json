@@ -5,9 +5,10 @@
       "name": "Small Potion",
       "iconPath": "",
       "maxStack": 20,
-      "itemType": "Consumable",
+      "itemType": "heal_hp",
       "canUse": true,
       "canDrop": true,
+"useValue":25,
       "desc": "恢复少量生命值。"
     },
     {
@@ -25,9 +26,10 @@
       "name": "Medium Potion",
       "iconPath": "",
       "maxStack": 20,
-      "itemType": "Consumable",
+      "itemType": "heal_hp",
       "canUse": true,
       "canDrop": true,
+"useValue":50,
       "desc": "恢复中等生命值。"
     },
     {
@@ -35,9 +37,10 @@
       "name": "Big Potion",
       "iconPath": "",
       "maxStack": 20,
-      "itemType": "Consumable",
+      "itemType": "heal_hp",
       "canUse": true,
       "canDrop": true,
+"useValue":75,
       "desc": "恢复大量生命值。"
     },
     {
@@ -45,9 +48,10 @@
       "name": "Energy Drink",
       "iconPath": "",
       "maxStack": 20,
-      "itemType": "Consumable",
+      "itemType": "stamina_up",
       "canUse": true,
       "canDrop": true,
+"useValue":30,
       "desc": "恢复少量能量值。"
     },
     {
@@ -55,9 +59,10 @@
       "name": "Bandage",
       "iconPath": "",
       "maxStack": 50,
-      "itemType": "Consumable",
+      "itemType": "heal_hp",
       "canUse": true,
       "canDrop": true,
+"useValue":10,
       "desc": "简易绷带，可用于止血与恢复。"
     },
     {

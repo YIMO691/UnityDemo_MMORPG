@@ -39,13 +39,14 @@ public class DataManager
     /// </summary>
     public void LoadSettingData()
     {
-        SettingData = JsonMgr.Instance.LoadData<SettingData>(SETTING_FILE_NAME);
-
-        if (SettingData == null)
+        if (JsonMgr.Instance.TryLoadData(SETTING_FILE_NAME, out SettingData data))
         {
-            SettingData = new SettingData();
-            SaveSettingData();
+            SettingData = data ?? new SettingData();
+            return;
         }
+        SettingData = new SettingData();
+        SaveSettingData();
+        Debug.Log("[DataManager] SettingData 不存在，已创建默认配置。");
     }
 
     /// <summary>
@@ -235,6 +236,50 @@ public class DataManager
         Debug.Log("[DataManager] 删除存档槽位：" + slotId);
     }
 
+    /// <summary>
+    /// 压缩存档槽位：把已有存档按顺序前移到 1..maxSlotCount 范围内，填补中间空洞
+    /// 仅对 persistentDataPath 下的 player_{id}.json 重命名，不触发读写内容
+    /// 返回发生移动的次数
+    /// </summary>
+    public int CompactPlayerSlots(int maxSlotCount = 20, int searchMax = 999)
+    {
+        List<int> used = new List<int>();
+        for (int i = 1; i <= searchMax; i++)
+        {
+            if (HasPlayerSaveInSlot(i)) used.Add(i);
+        }
+
+        int moves = 0;
+        int nextId = 1;
+        foreach (int curId in used)
+        {
+            if (nextId > maxSlotCount) break;
+            if (curId == nextId)
+            {
+                nextId++;
+                continue;
+            }
+
+            if (!HasPlayerSaveInSlot(curId)) { nextId++; continue; }
+            if (HasPlayerSaveInSlot(nextId)) { nextId++; continue; }
+
+            string src = Application.persistentDataPath + "/" + GetPlayerSlotFileName(curId) + ".json";
+            string dst = Application.persistentDataPath + "/" + GetPlayerSlotFileName(nextId) + ".json";
+            try
+            {
+                System.IO.File.Move(src, dst);
+                if (currentSlotId == curId) currentSlotId = nextId;
+                moves++;
+                Debug.Log($"[DataManager] Compact slot {curId} -> {nextId}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DataManager] 压缩存档失败 {curId}->{nextId}: {ex}");
+            }
+            nextId++;
+        }
+        return moves;
+    }
     #endregion
 
 }

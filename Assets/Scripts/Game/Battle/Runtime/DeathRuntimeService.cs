@@ -13,6 +13,13 @@ public static class DeathRuntimeService
         EventBus.Subscribe<DeathEvent>(OnDeath);
     }
 
+    public static void ClearProcessed(PlayerEntity player)
+    {
+        if (player == null) return;
+        int id = player.GetInstanceID();
+        processed.Remove(id);
+    }
+
     private static void OnDeath(DeathEvent evt)
     {
         if (evt == null || evt.deadEntity == null) return;
@@ -55,7 +62,8 @@ public static class DeathRuntimeService
         if (player != null)
         {
             Debug.Log("[DeathRuntimeService] Player dead.");
-            // Hook for animation/UI lock later
+            MonsterAggroService.ClearAllTargets();
+            EventBus.Publish(new PlayerDeadEvent(player));
             return;
         }
     }

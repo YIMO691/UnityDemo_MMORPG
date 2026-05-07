@@ -15,6 +15,7 @@ public static class AssetPaths
     public const string MonsterConfig = "Config/MonsterConfig";
     public const string ItemConfig = "Config/ItemConfig";
     public const string DropTableConfig = "Config/DropTableConfig";
+    public const string SkillConfig = "Config/SkillConfig";
     public const string MapImageRoot = "Map/Main/";
     public const string MonsterRoot = "Monster/";
 

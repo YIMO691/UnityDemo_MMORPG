@@ -21,4 +21,5 @@ public class MonsterConfig
     public float dodgeRate;
 
     public int dropTableId;
+    public int expReward;
 }

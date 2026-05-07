@@ -15,7 +15,8 @@
       "hitRate": 0.9,
       "dodgeRate": 0.05,
       "prefabPath": "Zombie",
-      "dropTableId": 1001
+      "dropTableId": 1001,
+      "expReward": 20
     },
     {
       "id": 2,
@@ -32,7 +33,8 @@
       "hitRate": 0.92,
       "dodgeRate": 0.06,
       "prefabPath": "Z1",
-      "dropTableId": 1001
+      "dropTableId": 1001,
+      "expReward": 30
     },
     {
       "id": 3,
@@ -49,7 +51,8 @@
       "hitRate": 0.95,
       "dodgeRate": 0.08,
       "prefabPath": "Z2",
-      "dropTableId": 1001
+      "dropTableId": 1001,
+      "expReward": 40
     },
     {
       "id": 4,
@@ -66,7 +69,8 @@
       "hitRate": 0.97,
       "dodgeRate": 0.1,
       "prefabPath": "Z3",
-      "dropTableId": 1001
+      "dropTableId": 1001,
+      "expReward": 60
     },
     {
       "id": 5,
@@ -83,7 +87,8 @@
       "hitRate": 1.0,
       "dodgeRate": 0.12,
       "prefabPath": "Z4",
-      "dropTableId": 1001
+      "dropTableId": 1001,
+      "expReward": 80
     }
   ]
 }
